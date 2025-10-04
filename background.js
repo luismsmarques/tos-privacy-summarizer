@@ -4,8 +4,8 @@ const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/
 const GEMINI_MODELS_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 // URLs do backend seguro (substituir pela URL do seu servidor)
-const BACKEND_BASE_URL = 'http://localhost:3000'; // Para desenvolvimento local
-// const BACKEND_BASE_URL = 'https://your-backend-domain.com'; // Para produção
+// const BACKEND_BASE_URL = 'http://localhost:3000'; // Para desenvolvimento local
+const BACKEND_BASE_URL = 'https://tos-privacy-summarizer.vercel.app';
 
 const API_ENDPOINTS = {
     PROXY: `${BACKEND_BASE_URL}/api/gemini/proxy`,
@@ -43,8 +43,11 @@ async function processSummaryAsync(text) {
       chrome.storage.local.get(['geminiApiKey', 'apiType', 'userId'], resolve);
     });
 
-    let apiType = result.apiType || 'shared';
+    // Forçar uso da API compartilhada (backend seguro)
+    let apiType = 'shared';
     let userId = result.userId;
+    
+    console.log('🔧 Configuração forçada para API compartilhada');
 
     // Se não tem userId, criar um
     if (!userId) {
@@ -173,17 +176,22 @@ async function createOrGetUserId() {
 
 // Função para gerar ID único do dispositivo
 function generateDeviceId() {
-  // Usar uma combinação de características do navegador
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  ctx.textBaseline = 'top';
-  ctx.font = '14px Arial';
-  ctx.fillText('Device ID', 2, 2);
+  // Gerar ID único usando características disponíveis no Service Worker
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 15);
+  const userAgent = navigator.userAgent || 'unknown';
   
-  const fingerprint = canvas.toDataURL();
-  const hash = btoa(fingerprint).substring(0, 16);
+  // Criar hash simples baseado em características disponíveis
+  let hash = '';
+  for (let i = 0; i < userAgent.length; i++) {
+    hash += userAgent.charCodeAt(i).toString(16);
+  }
   
-  return `device_${hash}_${Date.now()}`;
+  // Combinar tudo para criar ID único
+  const deviceId = `device_${hash.substring(0, 8)}_${timestamp}_${random}`;
+  
+  console.log('ID do dispositivo gerado:', deviceId);
+  return deviceId;
 }
 
 // Função para usar backend seguro
