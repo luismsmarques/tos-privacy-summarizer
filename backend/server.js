@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -52,6 +53,11 @@ app.use('/api/users', userRoutes);
 app.use('/api/credits', creditsRoutes);
 app.use('/api/stripe', stripeRoutes);
 app.use('/api/analytics', analyticsRoutes);
+
+// Rota para servir o dashboard
+app.get('/dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, '../dashboard/index.html'));
+});
 
 // Rota de health check
 app.get('/health', (req, res) => {
