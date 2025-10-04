@@ -1,0 +1,267 @@
+/* Dashboard Styles with Material Design 3 */
+.dashboard {
+    min-height: 100vh;
+    background-color: var(--md-sys-color-background);
+    color: var(--md-sys-color-on-background);
+    font-family: var(--md-sys-typescale-body-medium-font-family-name);
+}
+
+/* Header */
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 32px;
+    background-color: var(--md-sys-color-surface-container);
+    border-bottom: 1px solid var(--md-sys-color-outline-variant);
+    box-shadow: var(--md-sys-elevation-level1);
+}
+
+.header-left h1 {
+    font-size: var(--md-sys-typescale-headline-large-font-size);
+    font-weight: var(--md-sys-typescale-headline-large-font-weight);
+    color: var(--md-sys-color-on-surface);
+    margin: 0 0 4px 0;
+}
+
+.subtitle {
+    font-size: var(--md-sys-typescale-body-medium-font-size);
+    color: var(--md-sys-color-on-surface-variant);
+    margin: 0;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.last-updated {
+    font-size: var(--md-sys-typescale-body-small-font-size);
+    color: var(--md-sys-color-on-surface-variant);
+}
+
+.refresh-btn {
+    background: none;
+    border: none;
+    color: var(--md-sys-color-primary);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: var(--md-sys-shape-corner-small);
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.refresh-btn:hover {
+    background-color: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
+}
+
+.refresh-btn .material-symbols-outlined {
+    font-size: 20px;
+}
+
+/* Loading State */
+.loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 64px;
+    text-align: center;
+}
+
+.loading-spinner {
+    animation: spin 2s linear infinite;
+    margin-bottom: 16px;
+}
+
+.loading-spinner .material-symbols-outlined {
+    font-size: 48px;
+    color: var(--md-sys-color-primary);
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Error State */
+.error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 64px;
+    text-align: center;
+}
+
+.error-icon .material-symbols-outlined {
+    font-size: 48px;
+    color: var(--md-sys-color-error);
+    margin-bottom: 16px;
+}
+
+.error button {
+    background-color: var(--md-sys-color-primary);
+    color: var(--md-sys-color-on-primary);
+    border: none;
+    padding: 8px 16px;
+    border-radius: var(--md-sys-shape-corner-large);
+    cursor: pointer;
+    font-size: var(--md-sys-typescale-label-large-font-size);
+}
+
+/* Main Content */
+.dashboard-content {
+    padding: 32px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Metrics Grid */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin-bottom: 48px;
+}
+
+.metric-card {
+    background-color: var(--md-sys-color-surface-container);
+    border-radius: var(--md-sys-shape-corner-large);
+    padding: 24px;
+    box-shadow: var(--md-sys-elevation-level1);
+    transition: box-shadow 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.metric-card:hover {
+    box-shadow: var(--md-sys-elevation-level2);
+}
+
+.metric-icon {
+    font-size: 32px;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--md-sys-color-primary-container);
+    border-radius: var(--md-sys-shape-corner-medium);
+}
+
+.metric-content h3 {
+    font-size: var(--md-sys-typescale-title-medium-font-size);
+    font-weight: var(--md-sys-typescale-title-medium-font-weight);
+    color: var(--md-sys-color-on-surface-variant);
+    margin: 0 0 8px 0;
+}
+
+.metric-value {
+    font-size: var(--md-sys-typescale-headline-large-font-size);
+    font-weight: var(--md-sys-typescale-headline-large-font-weight);
+    color: var(--md-sys-color-on-surface);
+    margin: 0 0 8px 0;
+}
+
+.metric-change {
+    font-size: var(--md-sys-typescale-body-small-font-size);
+    font-weight: var(--md-sys-typescale-body-medium-font-weight);
+}
+
+.metric-change.positive {
+    color: var(--md-sys-color-tertiary);
+}
+
+.metric-change.negative {
+    color: var(--md-sys-color-error);
+}
+
+/* Charts Grid */
+.charts-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+    margin-bottom: 48px;
+}
+
+.chart-container {
+    background-color: var(--md-sys-color-surface-container);
+    border-radius: var(--md-sys-shape-corner-large);
+    padding: 24px;
+    box-shadow: var(--md-sys-elevation-level1);
+}
+
+.chart-container h3 {
+    font-size: var(--md-sys-typescale-title-medium-font-size);
+    font-weight: var(--md-sys-typescale-title-medium-font-weight);
+    color: var(--md-sys-color-on-surface);
+    margin: 0 0 24px 0;
+}
+
+/* Real-time Section */
+.realtime-section {
+    background-color: var(--md-sys-color-surface-container);
+    border-radius: var(--md-sys-shape-corner-large);
+    padding: 24px;
+    box-shadow: var(--md-sys-elevation-level1);
+}
+
+.realtime-section h3 {
+    font-size: var(--md-sys-typescale-title-medium-font-size);
+    font-weight: var(--md-sys-typescale-title-medium-font-weight);
+    color: var(--md-sys-color-on-surface);
+    margin: 0 0 24px 0;
+}
+
+.realtime-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.realtime-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+    background-color: var(--md-sys-color-surface-container-high);
+    border-radius: var(--md-sys-shape-corner-medium);
+}
+
+.realtime-label {
+    font-size: var(--md-sys-typescale-body-small-font-size);
+    color: var(--md-sys-color-on-surface-variant);
+    margin-bottom: 8px;
+}
+
+.realtime-value {
+    font-size: var(--md-sys-typescale-headline-small-font-size);
+    font-weight: var(--md-sys-typescale-headline-small-font-weight);
+    color: var(--md-sys-color-on-surface);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .dashboard-header {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+    }
+    
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .realtime-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
