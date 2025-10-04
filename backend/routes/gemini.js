@@ -95,7 +95,7 @@ router.post('/proxy', [
 
 // Função para chamar a API Gemini
 async function callGeminiAPI(text) {
-    const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/text-bison-001:generateText';
+    const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
     const apiKey = process.env.GEMINI_API_KEY;
     
     // Limitar o tamanho do texto
@@ -155,11 +155,17 @@ ${textToSummarize}`;
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            prompt: {
-                text: prompt
-            },
-            temperature: 0.7,
-            maxOutputTokens: 2048,
+            contents: [{
+                parts: [{
+                    text: prompt
+                }]
+            }],
+            generationConfig: {
+                temperature: 0.7,
+                topK: 40,
+                topP: 0.95,
+                maxOutputTokens: 2048,
+            }
         })
     });
 
@@ -171,8 +177,8 @@ ${textToSummarize}`;
 
     const data = await response.json();
 
-    if (data.candidates && data.candidates[0] && data.candidates[0].output) {
-        let responseText = data.candidates[0].output;
+    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+        let responseText = data.candidates[0].content.parts[0].text;
 
         // Limpar blocos de código Markdown se presentes
         responseText = cleanMarkdownCodeBlocks(responseText);
