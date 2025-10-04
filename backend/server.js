@@ -44,12 +44,14 @@ const geminiRoutes = require('./routes/gemini');
 const userRoutes = require('./routes/users');
 const creditsRoutes = require('./routes/credits');
 const stripeRoutes = require('./routes/stripe');
+const analyticsRoutes = require('./routes/analytics');
 
 // Rotas da API
 app.use('/api/gemini', geminiRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/credits', creditsRoutes);
 app.use('/api/stripe', stripeRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Rota de health check
 app.get('/health', (req, res) => {
