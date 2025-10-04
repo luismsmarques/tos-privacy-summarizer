@@ -95,7 +95,7 @@ router.post('/proxy', [
 
 // Função para chamar a API Gemini
 async function callGeminiAPI(text) {
-    const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent';
+    const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/text-bison-001:generateText';
     const apiKey = process.env.GEMINI_API_KEY;
     
     // Limitar o tamanho do texto
@@ -155,29 +155,24 @@ ${textToSummarize}`;
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            contents: [{
-                parts: [{
-                    text: prompt
-                }]
-            }],
-            generationConfig: {
-                temperature: 0.7,
-                topK: 40,
-                topP: 0.95,
-                maxOutputTokens: 2048,
-            }
+            prompt: {
+                text: prompt
+            },
+            temperature: 0.7,
+            maxOutputTokens: 2048,
         })
     });
 
     if (!response.ok) {
         const errorText = await response.text();
+        console.error('Erro da API Gemini:', response.status, response.statusText, errorText);
         throw new Error(`Erro da API Gemini: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     const data = await response.json();
 
-    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-        let responseText = data.candidates[0].content.parts[0].text;
+    if (data.candidates && data.candidates[0] && data.candidates[0].output) {
+        let responseText = data.candidates[0].output;
 
         // Limpar blocos de código Markdown se presentes
         responseText = cleanMarkdownCodeBlocks(responseText);
