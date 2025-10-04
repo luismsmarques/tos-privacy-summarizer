@@ -1,0 +1,17 @@
+{
+  "name": "tos-privacy-summarizer",
+  "version": "1.0.0",
+  "description": "Chrome Extension for ToS and Privacy Policy Summarization",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build step required'",
+    "start": "echo 'Static site'"
+  },
+  "keywords": ["chrome-extension", "tos", "privacy", "ai", "summarization"],
+  "author": "Luis Marques",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
