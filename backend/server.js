@@ -8,6 +8,9 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Configurar trust proxy para Vercel
+app.set('trust proxy', 1);
+
 // Middleware de segurança
 app.use(helmet());
 app.use(morgan('combined'));
