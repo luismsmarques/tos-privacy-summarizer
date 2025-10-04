@@ -95,7 +95,7 @@ router.post('/proxy', [
 
 // Função para chamar a API Gemini
 async function callGeminiAPI(text) {
-    const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+    const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
     const apiKey = process.env.GEMINI_API_KEY;
     
     // Limitar o tamanho do texto
