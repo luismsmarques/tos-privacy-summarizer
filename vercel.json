@@ -1,13 +1,35 @@
 {
-    "functions": {
-      "api/analytics.js": {
-        "maxDuration": 10
-      }
+  "functions": {
+    "api/analytics.js": {
+      "maxDuration": 10
     },
-    "rewrites": [
-      {
-        "source": "/dashboard",
-        "destination": "/dashboard/index.html"
-      }
-    ]
-  }
+    "api/test.js": {
+      "maxDuration": 5
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/dashboard",
+      "destination": "/dashboard/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type"
+        }
+      ]
+    }
+  ]
+}
