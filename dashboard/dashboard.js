@@ -1,5 +1,4 @@
 // Dashboard JavaScript - ToS Privacy Summarizer
-// Version: 2.0.1 - Fixed syntax errors
 class Dashboard {
     constructor() {
         this.currentSection = 'overview';
@@ -798,7 +797,3 @@ setInterval(() => {
 
 // Exportar para uso global
 window.Dashboard = Dashboard;
-
-// Cache busting - Force reload
-console.log('Dashboard v2.0.1 loaded at:', new Date().toISOString());
-console.log('Deploy timestamp:', Date.now());
