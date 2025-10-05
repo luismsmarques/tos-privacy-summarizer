@@ -332,8 +332,8 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelector('.action-zone').classList.remove('hidden');
         
         // Restaurar altura original
-        document.body.style.height = '';
-        document.body.style.minHeight = '';
+        // document.body.style.height = '';
+        // document.body.style.minHeight = '';
         
         // Esconder botão voltar
         backBtn.classList.add('hidden');
@@ -425,8 +425,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Expandir altura do popup
-        document.body.style.height = '600px';
-        document.body.style.minHeight = '600px';
+        // document.body.style.height = '600px';
+        // document.body.style.minHeight = '600px';
         
         // Mostrar botão voltar
         backBtn.classList.remove('hidden');
