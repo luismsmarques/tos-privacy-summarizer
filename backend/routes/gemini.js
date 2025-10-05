@@ -79,7 +79,7 @@ router.post('/proxy', [
             });
         }
 
-        const { userId, text, apiType = 'shared' } = req.body;
+        const { userId, text, focus = 'privacy', apiType = 'shared' } = req.body;
 
         // Registrar utilizador no analytics
         await registerUser(userId, req.ip || 'unknown');
@@ -97,7 +97,7 @@ router.post('/proxy', [
         }
 
         // Chamar API Gemini
-        const geminiResponse = await callGeminiAPI(text);
+        const geminiResponse = await callGeminiAPI(text, focus);
         success = true;
         
         // Detectar tipo de documento baseado no conteúdo
@@ -165,8 +165,22 @@ router.post('/proxy', [
     }
 });
 
+// Função para obter instruções baseadas no foco
+function getFocusInstructions(focus) {
+    switch (focus) {
+        case 'privacy':
+            return 'Concentre-se especialmente em questões de privacidade, recolha de dados, partilha de informações pessoais, cookies, e políticas de dados. Destaque riscos relacionados com a privacidade do utilizador.';
+        case 'terms':
+            return 'Concentre-se nos direitos e responsabilidades do utilizador, limitações de responsabilidade da empresa, propriedade intelectual, e cláusulas que afetam os direitos legais do utilizador.';
+        case 'general':
+            return 'Forneça uma análise equilibrada cobrindo tanto aspectos de privacidade quanto direitos do utilizador, dando uma visão geral completa do documento.';
+        default:
+            return 'Forneça uma análise equilibrada cobrindo tanto aspectos de privacidade quanto direitos do utilizador, dando uma visão geral completa do documento.';
+    }
+}
+
 // Função para chamar a API Gemini
-async function callGeminiAPI(text) {
+async function callGeminiAPI(text, focus = 'privacy') {
     const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
     const apiKey = process.env.GEMINI_API_KEY;
     
@@ -175,6 +189,8 @@ async function callGeminiAPI(text) {
     const textToSummarize = text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
 
     const prompt = `Você é um especialista em direito do consumidor e privacidade de dados. Sua tarefa é analisar o texto legal fornecido (Termos de Serviço ou Política de Privacidade) e transformá-lo em informações claras, acionáveis e estritamente formatadas em JSON para um utilizador comum.
+
+FOCO DA ANÁLISE: ${getFocusInstructions(focus)}
 
 A ÚNICA saída permitida deve ser um objeto JSON puro. NÃO use blocos de código Markdown. NÃO inclua qualquer texto introdutório, explicativo ou conclusivo. A resposta deve ser APENAS o JSON em português (Portugal) seguindo esta estrutura EXATA:
 

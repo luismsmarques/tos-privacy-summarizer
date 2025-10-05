@@ -18,9 +18,10 @@ const API_ENDPOINTS = {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'summarizeText') {
     console.log('Recebido texto para resumir:', request.text.substring(0, 100) + '...');
+    console.log('Foco solicitado:', request.focus);
 
     // Processar de forma assíncrona mas sem usar sendResponse
-    processSummaryAsync(request.text);
+    processSummaryAsync(request.text, request.focus);
     
     // Responder imediatamente para evitar erro de canal fechado
     sendResponse({ status: 'processing' });
@@ -28,8 +29,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 // Função assíncrona para processar o resumo
-async function processSummaryAsync(text) {
+async function processSummaryAsync(text, focus = 'privacy') {
   try {
+    console.log('Processando resumo com foco:', focus);
+    
     // Enviar atualização de progresso inicial
     chrome.runtime.sendMessage({
       action: 'progressUpdate',
@@ -66,7 +69,7 @@ async function processSummaryAsync(text) {
     
     if (apiType === 'shared') {
       // Usar backend seguro
-      summary = await summarizeWithBackend(text, userId);
+      summary = await summarizeWithBackend(text, userId, focus);
     } else {
       // Usar chave própria (método antigo)
       const apiKey = result.geminiApiKey;
@@ -201,11 +204,12 @@ function generateDeviceId() {
 }
 
 // Função para usar backend seguro
-async function summarizeWithBackend(text, userId) {
+async function summarizeWithBackend(text, userId, focus = 'privacy') {
   try {
     console.log('Usando backend seguro para resumir texto...');
     console.log('URL:', API_ENDPOINTS.PROXY);
     console.log('UserId:', userId);
+    console.log('Focus:', focus);
     console.log('Text length:', text.length);
     
     const response = await fetch(API_ENDPOINTS.PROXY, {
@@ -216,6 +220,7 @@ async function summarizeWithBackend(text, userId) {
       body: JSON.stringify({
         userId: userId,
         text: text,
+        focus: focus,
         apiType: 'shared'
       })
     });

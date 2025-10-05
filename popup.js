@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const errorMessage = document.getElementById('errorMessage');
     const themeToggle = document.getElementById('themeToggle');
     const settingsBtn = document.getElementById('settingsBtn');
-    const refreshButton = document.getElementById('refreshButton');
     const backBtn = document.getElementById('backBtn');
 
     // Context elements
@@ -233,9 +232,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Botão principal
         actionButton.addEventListener('click', handleSummarize);
         
-        // Botão de refresh
-        refreshButton.addEventListener('click', handleRefresh);
-        
         // Botão voltar
         backBtn.addEventListener('click', handleBack);
         
@@ -323,12 +319,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Handler para refresh
-    async function handleRefresh() {
-        console.log('Atualizando análise da página...');
-        await analyzeCurrentPage();
-    }
-    
     // Handler para voltar
     function handleBack() {
         console.log('Voltando ao estado inicial...');
