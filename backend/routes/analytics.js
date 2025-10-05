@@ -478,35 +478,7 @@ router.get('/overview', async (req, res) => {
   }
 });
 
-// Endpoint para obter dados de utilizadores
-router.get('/users', async (req, res) => {
-  try {
-    console.log('👥 Obtendo dados de utilizadores...');
-    
-    if (!db.isConnected) {
-      const connected = await db.connect();
-      if (!connected) {
-        return res.status(500).json({
-          success: false,
-          error: 'Não foi possível conectar à base de dados'
-        });
-      }
-    }
-    
-    const usersData = await db.getAnalyticsUsers();
-    res.json({
-      success: true,
-      data: usersData,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('❌ Erro ao obter dados de utilizadores:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Erro ao obter dados de utilizadores: ' + error.message
-    });
-  }
-});
+// Endpoint removido - duplicado com o endpoint autenticado abaixo
 
 // Endpoint para obter dados de resumos
 router.get('/summaries', async (req, res) => {
@@ -827,7 +799,17 @@ router.get('/users', (req, res, next) => authService.authenticateToken(req, res,
     try {
         console.log('📊 Obter lista de utilizadores');
         
-        const db = await import('../utils/database.js');
+        // Verificar conexão com base de dados
+        if (!db.isConnected) {
+            const connected = await db.connect();
+            if (!connected) {
+                console.error('❌ Não foi possível conectar à base de dados');
+                return res.status(500).json({
+                    success: false,
+                    error: 'Não foi possível conectar à base de dados'
+                });
+            }
+        }
         
         // Query para obter utilizadores com estatísticas
         const query = `
@@ -845,7 +827,9 @@ router.get('/users', (req, res, next) => authService.authenticateToken(req, res,
             ORDER BY u.created_at DESC
         `;
         
-        const result = await db.default.query(query);
+        console.log('🔍 Executando query:', query);
+        const result = await db.query(query);
+        console.log('📊 Resultado da query:', result.rows.length, 'linhas');
         
         const users = result.rows.map(row => ({
             user_id: row.user_id,
@@ -858,6 +842,7 @@ router.get('/users', (req, res, next) => authService.authenticateToken(req, res,
         }));
         
         console.log(`✅ ${users.length} utilizadores encontrados`);
+        console.log('📋 Primeiro utilizador:', users[0]);
         
         res.json({
             success: true,
