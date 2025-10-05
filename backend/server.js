@@ -70,10 +70,10 @@ app.use('/api/credits', creditsRoutes);
 app.use('/api/stripe', stripeRoutes);
 app.use('/api/analytics', auth.authenticateToken, analyticsRoutes);
 
-// Middleware para proteger todas as rotas do dashboard
-app.use('/dashboard', auth.protectDashboard);
+// Middleware para proteger todas as rotas do dashboard (temporariamente desabilitado para debug)
+// app.use('/dashboard', auth.protectDashboard);
 
-// Servir arquivos estáticos do dashboard (após proteção)
+// Servir arquivos estáticos do dashboard
 app.use('/dashboard', express.static(path.join(__dirname, '../dashboard')));
 
 // Rota de health check
@@ -82,6 +82,23 @@ app.get('/health', (req, res) => {
         status: 'OK', 
         timestamp: new Date().toISOString(),
         version: '1.0.0'
+    });
+});
+
+// Rota de debug para verificar se o servidor está funcionando
+app.get('/debug', (req, res) => {
+    res.json({
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        auth: {
+            hasAuthService: !!auth,
+            hasProtectDashboard: typeof auth.protectDashboard === 'function'
+        },
+        environment: {
+            hasJwtSecret: !!process.env.JWT_SECRET,
+            hasAdminUsername: !!process.env.ADMIN_USERNAME,
+            hasAdminPassword: !!process.env.ADMIN_PASSWORD
+        }
     });
 });
 
