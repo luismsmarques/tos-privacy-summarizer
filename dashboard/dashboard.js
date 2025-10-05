@@ -201,32 +201,36 @@ class Dashboard {
         const overview = this.data.overview;
         if (!overview) return;
         
+        // Extrair os dados reais do objeto de resposta da API
+        const overviewData = overview.data || overview;
+        console.log('Dados extraídos:', overviewData);
+        
         // Total de utilizadores
         const totalUsersEl = document.getElementById('totalUsers');
-        if (totalUsersEl && overview.total_users !== undefined) {
-            totalUsersEl.textContent = parseInt(overview.total_users).toLocaleString();
-            console.log('✅ Total users atualizado:', overview.total_users);
+        if (totalUsersEl && overviewData.total_users !== undefined) {
+            totalUsersEl.textContent = parseInt(overviewData.total_users).toLocaleString();
+            console.log('✅ Total users atualizado:', overviewData.total_users);
         }
         
         // Total de resumos (usar successful_summaries)
         const totalSummariesEl = document.getElementById('totalSummaries');
-        if (totalSummariesEl && overview.successful_summaries !== undefined) {
-            totalSummariesEl.textContent = parseInt(overview.successful_summaries).toLocaleString();
-            console.log('✅ Total summaries atualizado:', overview.successful_summaries);
+        if (totalSummariesEl && overviewData.successful_summaries !== undefined) {
+            totalSummariesEl.textContent = parseInt(overviewData.successful_summaries).toLocaleString();
+            console.log('✅ Total summaries atualizado:', overviewData.successful_summaries);
         }
         
         // Total de requests (usar today_requests)
         const totalRequestsEl = document.getElementById('totalRequests');
-        if (totalRequestsEl && overview.today_requests !== undefined) {
-            totalRequestsEl.textContent = parseInt(overview.today_requests).toLocaleString();
-            console.log('✅ Total requests atualizado:', overview.today_requests);
+        if (totalRequestsEl && overviewData.today_requests !== undefined) {
+            totalRequestsEl.textContent = parseInt(overviewData.today_requests).toLocaleString();
+            console.log('✅ Total requests atualizado:', overviewData.today_requests);
         }
         
         // Taxa de sucesso (calcular baseado em successful e failed)
         const successRateEl = document.getElementById('successRate');
-        if (successRateEl && overview.successful_summaries !== undefined && overview.failed_summaries !== undefined) {
-            const successful = parseInt(overview.successful_summaries);
-            const failed = parseInt(overview.failed_summaries);
+        if (successRateEl && overviewData.successful_summaries !== undefined && overviewData.failed_summaries !== undefined) {
+            const successful = parseInt(overviewData.successful_summaries);
+            const failed = parseInt(overviewData.failed_summaries);
             const total = successful + failed;
             
             if (total > 0) {
@@ -240,7 +244,7 @@ class Dashboard {
         }
         
         // Atualizar mudanças percentuais se disponíveis
-        this.updateMetricChanges(overview);
+        this.updateMetricChanges(overviewData);
     }
     
     updateMetricChanges(overview) {
