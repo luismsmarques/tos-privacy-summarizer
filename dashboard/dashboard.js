@@ -129,7 +129,7 @@ class Dashboard {
             
             // Adicionar token se disponível
             if (token) {
-                headers['X-Admin-Token'] = token;
+                headers['Authorization'] = `Bearer ${token}`;
             }
             
             const response = await fetch(endpoint, {
