@@ -296,7 +296,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         document.getElementById('termsLink').addEventListener('click', (e) => {
             e.preventDefault();
-            chrome.tabs.create({ url: chrome.runtime.getURL('TERMS-OF-SERVICE.md') });
+            chrome.tabs.create({ url: chrome.runtime.getURL('terms-of-service.html') });
         });
         
         document.getElementById('buyCreditsLink').addEventListener('click', (e) => {
