@@ -61,16 +61,19 @@ class AuthService {
             });
         }
 
-        const decoded = this.verifyToken(token);
-        if (!decoded) {
+        // Verificar token diretamente usando JWT
+        try {
+            const jwtSecret = process.env.JWT_SECRET || 'your-secret-key';
+            const decoded = jwt.verify(token, jwtSecret);
+            req.user = decoded;
+            next();
+        } catch (error) {
+            console.error('Token verification failed:', error);
             return res.status(403).json({ 
                 success: false, 
                 error: 'Token inválido ou expirado' 
             });
         }
-
-        req.user = decoded;
-        next();
     }
 
     // Middleware para proteger dashboard
