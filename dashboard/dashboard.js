@@ -8,7 +8,7 @@ class Dashboard {
         
         this.init();
     }
-    
+
     async init() {
         console.log('🚀 Inicializando Dashboard...');
         
@@ -30,7 +30,7 @@ class Dashboard {
         
         console.log('✅ Dashboard inicializado com sucesso');
     }
-    
+
     setupEventListeners() {
         // Toggle sidebar
         const menuToggle = document.getElementById('menuToggle');
@@ -115,7 +115,7 @@ class Dashboard {
             this.hideLoading();
         }
     }
-    
+
     async fetchData(endpoint) {
         try {
             console.log(`📡 Fazendo request para: ${endpoint}`);
@@ -138,13 +138,13 @@ class Dashboard {
                 credentials: 'include'
             });
             
-            if (!response.ok) {
+        if (!response.ok) {
                 if (response.status === 401) {
                     console.warn('🔒 Token inválido ou expirado, usando dados mock...');
                     // Não redirecionar, apenas usar dados mock
                     return null;
                 }
-                throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error(`HTTP error! status: ${response.status}`);
             }
             
             const data = await response.json();
@@ -331,7 +331,7 @@ class Dashboard {
             }
         });
     }
-    
+
     initDocumentTypesChart() {
         const ctx = document.getElementById('documentTypesChart');
         if (!ctx) return;
@@ -340,7 +340,7 @@ class Dashboard {
         if (this.charts.documentTypes) {
             this.charts.documentTypes.destroy();
         }
-        
+
         this.charts.documentTypes = new Chart(ctx, {
             type: 'doughnut',
             data: {
@@ -366,7 +366,7 @@ class Dashboard {
             }
         });
     }
-    
+
     updateCharts() {
         console.log('📊 Atualizando gráficos com dados reais...');
         
@@ -576,7 +576,7 @@ class Dashboard {
             window.location.href = '/dashboard';
         }
     }
-    
+
     showLoading() {
         this.isLoading = true;
         const contentArea = document.getElementById('contentArea');

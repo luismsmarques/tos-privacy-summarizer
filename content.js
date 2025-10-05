@@ -46,7 +46,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             sendResponse({ success: false, error: 'Ação não reconhecida' });
     }
     
-    // Não retornar true aqui - todas as respostas são síncronas
+    return true; // Manter canal aberto para resposta assíncrona
 });
 
 // Função para analisar a página

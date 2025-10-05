@@ -364,25 +364,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.error('Erro ao comunicar com content script:', chrome.runtime.lastError);
                     showError('Erro ao comunicar com a página. Tente recarregar a página.');
                     resetButton();
-                    return;
-                }
-                
-                if (response && response.success) {
+                } else {
                     console.log('Resposta do content script:', response);
-                    // O resumo será enviado pelo background script via chrome.runtime.onMessage
                     
-                    // Timeout de segurança: se não receber resumo em 15 segundos, mostrar erro
+                    // Fallback: se não receber resposta em 10 segundos, mostrar erro
                     setTimeout(() => {
                         if (isProcessing) {
-                            console.log('Timeout - não recebeu resumo em 15 segundos');
+                            console.log('Timeout - não recebeu resumo em 10 segundos');
                             showError('Timeout: O resumo demorou muito para ser processado. Tente novamente.');
                             resetButton();
                         }
-                    }, 15000);
-                } else {
-                    console.error('Erro na resposta do content script:', response);
-                    showError('Erro ao extrair texto da página. Tente recarregar a página.');
-                    resetButton();
+                    }, 10000);
                 }
             });
             
@@ -555,6 +547,41 @@ document.addEventListener('DOMContentLoaded', function() {
         
         let html = '';
         
+        // Rating de Risco e Complexidade (se disponível)
+        if (data.riskScore || data.complexityRating) {
+            html += `
+                <div class="summary-section rating-section">
+                    <h3>📊 Análise de Risco e Complexidade</h3>
+                    <div class="rating-container">
+                        ${data.riskScore ? `
+                            <div class="rating-item">
+                                <div class="rating-label">Nível de Risco</div>
+                                <div class="rating-score risk-${data.riskScore.level}">
+                                    <div class="score-circle">
+                                        <span class="score-number">${data.riskScore.score}</span>
+                                        <span class="score-max">/100</span>
+                                    </div>
+                                    <div class="score-description">${data.riskScore.description}</div>
+                                </div>
+                            </div>
+                        ` : ''}
+                        ${data.complexityRating ? `
+                            <div class="rating-item">
+                                <div class="rating-label">Complexidade</div>
+                                <div class="rating-score complexity-${data.complexityRating.level}">
+                                    <div class="score-circle">
+                                        <span class="score-number">${data.complexityRating.rating}</span>
+                                        <span class="score-max">/10</span>
+                                    </div>
+                                    <div class="score-description">${data.complexityRating.description}</div>
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+        
         // Resumo conciso
         if (data.resumo_conciso) {
             html += `
@@ -580,6 +607,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     <ul class="key-points">
                         ${data.pontos_chave.map(point => `<li>${point}</li>`).join('')}
                     </ul>
+                </div>
+            `;
+        }
+        
+        // Boas Práticas (se disponível)
+        if (data.goodPractices && data.goodPractices.practices && data.goodPractices.practices.length > 0) {
+            html += `
+                <div class="summary-section">
+                    <h3>✅ Boas Práticas Identificadas</h3>
+                    <div class="good-practices">
+                        ${data.goodPractices.practices.map(practice => `
+                            <div class="practice-item">
+                                <span class="material-icons practice-icon">check_circle</span>
+                                <div class="practice-text">${practice}</div>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
             `;
         }

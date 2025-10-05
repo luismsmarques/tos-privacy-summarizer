@@ -188,38 +188,50 @@ async function callGeminiAPI(text, focus = 'privacy') {
     const maxLength = 100000;
     const textToSummarize = text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
 
-    const prompt = `Você é um especialista em direito do consumidor e privacidade de dados. Sua tarefa é analisar o texto legal fornecido (Termos de Serviço ou Política de Privacidade) e transformá-lo em informações claras, acionáveis e estritamente formatadas em JSON para um utilizador comum.
+    const prompt = `Você é um especialista em direito do consumidor e privacidade de dados. Sua tarefa é analisar o seguinte texto legal e devolvê-lo estritamente no formato JSON abaixo. Sua análise deve incluir a avaliação da complexidade e do risco.
 
 FOCO DA ANÁLISE: ${getFocusInstructions(focus)}
 
 A ÚNICA saída permitida deve ser um objeto JSON puro. NÃO use blocos de código Markdown. NÃO inclua qualquer texto introdutório, explicativo ou conclusivo. A resposta deve ser APENAS o JSON em português (Portugal) seguindo esta estrutura EXATA:
 
 {
+  "rating_complexidade": "Um número inteiro de 1 a 10, onde 1 é muito simples e 10 é extremamente complexo.",
   "resumo_conciso": "Um resumo rápido e geral do que o utilizador está a aceitar. Use no máximo dois parágrafos.",
   "pontos_chave": [
-    "Use um ponto para descrever os aspetos mais importantes do serviço.",
-    "Use outro ponto para descrever os direitos e responsabilidades cruciais do utilizador.",
-    "Crie um total de 5 a 7 pontos essenciais sobre como o serviço funciona, a que se compromete, ou o que é fundamental saber."
+    "5 a 7 pontos essenciais sobre os direitos/deveres e funcionamento do serviço."
   ],
   "alertas_privacidade": [
     {
       "tipo": "partilha_dados",
-      "texto": "Os seus dados podem ser partilhados com terceiros (ex: anunciantes) para fins de marketing ou monetização."
+      "texto": "Descreva a partilha de dados."
     },
     {
       "tipo": "propriedade_conteudo",
-      "texto": "Cláusulas que permitem à empresa usar, modificar ou sublicenciar o seu conteúdo (fotos, posts) sem restrições ou compensação."
+      "texto": "Descreva questões de propriedade de conteúdo."
     },
     {
       "tipo": "alteracoes_termos",
-      "texto": "A empresa reserva-se o direito de alterar unilateralmente os termos ou a política sem aviso prévio ou notificação ativa ao utilizador."
+      "texto": "Descreva políticas de alteração de termos."
     },
     {
       "tipo": "jurisdicao",
-      "texto": "Existem cláusulas que forçam a arbitragem ou limitam a jurisdição do tribunal, dificultando ações judiciais diretas contra a empresa."
+      "texto": "Descreva questões de jurisdição e arbitragem."
+    },
+    {
+      "tipo": "outros_riscos",
+      "texto": "Descreva outros riscos identificados."
     }
+  ],
+  "boas_praticas": [
+    "Lista de cláusulas positivas encontradas (ex: conformidade com o GDPR, política clara de eliminação).",
+    "A empresa está em total conformidade com o regulamento X e Y.",
+    "Os utilizadores têm o direito explícito de eliminar os seus dados a qualquer momento."
   ]
 }
+
+INSTRUÇÕES DE AVALIAÇÃO (Para o Rating):
+
+O valor de rating_complexidade deve ser determinado pela extensão do documento, a densidade do jargão jurídico e a ambiguidade da linguagem. O resumo e os pontos-chave devem ser diretos e objetivos.
 
 Valores Válidos para o Campo tipo (Use um destes para cada objeto de alerta):
 - partilha_dados
@@ -228,6 +240,14 @@ Valores Válidos para o Campo tipo (Use um destes para cada objeto de alerta):
 - jurisdicao
 - outros_riscos
 - sem_alertas (Apenas use este valor se não for encontrado nenhum dos riscos acima. Se este for usado, ele deve ser o único objeto na lista alertas_privacidade.)
+
+Para boas_praticas, procure por cláusulas positivas como:
+- Conformidade com regulamentos (GDPR, LGPD, CCPA)
+- Direitos claros de eliminação de dados
+- Políticas transparentes de privacidade
+- Opções de opt-out claras
+- Limitações razoáveis de responsabilidade
+- Processos justos de resolução de disputas
 
 Mantenha a linguagem dos valores dentro do JSON direta, acessível e objetiva. Evite jargão jurídico sempre que possível.
 

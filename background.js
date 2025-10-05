@@ -14,6 +14,110 @@ const API_ENDPOINTS = {
     STRIPE: `${BACKEND_BASE_URL}/api/stripe`
 };
 
+// Sistema de Rating e Cálculo de Risco
+const RISK_WEIGHTS = {
+    'partilha_dados': 3,        // Alto Risco
+    'jurisdicao': 3,            // Alto Risco
+    'propriedade_conteudo': 2,  // Risco Médio
+    'alteracoes_termos': 2,     // Risco Médio
+    'outros_riscos': 1,         // Risco Baixo
+    'sem_alertas': 0            // Sem Risco
+};
+
+// Função para calcular score de risco
+function calculateRiskScore(alertasPrivacidade) {
+    if (!alertasPrivacidade || !Array.isArray(alertasPrivacidade)) {
+        return { score: 0, level: 'low', description: 'Sem alertas identificados' };
+    }
+    
+    let totalWeight = 0;
+    let alertCount = 0;
+    
+    alertasPrivacidade.forEach(alerta => {
+        if (alerta.tipo && RISK_WEIGHTS[alerta.tipo] !== undefined) {
+            totalWeight += RISK_WEIGHTS[alerta.tipo];
+            alertCount++;
+        }
+    });
+    
+    // Normalizar para escala 0-100
+    const maxPossibleWeight = Object.values(RISK_WEIGHTS).reduce((sum, weight) => sum + weight, 0);
+    const normalizedScore = Math.round((totalWeight / maxPossibleWeight) * 100);
+    
+    // Determinar nível de risco
+    let level, description;
+    if (normalizedScore >= 70) {
+        level = 'high';
+        description = 'Alto Risco';
+    } else if (normalizedScore >= 40) {
+        level = 'medium';
+        description = 'Risco Médio';
+    } else if (normalizedScore >= 20) {
+        level = 'low';
+        description = 'Risco Baixo';
+    } else {
+        level = 'minimal';
+        description = 'Risco Mínimo';
+    }
+    
+    return {
+        score: normalizedScore,
+        level: level,
+        description: description,
+        alertCount: alertCount,
+        totalWeight: totalWeight
+    };
+}
+
+// Função para calcular rating de complexidade
+function calculateComplexityRating(ratingComplexidade) {
+    if (!ratingComplexidade || isNaN(ratingComplexidade)) {
+        return { rating: 5, level: 'medium', description: 'Complexidade Média' };
+    }
+    
+    const rating = parseInt(ratingComplexidade);
+    let level, description;
+    
+    if (rating >= 8) {
+        level = 'very-high';
+        description = 'Muito Complexo';
+    } else if (rating >= 6) {
+        level = 'high';
+        description = 'Complexo';
+    } else if (rating >= 4) {
+        level = 'medium';
+        description = 'Complexidade Média';
+    } else if (rating >= 2) {
+        level = 'low';
+        description = 'Simples';
+    } else {
+        level = 'very-low';
+        description = 'Muito Simples';
+    }
+    
+    return {
+        rating: rating,
+        level: level,
+        description: description
+    };
+}
+
+// Função para processar boas práticas
+function processGoodPractices(boasPraticas) {
+    if (!boasPraticas || !Array.isArray(boasPraticas)) {
+        return { count: 0, practices: [] };
+    }
+    
+    const validPractices = boasPraticas.filter(practice => 
+        practice && typeof practice === 'string' && practice.trim().length > 0
+    );
+    
+    return {
+        count: validPractices.length,
+        practices: validPractices
+    };
+}
+
 // Listener para mensagens do content.js
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'summarizeText') {
@@ -111,6 +215,44 @@ async function processSummaryAsync(text, focus = 'privacy') {
     
     console.log('Resumo gerado com sucesso');
     
+    // Processar resumo e calcular ratings
+    let processedSummary;
+    try {
+      // Tentar parsear o JSON se for string
+      let parsedSummary;
+      if (typeof summary === 'string') {
+        parsedSummary = JSON.parse(summary);
+      } else {
+        parsedSummary = summary;
+      }
+      
+      console.log('Resumo parseado:', parsedSummary);
+      
+      // Calcular ratings
+      const riskScore = calculateRiskScore(parsedSummary.alertas_privacidade);
+      const complexityRating = calculateComplexityRating(parsedSummary.rating_complexidade);
+      const goodPractices = processGoodPractices(parsedSummary.boas_praticas);
+      
+      // Adicionar ratings ao resumo
+      processedSummary = {
+        ...parsedSummary,
+        riskScore: riskScore,
+        complexityRating: complexityRating,
+        goodPractices: goodPractices
+      };
+      
+      console.log('Ratings calculados:', {
+        riskScore: riskScore,
+        complexityRating: complexityRating,
+        goodPractices: goodPractices
+      });
+      
+    } catch (parseError) {
+      console.error('Erro ao processar resumo:', parseError);
+      // Se não conseguir parsear, usar o resumo original
+      processedSummary = summary;
+    }
+    
     // Enviar atualização de progresso final
     try {
       chrome.runtime.sendMessage({
@@ -125,11 +267,11 @@ async function processSummaryAsync(text, focus = 'privacy') {
     
     // Aguardar um pouco antes de mostrar o resultado
     setTimeout(() => {
-      console.log('Enviando resumo para popup:', summary);
+      console.log('Enviando resumo processado para popup:', processedSummary);
       try {
         chrome.runtime.sendMessage({
           action: 'displaySummary',
-          summary: summary
+          summary: processedSummary
         });
       } catch (error) {
         console.error('Erro ao enviar mensagem para popup:', error);
