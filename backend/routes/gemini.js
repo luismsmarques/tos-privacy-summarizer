@@ -18,45 +18,75 @@ const checkGeminiKey = (req, res, next) => {
 function detectDocumentType(text) {
     const lowerText = text.toLowerCase();
     
-    // Palavras-chave para Política de Privacidade
+    // PRIORIDADE 1: Verificar palavras-chave específicas (sem ambiguidade)
+    // Palavras-chave específicas para Política de Privacidade
     const privacyKeywords = [
         'privacy policy', 'política de privacidade', 'privacidade',
         'personal data', 'dados pessoais', 'data protection',
         'cookie policy', 'política de cookies', 'gdpr',
-        'data collection', 'recolha de dados', 'data processing'
+        'data collection', 'recolha de dados', 'data processing',
+        'information we collect', 'informações que coletamos',
+        'how we use your data', 'como usamos seus dados',
+        'data sharing', 'compartilhamento de dados',
+        'data retention', 'retenção de dados', 
+        'privacy notice', 'aviso de privacidade',
+        'personal information', 'informações pessoais',
+        'data controller', 'controlador de dados'
     ];
     
-    // Palavras-chave para Termos de Serviço
+    // Palavras-chave específicas para Termos de Serviço
     const termsKeywords = [
         'terms of service', 'termos de serviço', 'terms and conditions',
         'user agreement', 'contrato de utilizador', 'service agreement',
-        'terms of use', 'condições de uso', 'user terms'
+        'terms of use', 'condições de uso', 'user terms',
+        'service terms', 'termos do serviço', 'user conditions',
+        'conditions of use', 'condições de utilização',
+        'acceptable use', 'uso aceitável', 'prohibited uses',
+        'usos proibidos', 'liability', 'responsabilidade',
+        'limitation of liability', 'limitação de responsabilidade',
+        'user obligations', 'obrigações do utilizador',
+        'service description', 'descrição do serviço',
+        'payment terms', 'termos de pagamento',
+        'cancellation policy', 'política de cancelamento'
     ];
     
-    // Contar ocorrências
+    // Contar ocorrências com word boundaries para evitar falsos positivos
     const privacyCount = privacyKeywords.reduce((count, keyword) => {
-        return count + (lowerText.includes(keyword) ? 1 : 0);
+        const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+        const matches = (lowerText.match(regex) || []).length;
+        return count + matches;
     }, 0);
     
     const termsCount = termsKeywords.reduce((count, keyword) => {
-        return count + (lowerText.includes(keyword) ? 1 : 0);
+        const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+        const matches = (lowerText.match(regex) || []).length;
+        return count + matches;
     }, 0);
     
-    // Determinar tipo baseado na contagem
-    if (privacyCount > termsCount) {
+    // Determinar tipo baseado na contagem (com threshold mínimo)
+    const minThreshold = 2;
+    
+    if (privacyCount >= minThreshold && privacyCount > termsCount) {
         return 'privacy_policy';
-    } else if (termsCount > privacyCount) {
+    } else if (termsCount >= minThreshold && termsCount > privacyCount) {
         return 'terms_of_service';
-    } else {
-        // Se não conseguir determinar, usar padrão baseado no contexto
-        if (lowerText.includes('privacy') || lowerText.includes('privacidade')) {
+    } else if (privacyCount > 0 || termsCount > 0) {
+        // Se há pelo menos uma ocorrência, usar a maior contagem
+        if (privacyCount > termsCount) {
             return 'privacy_policy';
-        } else if (lowerText.includes('terms') || lowerText.includes('termos')) {
+        } else if (termsCount > privacyCount) {
             return 'terms_of_service';
-        } else {
-            return 'unknown';
         }
     }
+    
+    // PRIORIDADE 2: Fallback baseado em palavras-chave simples
+    if (lowerText.includes('privacidade') || lowerText.includes('privacy')) {
+        return 'privacy_policy';
+    } else if (lowerText.includes('termos') || lowerText.includes('terms')) {
+        return 'terms_of_service';
+    }
+    
+    return 'unknown';
 }
 
 // Endpoint principal para proxy da API Gemini

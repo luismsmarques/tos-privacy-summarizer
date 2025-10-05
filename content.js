@@ -182,8 +182,31 @@ function calculateTextComplexity(text) {
 function detectDocumentType(text) {
     try {
         const lowerText = text.toLowerCase();
+        const url = window.location.href.toLowerCase();
+        const title = document.title.toLowerCase();
         
-        // Palavras-chave expandidas para Política de Privacidade
+        Logger.log('Detecção de tipo - Contexto:', { 
+            url: url, 
+            title: title,
+            textLength: text.length 
+        });
+        
+        // PRIORIDADE 1: Verificar URL e título primeiro (mais confiável)
+        if (url.includes('termos') || url.includes('terms') || 
+            title.includes('termos') || title.includes('terms') ||
+            url.includes('condicoes') || url.includes('conditions')) {
+            Logger.log('Detectado como Termos de Serviço baseado na URL/título');
+            return 'terms_of_service';
+        }
+        
+        if (url.includes('privacidade') || url.includes('privacy') || 
+            title.includes('privacidade') || title.includes('privacy')) {
+            Logger.log('Detectado como Política de Privacidade baseado na URL/título');
+            return 'privacy_policy';
+        }
+        
+        // PRIORIDADE 2: Análise de conteúdo com palavras-chave específicas
+        // Palavras-chave específicas para Política de Privacidade (sem ambiguidade)
         const privacyKeywords = [
             'privacy policy', 'política de privacidade', 'privacidade',
             'personal data', 'dados pessoais', 'data protection',
@@ -192,11 +215,13 @@ function detectDocumentType(text) {
             'information we collect', 'informações que coletamos',
             'how we use your data', 'como usamos seus dados',
             'data sharing', 'compartilhamento de dados',
-            'your rights', 'seus direitos', 'data retention',
-            'retenção de dados', 'privacy notice', 'aviso de privacidade'
+            'data retention', 'retenção de dados', 
+            'privacy notice', 'aviso de privacidade',
+            'personal information', 'informações pessoais',
+            'data controller', 'controlador de dados'
         ];
         
-        // Palavras-chave expandidas para Termos de Serviço
+        // Palavras-chave específicas para Termos de Serviço (sem ambiguidade)
         const termsKeywords = [
             'terms of service', 'termos de serviço', 'terms and conditions',
             'user agreement', 'contrato de utilizador', 'service agreement',
@@ -205,42 +230,67 @@ function detectDocumentType(text) {
             'conditions of use', 'condições de utilização',
             'acceptable use', 'uso aceitável', 'prohibited uses',
             'usos proibidos', 'liability', 'responsabilidade',
-            'limitation of liability', 'limitação de responsabilidade'
+            'limitation of liability', 'limitação de responsabilidade',
+            'user obligations', 'obrigações do utilizador',
+            'service description', 'descrição do serviço',
+            'payment terms', 'termos de pagamento',
+            'cancellation policy', 'política de cancelamento'
         ];
         
-        // Contar ocorrências com peso
+        // Contar ocorrências com peso (evitar falsos positivos)
         const privacyCount = privacyKeywords.reduce((count, keyword) => {
-            const matches = (lowerText.match(new RegExp(keyword, 'g')) || []).length;
+            // Usar word boundaries para evitar matches parciais
+            const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+            const matches = (lowerText.match(regex) || []).length;
             return count + matches;
         }, 0);
         
         const termsCount = termsKeywords.reduce((count, keyword) => {
-            const matches = (lowerText.match(new RegExp(keyword, 'g')) || []).length;
+            // Usar word boundaries para evitar matches parciais
+            const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+            const matches = (lowerText.match(regex) || []).length;
             return count + matches;
         }, 0);
         
-        Logger.log('Detecção de tipo:', { privacyCount, termsCount });
+        Logger.log('Detecção de tipo - Contagem:', { 
+            privacyCount, 
+            termsCount,
+            privacyKeywords: privacyKeywords.slice(0, 5),
+            termsKeywords: termsKeywords.slice(0, 5)
+        });
         
-        // Determinar tipo baseado na contagem
-        if (privacyCount > termsCount && privacyCount > 0) {
+        // Determinar tipo baseado na contagem (com threshold mínimo)
+        const minThreshold = 2; // Mínimo de 2 ocorrências para considerar confiável
+        
+        if (privacyCount >= minThreshold && privacyCount > termsCount) {
+            Logger.log('Detectado como Política de Privacidade baseado no conteúdo');
             return 'privacy_policy';
-        } else if (termsCount > privacyCount && termsCount > 0) {
+        } else if (termsCount >= minThreshold && termsCount > privacyCount) {
+            Logger.log('Detectado como Termos de Serviço baseado no conteúdo');
             return 'terms_of_service';
-        } else {
-            // Verificar contexto adicional
-            const url = window.location.href.toLowerCase();
-            const title = document.title.toLowerCase();
-            
-            if (url.includes('privacy') || title.includes('privacy') || 
-                url.includes('privacidade') || title.includes('privacidade')) {
+        } else if (privacyCount > 0 || termsCount > 0) {
+            // Se há pelo menos uma ocorrência, usar a maior contagem
+            if (privacyCount > termsCount) {
+                Logger.log('Detectado como Política de Privacidade (baixa confiança)');
                 return 'privacy_policy';
-            } else if (url.includes('terms') || title.includes('terms') || 
-                      url.includes('termos') || title.includes('termos')) {
+            } else if (termsCount > privacyCount) {
+                Logger.log('Detectado como Termos de Serviço (baixa confiança)');
                 return 'terms_of_service';
-            } else {
-                return 'unknown';
             }
         }
+        
+        // PRIORIDADE 3: Fallback baseado em palavras-chave simples
+        if (lowerText.includes('privacidade') || lowerText.includes('privacy')) {
+            Logger.log('Fallback: Detectado como Política de Privacidade');
+            return 'privacy_policy';
+        } else if (lowerText.includes('termos') || lowerText.includes('terms')) {
+            Logger.log('Fallback: Detectado como Termos de Serviço');
+            return 'terms_of_service';
+        }
+        
+        Logger.log('Não foi possível determinar o tipo de documento');
+        return 'unknown';
+        
     } catch (error) {
         Logger.error('Erro ao detectar tipo de documento:', error);
         return 'unknown';
