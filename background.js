@@ -94,11 +94,12 @@ async function processSummaryAsync(text) {
     
     // Aguardar um pouco antes de mostrar o resultado
     setTimeout(() => {
+      console.log('Enviando resumo para popup:', summary);
       chrome.runtime.sendMessage({
         action: 'displaySummary',
         summary: summary
       });
-    }, 1000);
+    }, 500);
 
   } catch (error) {
     console.error('Erro ao gerar resumo:', error);
@@ -475,21 +476,4 @@ chrome.runtime.onInstalled.addListener((details) => {
       console.log('Configurações padrão definidas:', defaults);
     });
   });
-});
-
-// Listener para clique no ícone da extensão
-chrome.action.onClicked.addListener(async (tab) => {
-  try {
-    console.log('Ícone da extensão clicado, abrindo sidebar...');
-    
-    // Abrir sidebar em nova aba
-    await chrome.tabs.create({
-      url: chrome.runtime.getURL('sidebar.html'),
-      active: true
-    });
-    
-    console.log('Sidebar aberto com sucesso');
-  } catch (error) {
-    console.error('Erro ao abrir sidebar:', error);
-  }
 });

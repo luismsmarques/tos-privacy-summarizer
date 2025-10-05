@@ -300,6 +300,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     resetButton();
                 } else {
                     console.log('Resposta do content script:', response);
+                    
+                    // Fallback: se não receber resposta em 10 segundos, mostrar erro
+                    setTimeout(() => {
+                        if (isProcessing) {
+                            console.log('Timeout - não recebeu resumo em 10 segundos');
+                            showError('Timeout: O resumo demorou muito para ser processado. Tente novamente.');
+                            resetButton();
+                        }
+                    }, 10000);
                 }
             });
             
@@ -354,21 +363,33 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Mostrar resumo
     function showSummary(summary) {
+        console.log('Mostrando resumo:', summary);
         hideProgress();
         summaryContainer.classList.remove('hidden');
         
         // Parsear JSON se necessário
         let parsedSummary;
         try {
-            parsedSummary = JSON.parse(summary);
+            // Se já é um objeto, usar diretamente
+            if (typeof summary === 'object') {
+                parsedSummary = summary;
+            } else {
+                // Tentar parsear como JSON
+                parsedSummary = JSON.parse(summary);
+            }
         } catch (e) {
+            console.log('Não é JSON válido, usando como texto:', e);
             parsedSummary = { summary: summary };
         }
         
+        console.log('Resumo parseado:', parsedSummary);
+        
         // Renderizar resumo
         if (parsedSummary.summary) {
+            console.log('Renderizando resumo:', parsedSummary.summary);
             summaryContent.innerHTML = formatSummary(parsedSummary.summary);
         } else {
+            console.log('Nenhum resumo encontrado no objeto');
             summaryContent.innerHTML = '<p>Resumo não disponível</p>';
         }
         
@@ -377,6 +398,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Formatar resumo
     function formatSummary(summary) {
+        console.log('Formatando resumo:', summary);
+        
+        if (!summary || summary.trim() === '') {
+            return '<p>Resumo não disponível</p>';
+        }
+        
         // Converter markdown para HTML básico
         let html = summary
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -388,11 +415,12 @@ document.addEventListener('DOMContentLoaded', function() {
             .replace(/\n\n/g, '</p><p>')
             .replace(/\n/g, '<br>');
         
-        // Envolver em parágrafos
+        // Envolver em parágrafos se não começar com tag HTML
         if (!html.startsWith('<')) {
             html = '<p>' + html + '</p>';
         }
         
+        console.log('HTML formatado:', html);
         return html;
     }
 
@@ -443,11 +471,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Listener para mensagens do background script
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-        console.log('Popup recebeu mensagem:', request.action);
+        console.log('Popup recebeu mensagem:', request.action, request);
         
         switch (request.action) {
             case 'displaySummary':
-                if (request.summary.startsWith('Erro')) {
+                console.log('Processando displaySummary:', request.summary);
+                if (request.summary && request.summary.startsWith('Erro')) {
                     showError(request.summary);
                 } else {
                     showSummary(request.summary);
@@ -455,6 +484,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
                 
             case 'progressUpdate':
+                console.log('Atualizando progresso:', request.progress, request.message);
                 if (progressFill) {
                     progressFill.style.width = `${request.progress}%`;
                 }
@@ -464,8 +494,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
                 
             case 'updateCredits':
+                console.log('Atualizando créditos');
                 loadCredits();
                 break;
+                
+            default:
+                console.log('Ação não reconhecida:', request.action);
         }
+        
+        return true; // Manter canal aberto
     });
 });
