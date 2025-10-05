@@ -364,6 +364,19 @@ class Dashboard {
                 `;
             }
         }
+        
+        if (overview.requestsChange !== undefined) {
+            const requestsChangeEl = document.getElementById('requestsChange');
+            if (requestsChangeEl) {
+                const change = overview.requestsChange;
+                const isPositive = change >= 0;
+                requestsChangeEl.className = `metric-change ${isPositive ? 'positive' : 'negative'}`;
+                requestsChangeEl.innerHTML = `
+                    <span class="material-symbols-outlined">${isPositive ? 'trending_up' : 'trending_down'}</span>
+                    <span>${isPositive ? '+' : ''}${change.toFixed(1)}% hoje</span>
+                `;
+            }
+        }
     }
     
     initializeCharts() {
