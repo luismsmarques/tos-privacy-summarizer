@@ -34,6 +34,68 @@ router.use(async (req, res, next) => {
   next();
 });
 
+// Endpoint de debug para verificar conexão
+router.get('/debug', async (req, res) => {
+  try {
+    console.log('🔍 Debug endpoint chamado');
+    
+    // Verificar variáveis de ambiente
+    const envCheck = {
+      ANALYTICS_URL: process.env.ANALYTICS_URL ? 'Configurada' : 'Não configurada',
+      DATABASE_URL: process.env.DATABASE_URL ? 'Configurada' : 'Não configurada',
+      NODE_ENV: process.env.NODE_ENV || 'undefined'
+    };
+    
+    // Tentar conectar à base de dados
+    let dbStatus = 'Desconectada';
+    let dbError = null;
+    
+    try {
+      if (!db.isConnected) {
+        const connected = await db.connect();
+        dbStatus = connected ? 'Conectada' : 'Falha na conexão';
+      } else {
+        dbStatus = 'Já conectada';
+      }
+    } catch (error) {
+      dbStatus = 'Erro na conexão';
+      dbError = error.message;
+    }
+    
+    // Tentar uma query simples
+    let queryTest = 'Não testado';
+    let queryError = null;
+    
+    try {
+      const result = await db.query('SELECT 1 as test');
+      queryTest = 'Sucesso: ' + JSON.stringify(result.rows[0]);
+    } catch (error) {
+      queryTest = 'Falha';
+      queryError = error.message;
+    }
+    
+    res.json({
+      success: true,
+      debug: {
+        timestamp: new Date().toISOString(),
+        environment: envCheck,
+        database: {
+          status: dbStatus,
+          error: dbError,
+          queryTest: queryTest,
+          queryError: queryError
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Erro no debug:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro no debug: ' + error.message
+    });
+  }
+});
+
 // Endpoint para obter analytics overview
 router.get('/overview', async (req, res) => {
   try {
