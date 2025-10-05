@@ -102,6 +102,7 @@ async function processSummaryAsync(text) {
 
   } catch (error) {
     console.error('Erro ao gerar resumo:', error);
+    console.error('Error stack:', error.stack);
     
     // Determinar tipo de erro e enviar mensagem apropriada
     let errorMessage = 'Erro ao gerar resumo: ';
@@ -120,9 +121,13 @@ async function processSummaryAsync(text) {
       errorMessage += 'Erro ao processar resposta da API';
     } else if (error.message.includes('Créditos insuficientes')) {
       errorMessage += 'Créditos insuficientes. Compre mais créditos ou configure a sua própria chave da API.';
+    } else if (error.message.includes('HTTP')) {
+      errorMessage += `Erro do servidor: ${error.message}`;
     } else {
       errorMessage += error.message;
     }
+    
+    console.log('Enviando erro para popup:', errorMessage);
     
     chrome.runtime.sendMessage({
       action: 'displaySummary',
@@ -198,6 +203,9 @@ function generateDeviceId() {
 async function summarizeWithBackend(text, userId) {
   try {
     console.log('Usando backend seguro para resumir texto...');
+    console.log('URL:', API_ENDPOINTS.PROXY);
+    console.log('UserId:', userId);
+    console.log('Text length:', text.length);
     
     const response = await fetch(API_ENDPOINTS.PROXY, {
       method: 'POST',
@@ -211,12 +219,22 @@ async function summarizeWithBackend(text, userId) {
       })
     });
     
+    console.log('Response status:', response.status);
+    console.log('Response ok:', response.ok);
+    
     if (!response.ok) {
-      const errorData = await response.json();
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        errorData = { error: `Erro HTTP: ${response.status} ${response.statusText}` };
+      }
+      console.error('Backend error:', errorData);
       throw new Error(errorData.error || `Erro HTTP: ${response.status}`);
     }
     
     const result = await response.json();
+    console.log('Backend result:', result);
     
     // Atualizar créditos no storage se disponível
     if (result.credits !== undefined) {

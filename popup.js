@@ -485,7 +485,7 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             processing_error: {
                 title: 'Erro no Processamento',
-                message: 'Ocorreu um erro ao processar o conteúdo. Tente novamente ou contacte o suporte se o problema persistir.'
+                message: 'Ocorreu um erro ao processar o conteúdo. Verifique os logs da extensão para mais detalhes.'
             },
             onboarding_incomplete: {
                 title: 'Configuração Incompleta',
