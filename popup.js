@@ -144,9 +144,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Atualizar UI de contexto
     function updateContextUI(analysis) {
         if (!analysis) {
-            contentType.textContent = 'A analisar...';
-            complexityText.textContent = 'A calcular...';
-            timeSaved.textContent = 'A calcular...';
+            if (contentType) contentType.textContent = 'A analisar...';
+            if (complexityText) complexityText.textContent = 'A calcular...';
+            if (timeSaved) timeSaved.textContent = 'A calcular...';
             return;
         }
 
@@ -156,16 +156,22 @@ document.addEventListener('DOMContentLoaded', function() {
             'privacy_policy': 'Política de Privacidade',
             'unknown': 'Outros'
         };
-        contentType.textContent = typeMap[analysis.type] || 'Outros';
+        if (contentType) {
+            contentType.textContent = typeMap[analysis.type] || 'Outros';
+        }
 
         // Complexidade
         const complexity = calculateComplexity(analysis.textLength);
         updateComplexityIndicator(complexity);
-        complexityText.textContent = complexity.text;
+        if (complexityText) {
+            complexityText.textContent = complexity.text;
+        }
 
         // Tempo poupança
         const estimatedReadingTime = calculateReadingTime(analysis.textLength, analysis.type, complexity);
-        timeSaved.textContent = `≈ ${estimatedReadingTime} minutos de leitura`;
+        if (timeSaved) {
+            timeSaved.textContent = `≈ ${estimatedReadingTime} minutos de leitura`;
+        }
     }
 
     // Calcular complexidade baseada no tamanho do texto
@@ -222,6 +228,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Atualizar indicador de complexidade
     function updateComplexityIndicator(complexity) {
+        if (!complexityIndicator) return;
+        
         const dots = complexityIndicator.querySelectorAll('.complexity-dot');
         dots.forEach((dot, index) => {
             dot.classList.remove('active', 'high');
@@ -243,21 +251,25 @@ document.addEventListener('DOMContentLoaded', function() {
             const hasApiKey = !!result.apiKey;
             
             if (hasApiKey) {
-                creditsText.textContent = 'Conta Premium (Ilimitado)';
-                creditsBadge.textContent = 'PREMIUM';
-                creditsBadge.classList.add('premium');
-                actionButtonCost.textContent = '(Gratuito)';
+                if (creditsText) creditsText.textContent = 'Conta Premium (Ilimitado)';
+                if (creditsBadge) {
+                    creditsBadge.textContent = 'PREMIUM';
+                    creditsBadge.classList.add('premium');
+                }
+                if (actionButtonCost) actionButtonCost.textContent = '(Gratuito)';
             } else {
-                creditsText.textContent = `${credits} Créditos Grátis Restantes`;
-                creditsBadge.textContent = 'GRÁTIS';
-                creditsBadge.classList.remove('premium');
-                actionButtonCost.textContent = `(${credits > 0 ? '1' : '0'} Crédito)`;
+                if (creditsText) creditsText.textContent = `${credits} Créditos Grátis Restantes`;
+                if (creditsBadge) {
+                    creditsBadge.textContent = 'GRÁTIS';
+                    creditsBadge.classList.remove('premium');
+                }
+                if (actionButtonCost) actionButtonCost.textContent = `(${credits > 0 ? '1' : '0'} Crédito)`;
             }
             
             // Desabilitar botão se não há créditos
-            if (!hasApiKey && credits <= 0) {
+            if (!hasApiKey && credits <= 0 && actionButton) {
                 actionButton.disabled = true;
-                actionButtonText.textContent = 'Sem Créditos';
+                if (actionButtonText) actionButtonText.textContent = 'Sem Créditos';
             }
         } catch (error) {
             console.error('Erro ao carregar créditos:', error);
@@ -267,16 +279,24 @@ document.addEventListener('DOMContentLoaded', function() {
     // Configurar event listeners
     function setupEventListeners() {
         // Botão principal
-        actionButton.addEventListener('click', handleSummarize);
+        if (actionButton) {
+            actionButton.addEventListener('click', handleSummarize);
+        }
         
         // Botão voltar
-        backBtn.addEventListener('click', handleBack);
+        if (backBtn) {
+            backBtn.addEventListener('click', handleBack);
+        }
         
         // Toggle de tema
-        themeToggle.addEventListener('click', toggleTheme);
+        if (themeToggle) {
+            themeToggle.addEventListener('click', toggleTheme);
+        }
         
         // Botão de configurações
-        settingsBtn.addEventListener('click', openSettings);
+        if (settingsBtn) {
+            settingsBtn.addEventListener('click', openSettings);
+        }
         
         // Focus selector
         focusOptions.forEach(option => {
@@ -289,21 +309,30 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // Links do footer
-        document.getElementById('privacyLink').addEventListener('click', (e) => {
-            e.preventDefault();
-            chrome.tabs.create({ url: chrome.runtime.getURL('privacy-policy.html') });
-        });
+        const privacyLink = document.getElementById('privacyLink');
+        if (privacyLink) {
+            privacyLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                chrome.tabs.create({ url: chrome.runtime.getURL('privacy-policy.html') });
+            });
+        }
         
-        document.getElementById('termsLink').addEventListener('click', (e) => {
-            e.preventDefault();
-            chrome.tabs.create({ url: chrome.runtime.getURL('terms-of-service.html') });
-        });
+        const termsLink = document.getElementById('termsLink');
+        if (termsLink) {
+            termsLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                chrome.tabs.create({ url: chrome.runtime.getURL('terms-of-service.html') });
+            });
+        }
         
-        document.getElementById('buyCreditsLink').addEventListener('click', (e) => {
-            e.preventDefault();
-            // TODO: Implementar compra de créditos
-            console.log('Comprar créditos');
-        });
+        const buyCreditsLink = document.getElementById('buyCreditsLink');
+        if (buyCreditsLink) {
+            buyCreditsLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                // TODO: Implementar compra de créditos
+                console.log('Comprar créditos');
+            });
+        }
     }
 
     // Handler para resumir
@@ -313,8 +342,8 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             console.log('Iniciando processo de resumo...');
             isProcessing = true;
-            actionButton.disabled = true;
-            actionButtonText.textContent = 'Processando...';
+            if (actionButton) actionButton.disabled = true;
+            if (actionButtonText) actionButtonText.textContent = 'Processando...';
             
             // Mostrar progresso
             showProgress();
@@ -361,26 +390,30 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Voltando ao estado inicial...');
         
         // Esconder resumo
-        summaryContainer.classList.add('hidden');
+        if (summaryContainer) summaryContainer.classList.add('hidden');
         
         // Mostrar zonas originais
-        document.querySelector('.value-zone').classList.remove('hidden');
-        document.querySelector('.context-zone').classList.remove('hidden');
-        document.querySelector('.action-zone').classList.remove('hidden');
+        const valueZone = document.querySelector('.value-zone');
+        const contextZone = document.querySelector('.context-zone');
+        const actionZone = document.querySelector('.action-zone');
+        
+        if (valueZone) valueZone.classList.remove('hidden');
+        if (contextZone) contextZone.classList.remove('hidden');
+        if (actionZone) actionZone.classList.remove('hidden');
         
         // Restaurar altura original
         // document.body.style.height = '';
         // document.body.style.minHeight = '';
         
         // Esconder botão voltar
-        backBtn.classList.add('hidden');
+        if (backBtn) backBtn.classList.add('hidden');
     }
 
     // Mostrar progresso
     function showProgress() {
-        progressContainer.classList.remove('hidden');
-        summaryContainer.classList.add('hidden');
-        errorContainer.classList.add('hidden');
+        if (progressContainer) progressContainer.classList.remove('hidden');
+        if (summaryContainer) summaryContainer.classList.add('hidden');
+        if (errorContainer) errorContainer.classList.add('hidden');
         
         // Simular progresso
         let progress = 0;
@@ -388,14 +421,18 @@ document.addEventListener('DOMContentLoaded', function() {
             progress += Math.random() * 15;
             if (progress > 90) progress = 90;
             
-            progressFill.style.width = `${progress}%`;
+            if (progressFill) {
+                progressFill.style.width = `${progress}%`;
+            }
             
-            if (progress < 30) {
-                progressText.textContent = 'Extraindo texto da página...';
-            } else if (progress < 60) {
-                progressText.textContent = 'Enviando para análise IA...';
-            } else if (progress < 90) {
-                progressText.textContent = 'Processando com Gemini...';
+            if (progressText) {
+                if (progress < 30) {
+                    progressText.textContent = 'Extraindo texto da página...';
+                } else if (progress < 60) {
+                    progressText.textContent = 'Enviando para análise IA...';
+                } else if (progress < 90) {
+                    progressText.textContent = 'Processando com Gemini...';
+                }
             }
         }, 500);
         
@@ -409,7 +446,7 @@ document.addEventListener('DOMContentLoaded', function() {
             clearInterval(window.progressInterval);
             window.progressInterval = null;
         }
-        progressContainer.classList.add('hidden');
+        if (progressContainer) progressContainer.classList.add('hidden');
     }
 
     // Mostrar resumo
@@ -547,7 +584,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="privacy-alerts">
                         ${data.alertas_privacidade.map(alert => `
                             <div class="alert-item alert-${alert.tipo}">
-                                <span class="material-symbols-outlined alert-icon">warning</span>
+                                <span class="material-icons alert-icon">warning</span>
                                 <div class="alert-text">${alert.texto}</div>
                             </div>
                         `).join('')}
@@ -591,16 +628,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // Mostrar erro
     function showError(message) {
         hideProgress();
-        errorContainer.classList.remove('hidden');
-        errorMessage.textContent = message;
+        if (errorContainer) errorContainer.classList.remove('hidden');
+        if (errorMessage) errorMessage.textContent = message;
         resetButton();
     }
 
     // Resetar botão
     function resetButton() {
         isProcessing = false;
-        actionButton.disabled = false;
-        actionButtonText.textContent = 'Extrair & Resumir';
+        if (actionButton) actionButton.disabled = false;
+        if (actionButtonText) actionButtonText.textContent = 'Extrair & Resumir';
     }
 
     // Toggle tema
@@ -612,8 +649,10 @@ document.addEventListener('DOMContentLoaded', function() {
         chrome.storage.local.set({ theme: newTheme });
         
         // Atualizar ícone
-        const icon = themeToggle.querySelector('.material-symbols-outlined');
-        icon.textContent = newTheme === 'dark' ? 'light_mode' : 'dark_mode';
+        const icon = themeToggle.querySelector('.material-icons');
+        if (icon) {
+            icon.textContent = newTheme === 'dark' ? 'light_mode' : 'dark_mode';
+        }
     }
 
     // Inicializar tema
@@ -623,8 +662,10 @@ document.addEventListener('DOMContentLoaded', function() {
             document.documentElement.setAttribute('data-theme', theme);
             
             // Atualizar ícone
-            const icon = themeToggle.querySelector('.material-symbols-outlined');
-            icon.textContent = theme === 'dark' ? 'light_mode' : 'dark_mode';
+            const icon = themeToggle.querySelector('.material-icons');
+            if (icon) {
+                icon.textContent = theme === 'dark' ? 'light_mode' : 'dark_mode';
+            }
         });
     }
 
