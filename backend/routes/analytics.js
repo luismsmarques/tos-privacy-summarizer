@@ -96,6 +96,61 @@ router.get('/debug', async (req, res) => {
   }
 });
 
+// Endpoint para verificar tabelas
+router.get('/tables', async (req, res) => {
+  try {
+    console.log('🔍 Verificando tabelas...');
+    
+    // Listar todas as tabelas
+    const tablesResult = await db.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public'
+      ORDER BY table_name
+    `);
+    
+    const tables = tablesResult.rows.map(row => row.table_name);
+    
+    // Verificar se as tabelas principais existem
+    const requiredTables = ['users', 'summaries', 'requests'];
+    const missingTables = requiredTables.filter(table => !tables.includes(table));
+    
+    // Testar queries em cada tabela existente
+    const tableTests = {};
+    for (const table of tables) {
+      try {
+        const countResult = await db.query(`SELECT COUNT(*) as count FROM ${table}`);
+        tableTests[table] = {
+          exists: true,
+          count: countResult.rows[0].count
+        };
+      } catch (error) {
+        tableTests[table] = {
+          exists: true,
+          error: error.message
+        };
+      }
+    }
+    
+    res.json({
+      success: true,
+      tables: {
+        all: tables,
+        required: requiredTables,
+        missing: missingTables,
+        tests: tableTests
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Erro ao verificar tabelas:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao verificar tabelas: ' + error.message
+    });
+  }
+});
+
 // Endpoint para obter analytics overview
 router.get('/overview', async (req, res) => {
   try {
