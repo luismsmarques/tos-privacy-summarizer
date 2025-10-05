@@ -12,6 +12,13 @@ class Dashboard {
     async init() {
         console.log('🚀 Inicializando Dashboard...');
         
+        // Verificar se está autenticado
+        if (!this.isAuthenticated()) {
+            console.warn('⚠️ Utilizador não autenticado, redirecionando...');
+            window.location.href = '/dashboard';
+            return;
+        }
+        
         // Configurar event listeners
         this.setupEventListeners();
         
@@ -76,15 +83,16 @@ class Dashboard {
         try {
             // Carregar dados de todas as APIs em paralelo
             const [overviewData, realtimeData, summariesData] = await Promise.all([
-                this.fetchData('/api/analytics/overview').catch(() => this.getMockOverviewData()),
-                this.fetchData('/api/analytics/realtime').catch(() => this.getMockRealtimeData()),
-                this.fetchData('/api/analytics/summaries').catch(() => this.getMockSummariesData())
+                this.fetchData('/api/analytics/overview').catch(() => null),
+                this.fetchData('/api/analytics/realtime').catch(() => null),
+                this.fetchData('/api/analytics/summaries').catch(() => null)
             ]);
             
+            // Usar dados mock se APIs retornarem null ou falharem
             this.data = {
-                overview: overviewData,
-                realtime: realtimeData,
-                summaries: summariesData
+                overview: overviewData || this.getMockOverviewData(),
+                realtime: realtimeData || this.getMockRealtimeData(),
+                summaries: summariesData || this.getMockSummariesData()
             };
             
             this.updateMetrics();
@@ -132,10 +140,9 @@ class Dashboard {
             
             if (!response.ok) {
                 if (response.status === 401) {
-                    console.warn('🔒 Token inválido ou expirado, redirecionando para login...');
-                    // Redirecionar para login se não autorizado
-                    window.location.href = '/dashboard';
-                    return;
+                    console.warn('🔒 Token inválido ou expirado, usando dados mock...');
+                    // Não redirecionar, apenas usar dados mock
+                    return null;
                 }
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -164,6 +171,27 @@ class Dashboard {
         
         console.warn('⚠️ Token não encontrado nos cookies');
         return null;
+    }
+    
+    isAuthenticated() {
+        const token = this.getAuthToken();
+        if (!token) return false;
+        
+        try {
+            // Verificar se o token é válido (básico)
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const now = Date.now() / 1000;
+            
+            if (payload.exp && payload.exp < now) {
+                console.warn('⚠️ Token expirado');
+                return false;
+            }
+            
+            return true;
+        } catch (error) {
+            console.warn('⚠️ Token inválido:', error);
+            return false;
+        }
     }
     
     updateMetrics() {
