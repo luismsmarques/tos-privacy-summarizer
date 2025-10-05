@@ -113,30 +113,39 @@ class Dashboard {
         try {
             // Carregar dados de todas as APIs em paralelo
             const [overviewData, realtimeData, summariesData] = await Promise.all([
-                this.fetchData('/api/analytics/overview').catch(() => null),
-                this.fetchData('/api/analytics/realtime').catch(() => null),
-                this.fetchData('/api/analytics/summaries').catch(() => null)
+                this.fetchData('/api/analytics/overview').catch((error) => {
+                    console.error('❌ Erro ao carregar overview:', error);
+                    return { error: error.message };
+                }),
+                this.fetchData('/api/analytics/realtime').catch((error) => {
+                    console.error('❌ Erro ao carregar realtime:', error);
+                    return { error: error.message };
+                }),
+                this.fetchData('/api/analytics/summaries').catch((error) => {
+                    console.error('❌ Erro ao carregar summaries:', error);
+                    return { error: error.message };
+                })
             ]);
             
-            // Usar dados mock se APIs retornarem null ou falharem
+            // Verificar se há erros nas respostas
             this.data = {
-                overview: overviewData || this.getMockOverviewData(),
-                realtime: realtimeData || this.getMockRealtimeData(),
-                summaries: summariesData || this.getMockSummariesData()
+                overview: overviewData,
+                realtime: realtimeData,
+                summaries: summariesData
             };
             
             this.updateMetrics();
             this.updateCharts();
             
         } catch (error) {
-            console.error('❌ Erro ao carregar dados:', error);
+            console.error('❌ Erro geral ao carregar dados:', error);
             this.showError('Erro ao carregar dados do dashboard');
             
-            // Usar dados mock em caso de erro
+            // Não usar dados mock - mostrar erro
             this.data = {
-                overview: this.getMockOverviewData(),
-                realtime: this.getMockRealtimeData(),
-                summaries: this.getMockSummariesData()
+                overview: { error: 'Erro ao carregar dados' },
+                realtime: { error: 'Erro ao carregar dados' },
+                summaries: { error: 'Erro ao carregar dados' }
             };
             
             this.updateMetrics();
@@ -230,7 +239,16 @@ class Dashboard {
         console.log('Dados overview:', this.data.overview);
         
         const overview = this.data.overview;
-        if (!overview) return;
+        if (!overview) {
+            this.showMetricsError('Dados de overview não disponíveis');
+            return;
+        }
+        
+        // Verificar se há erro na resposta
+        if (overview.error) {
+            this.showMetricsError(`Erro ao carregar overview: ${overview.error}`);
+            return;
+        }
         
         // Extrair os dados reais do objeto de resposta da API
         const overviewData = overview.data || overview;
@@ -241,6 +259,8 @@ class Dashboard {
         if (totalUsersEl && overviewData.total_users !== undefined) {
             totalUsersEl.textContent = parseInt(overviewData.total_users).toLocaleString();
             console.log('✅ Total users atualizado:', overviewData.total_users);
+        } else if (totalUsersEl) {
+            totalUsersEl.textContent = '-';
         }
         
         // Total de resumos (usar successful_summaries)
@@ -248,6 +268,8 @@ class Dashboard {
         if (totalSummariesEl && overviewData.successful_summaries !== undefined) {
             totalSummariesEl.textContent = parseInt(overviewData.successful_summaries).toLocaleString();
             console.log('✅ Total summaries atualizado:', overviewData.successful_summaries);
+        } else if (totalSummariesEl) {
+            totalSummariesEl.textContent = '-';
         }
         
         // Total de requests (usar today_requests)
@@ -255,6 +277,8 @@ class Dashboard {
         if (totalRequestsEl && overviewData.today_requests !== undefined) {
             totalRequestsEl.textContent = parseInt(overviewData.today_requests).toLocaleString();
             console.log('✅ Total requests atualizado:', overviewData.today_requests);
+        } else if (totalRequestsEl) {
+            totalRequestsEl.textContent = '-';
         }
         
         // Taxa de sucesso (calcular baseado em successful e failed)
@@ -272,10 +296,31 @@ class Dashboard {
                 successRateEl.textContent = '0%';
                 console.log('✅ Success rate atualizado: 0%');
             }
+        } else if (successRateEl) {
+            successRateEl.textContent = '-';
         }
         
         // Atualizar mudanças percentuais se disponíveis
         this.updateMetricChanges(overviewData);
+    }
+    
+    // Show error message for metrics
+    showMetricsError(message) {
+        console.error('❌ Erro nas métricas:', message);
+        
+        // Mostrar '-' em todas as métricas
+        const totalUsersEl = document.getElementById('totalUsers');
+        const totalSummariesEl = document.getElementById('totalSummaries');
+        const totalRequestsEl = document.getElementById('totalRequests');
+        const successRateEl = document.getElementById('successRate');
+        
+        if (totalUsersEl) totalUsersEl.textContent = '-';
+        if (totalSummariesEl) totalSummariesEl.textContent = '-';
+        if (totalRequestsEl) totalRequestsEl.textContent = '-';
+        if (successRateEl) successRateEl.textContent = '-';
+        
+        // Mostrar mensagem de erro temporária
+        this.showError(`Erro nas métricas: ${message}`);
     }
     
     updateMetricChanges(overview) {
@@ -400,6 +445,13 @@ class Dashboard {
 
     updateCharts() {
         console.log('📊 Atualizando gráficos com dados reais...');
+        
+        // Verificar se há erro nos dados de realtime
+        if (this.data.realtime && this.data.realtime.error) {
+            console.error('❌ Erro nos dados de realtime:', this.data.realtime.error);
+            this.showChartError('activity', `Erro ao carregar dados de atividade: ${this.data.realtime.error}`);
+            return;
+        }
         
         // Atualizar gráfico de atividade se tivermos dados
         if (this.data.realtime && this.charts.activity) {
@@ -575,8 +627,9 @@ class Dashboard {
                 this.usersData = response.data;
                 console.log(`✅ ${this.usersData.length} utilizadores carregados da API`);
             } else {
-                console.log('⚠️ Resposta da API inválida, usando dados mock');
-                this.usersData = this.getMockUsersData();
+                console.error('❌ Resposta da API inválida para utilizadores');
+                this.showUsersError('Erro ao carregar dados de utilizadores da API');
+                return;
             }
             
             this.updateUsersStats();
@@ -584,9 +637,89 @@ class Dashboard {
             
         } catch (error) {
             console.error('❌ Erro ao carregar dados de utilizadores:', error);
-            this.usersData = this.getMockUsersData();
-            this.updateUsersStats();
-            this.renderUsersTable();
+            this.showUsersError(`Erro ao conectar com a API: ${error.message}`);
+        }
+    }
+
+    // Show error message for users section
+    showUsersError(message) {
+        // Limpar dados existentes
+        this.usersData = [];
+        
+        // Mostrar erro nas estatísticas
+        const totalUsersEl = document.getElementById('totalUsersCount');
+        const activeUsersEl = document.getElementById('activeUsersCount');
+        const newUsersEl = document.getElementById('newUsersCount');
+        
+        if (totalUsersEl) totalUsersEl.textContent = '-';
+        if (activeUsersEl) activeUsersEl.textContent = '-';
+        if (newUsersEl) newUsersEl.textContent = '-';
+        
+        // Mostrar erro na tabela
+        const tbody = document.getElementById('usersTableBody');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px; color: var(--md-sys-color-error);">
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 16px;">
+                            <span class="material-symbols-outlined" style="font-size: 48px; opacity: 0.7;">error</span>
+                            <div style="font-size: 18px; font-weight: 500;">Erro ao Carregar Dados</div>
+                            <div style="font-size: 14px; opacity: 0.8;">${message}</div>
+                            <button onclick="dashboard.loadUsersData()" style="
+                                background: var(--md-sys-color-primary);
+                                color: var(--md-sys-color-on-primary);
+                                border: none;
+                                padding: 8px 16px;
+                                border-radius: 8px;
+                                cursor: pointer;
+                                font-size: 14px;
+                                margin-top: 8px;
+                            ">
+                                Tentar Novamente
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+        
+        console.error('❌ Erro mostrado na interface:', message);
+    }
+
+    // Show error message for charts
+    showChartError(chartType, message) {
+        console.error(`❌ Erro no gráfico ${chartType}:`, message);
+        
+        const chartContainer = document.getElementById(`${chartType}Chart`);
+        if (chartContainer) {
+            // Criar elemento de erro
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'chart-error';
+            errorDiv.style.cssText = `
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 200px;
+                color: var(--md-sys-color-error);
+                text-align: center;
+                padding: 20px;
+            `;
+            
+            errorDiv.innerHTML = `
+                <span class="material-symbols-outlined" style="font-size: 48px; opacity: 0.7; margin-bottom: 16px;">error</span>
+                <div style="font-size: 16px; font-weight: 500; margin-bottom: 8px;">Erro no Gráfico</div>
+                <div style="font-size: 14px; opacity: 0.8;">${message}</div>
+            `;
+            
+            // Substituir o canvas pelo erro
+            const canvas = chartContainer.querySelector('canvas');
+            if (canvas) {
+                canvas.style.display = 'none';
+            }
+            
+            // Adicionar erro ao container
+            chartContainer.appendChild(errorDiv);
         }
     }
 
