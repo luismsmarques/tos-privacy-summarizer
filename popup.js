@@ -329,7 +329,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (buyCreditsLink) {
             buyCreditsLink.addEventListener('click', (e) => {
                 e.preventDefault();
-                chrome.tabs.create({ url: chrome.runtime.getURL('checkout.html') });
+                chrome.tabs.create({ url: 'https://tos-privacy-summarizer.vercel.app/api/checkout' });
             });
         }
     }
