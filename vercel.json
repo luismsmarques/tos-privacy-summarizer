@@ -5,6 +5,9 @@
     },
     "api/log-analytics.js": {
       "maxDuration": 10
+    },
+    "api/debug-supabase.js": {
+      "maxDuration": 10
     }
   },
   "rewrites": [
