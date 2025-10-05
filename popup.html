@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ToS & Privacy Summarizer</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" />
     <style>
@@ -574,22 +573,6 @@
         }
 
         /* Material Icons Fix */
-        .material-symbols-outlined {
-            font-family: 'Material Symbols Outlined';
-            font-weight: normal;
-            font-style: normal;
-            font-size: 24px;
-            line-height: 1;
-            letter-spacing: normal;
-            text-transform: none;
-            display: inline-block;
-            white-space: nowrap;
-            word-wrap: normal;
-            direction: ltr;
-            -webkit-font-feature-settings: 'liga';
-            -webkit-font-smoothing: antialiased;
-        }
-
         .material-icons {
             font-family: 'Material Icons';
             font-weight: normal;
@@ -607,7 +590,7 @@
         }
 
         /* Fallback para ícones que não carregam */
-        .material-symbols-outlined:not([class*="loaded"]) {
+        .material-icons:not([class*="loaded"]) {
             font-family: 'Material Icons', sans-serif;
         }
 
@@ -730,13 +713,13 @@
         <h1>ToS Summarizer</h1>
         <div class="header-controls">
             <button class="back-btn hidden" id="backBtn" title="Voltar">
-                <span class="material-symbols-outlined">arrow_back</span>
+                <span class="material-icons">arrow_back</span>
             </button>
             <button class="theme-toggle" id="themeToggle" title="Alternar tema">
-                <span class="material-symbols-outlined">dark_mode</span>
+                <span class="material-icons">dark_mode</span>
             </button>
             <button class="settings-btn" id="settingsBtn" title="Configurações">
-                <span class="material-symbols-outlined">settings</span>
+                <span class="material-icons">settings</span>
             </button>
         </div>
     </div>
@@ -747,14 +730,14 @@
         <div class="value-zone">
         <div class="credits-status">
             <div class="credits-info">
-                <span class="material-symbols-outlined">account_balance_wallet</span>
+                <span class="material-icons">account_balance_wallet</span>
                 <span id="creditsText">5 Créditos Grátis Restantes</span>
             </div>
             <div class="credits-badge" id="creditsBadge">GRÁTIS</div>
         </div>
         
         <div class="security-status">
-            <span class="material-symbols-outlined">lock</span>
+            <span class="material-icons">lock</span>
             <span>Análise Segura e Privada</span>
         </div>
         
@@ -779,7 +762,7 @@
     <!-- Context Data Zone -->
     <div class="context-zone">
         <div class="context-item">
-            <span class="material-symbols-outlined context-icon">link</span>
+            <span class="material-icons context-icon">link</span>
             <div class="context-content">
                 <div class="context-label">URL da Página</div>
                 <div class="context-value url-display" id="pageUrl">A carregar...</div>
@@ -787,7 +770,7 @@
         </div>
         
         <div class="context-item">
-            <span class="material-symbols-outlined context-icon">description</span>
+            <span class="material-icons context-icon">description</span>
             <div class="context-content">
                 <div class="context-label">Tipo de Conteúdo Detetado</div>
                 <div class="context-value">
@@ -797,7 +780,7 @@
         </div>
         
         <div class="context-item">
-            <span class="material-symbols-outlined context-icon">trending_up</span>
+            <span class="material-icons context-icon">trending_up</span>
             <div class="context-content">
                 <div class="context-label">Complexidade Linguística Estimada</div>
                 <div class="context-value">
@@ -816,7 +799,7 @@
         </div>
         
         <div class="context-item">
-            <span class="material-symbols-outlined context-icon">schedule</span>
+            <span class="material-icons context-icon">schedule</span>
             <div class="context-content">
                 <div class="context-label">Tempo Poupança Estimada</div>
                 <div class="context-value time-saved" id="timeSaved">A calcular...</div>
@@ -828,7 +811,7 @@
     <div class="action-zone">
         <div class="customization-section">
             <div class="customization-label">
-                <span class="material-symbols-outlined">tune</span>
+                <span class="material-icons">tune</span>
                 <span>Foco do Resumo</span>
             </div>
             <div class="focus-selector">
@@ -839,7 +822,7 @@
         </div>
         
         <button class="action-button" id="actionButton">
-            <span class="material-symbols-outlined">summarize</span>
+            <span class="material-icons">summarize</span>
             <span id="actionButtonText">Extrair & Resumir</span>
             <span id="actionButtonCost">(1 Crédito)</span>
         </button>
