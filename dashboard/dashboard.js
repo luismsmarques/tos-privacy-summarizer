@@ -377,6 +377,19 @@ class Dashboard {
                 `;
             }
         }
+        
+        if (overview.successChange !== undefined) {
+            const successChangeEl = document.getElementById('successChange');
+            if (successChangeEl) {
+                const change = overview.successChange;
+                const isPositive = change >= 0;
+                successChangeEl.className = `metric-change ${isPositive ? 'positive' : 'negative'}`;
+                successChangeEl.innerHTML = `
+                    <span class="material-symbols-outlined">${isPositive ? 'trending_up' : 'trending_down'}</span>
+                    <span>${isPositive ? '+' : ''}${change.toFixed(1)}% esta semana</span>
+                `;
+            }
+        }
     }
     
     initializeCharts() {
