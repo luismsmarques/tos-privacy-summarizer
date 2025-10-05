@@ -1,15 +1,35 @@
-// Database utilities for Vercel Postgres
-import { sql } from '@vercel/postgres';
+// Database utilities for Neon Postgres
+import pkg from 'pg';
+const { Pool } = pkg;
 
 class Database {
     constructor() {
+        this.pool = null;
         this.isConnected = false;
     }
 
     async connect() {
         try {
+            // Verificar se as variáveis de ambiente estão configuradas
+            const databaseUrl = process.env.ANALYTICS_URL || process.env.DATABASE_URL;
+            if (!databaseUrl) {
+                console.warn('⚠️ ANALYTICS_URL não configurada - usando fallback');
+                return false;
+            }
+            
+            // Criar pool de conexões
+            this.pool = new Pool({
+                connectionString: databaseUrl,
+                ssl: {
+                    rejectUnauthorized: false
+                }
+            });
+            
             // Test connection
-            await sql`SELECT 1 as test`;
+            const client = await this.pool.connect();
+            const result = await client.query('SELECT 1 as test');
+            client.release();
+            
             this.isConnected = true;
             console.log('✅ Database connected successfully');
             return true;
@@ -20,18 +40,25 @@ class Database {
         }
     }
 
+    async query(text, params) {
+        if (!this.pool) {
+            throw new Error('Database not connected');
+        }
+        return await this.pool.query(text, params);
+    }
+
     // User operations
     async createUser(userId, deviceId = null) {
         try {
-            const result = await sql`
+            const result = await this.query(`
                 INSERT INTO users (user_id, device_id, credits)
-                VALUES (${userId}, ${deviceId}, 5)
+                VALUES ($1, $2, 5)
                 ON CONFLICT (user_id) 
                 DO UPDATE SET 
                     last_seen = CURRENT_TIMESTAMP,
-                    device_id = COALESCE(${deviceId}, users.device_id)
+                    device_id = COALESCE($2, users.device_id)
                 RETURNING *
-            `;
+            `, [userId, deviceId]);
             return result.rows[0];
         } catch (error) {
             console.error('Error creating user:', error);
@@ -41,9 +68,10 @@ class Database {
 
     async getUser(userId) {
         try {
-            const result = await sql`
-                SELECT * FROM users WHERE user_id = ${userId}
-            `;
+            const result = await this.query(
+                'SELECT * FROM users WHERE user_id = $1',
+                [userId]
+            );
             return result.rows[0] || null;
         } catch (error) {
             console.error('Error getting user:', error);
@@ -53,11 +81,11 @@ class Database {
 
     async updateUserLastSeen(userId) {
         try {
-            await sql`
+            await this.query(`
                 UPDATE users 
                 SET last_seen = CURRENT_TIMESTAMP, total_requests = total_requests + 1
-                WHERE user_id = ${userId}
-            `;
+                WHERE user_id = $1
+            `, [userId]);
         } catch (error) {
             console.error('Error updating user last seen:', error);
             throw error;
@@ -66,9 +94,10 @@ class Database {
 
     async getUserCredits(userId) {
         try {
-            const result = await sql`
-                SELECT credits FROM users WHERE user_id = ${userId}
-            `;
+            const result = await this.query(
+                'SELECT credits FROM users WHERE user_id = $1',
+                [userId]
+            );
             return result.rows[0]?.credits || 5;
         } catch (error) {
             console.error('Error getting user credits:', error);
@@ -78,12 +107,12 @@ class Database {
 
     async decrementUserCredits(userId) {
         try {
-            const result = await sql`
+            const result = await this.query(`
                 UPDATE users 
                 SET credits = GREATEST(credits - 1, 0)
-                WHERE user_id = ${userId}
+                WHERE user_id = $1
                 RETURNING credits
-            `;
+            `, [userId]);
             return result.rows[0]?.credits || 0;
         } catch (error) {
             console.error('Error decrementing credits:', error);
@@ -94,19 +123,19 @@ class Database {
     // Summary operations
     async createSummary(summaryId, userId, success, duration, type = 'unknown', textLength = 0) {
         try {
-            const result = await sql`
-                INSERT INTO summaries (summary_id, user_id, success, duration, type, text_length)
-                VALUES (${summaryId}, ${userId}, ${success}, ${duration}, ${type}, ${textLength})
+            const result = await this.query(`
+                INSERT INTO summaries (summary_id, user_id, success, duration_ms, type, text_length)
+                VALUES ($1, $2, $3, $4, $5, $6)
                 RETURNING *
-            `;
+            `, [summaryId, userId, success, duration, type, textLength]);
             
             // Update user summary count
             if (success) {
-                await sql`
+                await this.query(`
                     UPDATE users 
                     SET summaries_generated = summaries_generated + 1
-                    WHERE user_id = ${userId}
-                `;
+                    WHERE user_id = $1
+                `, [userId]);
             }
             
             return result.rows[0];
@@ -116,13 +145,41 @@ class Database {
         }
     }
 
+    async getSummary(summaryId) {
+        try {
+            const result = await this.query(
+                'SELECT * FROM summaries WHERE summary_id = $1',
+                [summaryId]
+            );
+            return result.rows[0] || null;
+        } catch (error) {
+            console.error('Error getting summary:', error);
+            throw error;
+        }
+    }
+
+    async getUserSummaries(userId, limit = 10) {
+        try {
+            const result = await this.query(`
+                SELECT * FROM summaries 
+                WHERE user_id = $1
+                ORDER BY created_at DESC
+                LIMIT $2
+            `, [userId, limit]);
+            return result.rows;
+        } catch (error) {
+            console.error('Error getting user summaries:', error);
+            throw error;
+        }
+    }
+
     // Request logging
     async logRequest(method, path, statusCode, duration, userAgent, ipAddress, userId = null) {
         try {
-            await sql`
+            await this.query(`
                 INSERT INTO requests (method, path, status_code, duration, user_agent, ip_address, user_id)
-                VALUES (${method}, ${path}, ${statusCode}, ${duration}, ${userAgent}, ${ipAddress}, ${userId})
-            `;
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+            `, [method, path, statusCode, duration, userAgent, ipAddress, userId]);
         } catch (error) {
             console.error('Error logging request:', error);
             // Don't throw - logging shouldn't break the app
@@ -132,328 +189,145 @@ class Database {
     // Performance tracking
     async updatePerformanceMetrics(hour, requests, avgResponseTime, errors, totalDuration) {
         try {
-            await sql`
+            await this.query(`
                 INSERT INTO performance_hourly (hour, date, requests, avg_response_time, errors, total_duration)
-                VALUES (${hour}, CURRENT_DATE, ${requests}, ${avgResponseTime}, ${errors}, ${totalDuration})
+                VALUES ($1, CURRENT_DATE, $2, $3, $4, $5)
                 ON CONFLICT (hour, date)
                 DO UPDATE SET
-                    requests = performance_hourly.requests + ${requests},
-                    total_duration = performance_hourly.total_duration + ${totalDuration},
-                    avg_response_time = (performance_hourly.total_duration + ${totalDuration}) / (performance_hourly.requests + ${requests}),
-                    errors = performance_hourly.errors + ${errors},
-                    updated_at = CURRENT_TIMESTAMP
-            `;
+                    requests = performance_hourly.requests + $2,
+                    total_duration = performance_hourly.total_duration + $5,
+                    avg_response_time = (performance_hourly.avg_response_time * performance_hourly.requests + $3 * $2) / (performance_hourly.requests + $2),
+                    errors = performance_hourly.errors + $4
+            `, [hour, requests, avgResponseTime, errors, totalDuration]);
         } catch (error) {
             console.error('Error updating performance metrics:', error);
+            // Don't throw - metrics shouldn't break the app
         }
     }
 
     // Analytics queries
-    async getOverviewData() {
+    async getAnalyticsOverview() {
         try {
-            const result = await sql`
-                SELECT * FROM analytics_overview
-            `;
+            const result = await this.query(`
+                SELECT 
+                    (SELECT COUNT(*) FROM users) as total_users,
+                    (SELECT COUNT(*) FROM summaries WHERE success = true) as successful_summaries,
+                    (SELECT COUNT(*) FROM summaries WHERE success = false) as failed_summaries,
+                    (SELECT AVG(duration_ms) FROM summaries WHERE success = true) as avg_duration,
+                    (SELECT COUNT(*) FROM requests WHERE created_at >= CURRENT_DATE) as today_requests
+            `);
             return result.rows[0];
         } catch (error) {
-            console.error('Error getting overview data:', error);
-            return {
-                total_users: 0,
-                total_summaries: 0,
-                avg_response_time: 0,
-                uptime: 100,
-                requests_per_minute: 0,
-                error_rate: 0
-            };
+            console.error('Error getting analytics overview:', error);
+            throw error;
         }
     }
 
-    async getUsersData() {
+    async getAnalyticsUsers() {
         try {
-            const result = await sql`
-                SELECT * FROM analytics_users
-            `;
-            const usersData = result.rows[0];
-            
-            // Get growth chart (last 7 days)
-            const growthResult = await sql`
+            const result = await this.query(`
                 SELECT 
-                    DATE(first_seen) as date,
-                    COUNT(*) as users
-                FROM users 
-                WHERE first_seen > CURRENT_DATE - INTERVAL '7 days'
-                GROUP BY DATE(first_seen)
-                ORDER BY date
-            `;
-            
-            return {
-                ...usersData,
-                growthChart: growthResult.rows
-            };
+                    COUNT(*) as total_users,
+                    COUNT(CASE WHEN created_at >= CURRENT_DATE THEN 1 END) as new_today,
+                    COUNT(CASE WHEN last_seen >= CURRENT_DATE - INTERVAL '7 days' THEN 1 END) as active_week,
+                    COUNT(CASE WHEN last_seen >= CURRENT_DATE - INTERVAL '30 days' THEN 1 END) as active_month,
+                    AVG(total_requests) as avg_requests_per_user,
+                    AVG(summaries_generated) as avg_summaries_per_user
+                FROM users
+            `);
+            return result.rows[0];
         } catch (error) {
-            console.error('Error getting users data:', error);
-            return {
-                total: 0,
-                active_today: 0,
-                new_this_week: 0,
-                retention_rate: 0,
-                growthChart: []
-            };
+            console.error('Error getting analytics users:', error);
+            throw error;
         }
     }
 
-    async getSummariesData() {
+    async getAnalyticsSummaries() {
         try {
-            const result = await sql`
-                SELECT * FROM analytics_summaries
-            `;
-            const summariesData = result.rows[0];
-            
-            // Get types distribution
-            const typesResult = await sql`
+            const result = await this.query(`
                 SELECT 
-                    type,
-                    COUNT(*) as count
-                FROM summaries 
-                WHERE success = true
-                GROUP BY type
-            `;
-            
-            const types = {};
-            typesResult.rows.forEach(row => {
-                types[row.type] = row.count;
-            });
-            
-            return {
-                ...summariesData,
-                types,
-                geo: {
-                    'Portugal': Math.floor(summariesData.total * 0.4),
-                    'Brazil': Math.floor(summariesData.total * 0.3),
-                    'Spain': Math.floor(summariesData.total * 0.15),
-                    'USA': Math.floor(summariesData.total * 0.15)
-                }
-            };
+                    COUNT(*) as total_summaries,
+                    COUNT(CASE WHEN success = true THEN 1 END) as successful,
+                    COUNT(CASE WHEN success = false THEN 1 END) as failed,
+                    AVG(CASE WHEN success = true THEN duration_ms END) as avg_duration,
+                    COUNT(CASE WHEN created_at >= CURRENT_DATE THEN 1 END) as today_summaries,
+                    COUNT(CASE WHEN created_at >= CURRENT_DATE - INTERVAL '7 days' THEN 1 END) as week_summaries
+                FROM summaries
+            `);
+            return result.rows[0];
         } catch (error) {
-            console.error('Error getting summaries data:', error);
-            return {
-                total: 0,
-                today: 0,
-                avg_time: 0,
-                success_rate: 0,
-                types: {},
-                geo: {}
-            };
+            console.error('Error getting analytics summaries:', error);
+            throw error;
         }
     }
 
-    async getPerformanceData() {
+    async getAnalyticsPerformance() {
         try {
-            // Get recent performance data
-            const recentResult = await sql`
+            const result = await this.query(`
                 SELECT 
-                    COALESCE(AVG(duration), 0) as avg_response_time,
+                    AVG(duration) as avg_response_time,
                     COUNT(*) as total_requests,
-                    COUNT(CASE WHEN status_code >= 400 THEN 1 END) as errors
-                FROM requests 
-                WHERE timestamp > NOW() - INTERVAL '1 hour'
-            `;
-            
-            const recent = recentResult.rows[0];
-            
-            // Get hourly performance chart
-            const chartResult = await sql`
+                    COUNT(CASE WHEN status_code >= 400 THEN 1 END) as error_count,
+                    COUNT(CASE WHEN created_at >= CURRENT_DATE THEN 1 END) as today_requests
+                FROM requests
+                WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'
+            `);
+            return result.rows[0];
+        } catch (error) {
+            console.error('Error getting analytics performance:', error);
+            throw error;
+        }
+    }
+
+    async getAnalyticsHourly() {
+        try {
+            const result = await this.query(`
                 SELECT 
                     hour,
-                    avg_response_time as value
-                FROM performance_hourly 
-                WHERE date = CURRENT_DATE
-                ORDER BY hour
-            `;
-            
-            const responseTimeChart = [];
-            for (let i = 0; i < 24; i++) {
-                const hourData = chartResult.rows.find(row => row.hour === i);
-                responseTimeChart.push({
-                    time: `${i.toString().padStart(2, '0')}:00`,
-                    value: hourData ? parseFloat(hourData.value) : 0
-                });
-            }
-            
-            // Generate alerts
-            const alerts = [];
-            if (recent.avg_response_time > 3000) {
-                alerts.push({
-                    type: 'warning',
-                    message: `High response time (${(recent.avg_response_time / 1000).toFixed(1)}s)`,
-                    time: new Date().toLocaleTimeString()
-                });
-            }
-            
-            if (recent.errors > 5) {
-                alerts.push({
-                    type: 'error',
-                    message: 'High error rate detected',
-                    time: new Date().toLocaleTimeString()
-                });
-            }
-            
-            return {
-                apiResponseTime: parseFloat(recent.avg_response_time) / 1000,
-                memoryUsage: Math.floor(Math.random() * 30) + 50, // Simulated
-                cpuUsage: Math.floor(Math.random() * 20) + 10,    // Simulated
-                diskUsage: Math.floor(Math.random() * 20) + 30,  // Simulated
-                responseTimeChart,
-                alerts
-            };
+                    requests,
+                    avg_response_time,
+                    errors
+                FROM performance_hourly
+                WHERE date >= CURRENT_DATE - INTERVAL '7 days'
+                ORDER BY date DESC, hour DESC
+                LIMIT 168
+            `);
+            return result.rows;
         } catch (error) {
-            console.error('Error getting performance data:', error);
-            return {
-                apiResponseTime: 0,
-                memoryUsage: 0,
-                cpuUsage: 0,
-                diskUsage: 0,
-                responseTimeChart: [],
-                alerts: []
-            };
+            console.error('Error getting analytics hourly:', error);
+            throw error;
         }
     }
 
-    async getCreditsData() {
+    async getAnalyticsDaily() {
         try {
-            // Get today's consumed credits
-            const todayResult = await sql`
-                SELECT COUNT(*) as consumed_today
-                FROM summaries 
-                WHERE success = true AND created_at > CURRENT_DATE
-            `;
-            
-            const consumedToday = todayResult.rows[0].consumed_today;
-            
-            // Get users with credits
-            const usersWithCreditsResult = await sql`
-                SELECT COUNT(*) as users_with_credits
-                FROM users 
-                WHERE credits > 0
-            `;
-            
-            const usersWithCredits = usersWithCreditsResult.rows[0].users_with_credits;
-            
-            // Get revenue chart (last 7 days)
-            const revenueResult = await sql`
+            const result = await this.query(`
                 SELECT 
                     DATE(created_at) as date,
-                    COUNT(*) as summaries_count
-                FROM summaries 
-                WHERE success = true AND created_at > CURRENT_DATE - INTERVAL '7 days'
+                    COUNT(*) as requests,
+                    AVG(duration) as avg_response_time,
+                    COUNT(CASE WHEN status_code >= 400 THEN 1 END) as errors
+                FROM requests
+                WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
                 GROUP BY DATE(created_at)
-                ORDER BY date
-            `;
-            
-            const revenueChart = revenueResult.rows.map(row => ({
-                date: row.date.toISOString().split('T')[0],
-                revenue: row.summaries_count * 0.02 // €0.02 per summary
-            }));
-            
-            return {
-                consumedToday,
-                revenueToday: consumedToday * 0.02,
-                usersWithCredits,
-                conversionRate: Math.random() * 20 + 5, // Simulated
-                revenueChart,
-                popularPlans: {
-                    '10 credits': Math.floor(usersWithCredits * 0.5),
-                    '50 credits': Math.floor(usersWithCredits * 0.3),
-                    '100 credits': Math.floor(usersWithCredits * 0.2)
-                }
-            };
+                ORDER BY date DESC
+            `);
+            return result.rows;
         } catch (error) {
-            console.error('Error getting credits data:', error);
-            return {
-                consumedToday: 0,
-                revenueToday: 0,
-                usersWithCredits: 0,
-                conversionRate: 0,
-                revenueChart: [],
-                popularPlans: {}
-            };
+            console.error('Error getting analytics daily:', error);
+            throw error;
         }
     }
 
-    async getRealtimeData() {
-        try {
-            const result = await sql`
-                SELECT 
-                    COUNT(DISTINCT user_id) as active_users,
-                    COUNT(*) as requests_per_minute,
-                    COALESCE(AVG(duration), 0) as avg_response_time,
-                    COUNT(CASE WHEN status_code >= 400 THEN 1 END) as errors,
-                    COUNT(*) as total_requests
-                FROM requests 
-                WHERE timestamp > NOW() - INTERVAL '1 minute'
-            `;
-            
-            const data = result.rows[0];
-            const errorRate = data.total_requests > 0 
-                ? (data.errors / data.total_requests) * 100 
-                : 0;
-            
-            return {
-                activeUsers: data.active_users,
-                requestsPerMinute: data.requests_per_minute,
-                avgResponseTime: parseFloat(data.avg_response_time) / 1000,
-                errorRate: parseFloat(errorRate),
-                timestamp: new Date().toISOString()
-            };
-        } catch (error) {
-            console.error('Error getting realtime data:', error);
-            return {
-                activeUsers: 0,
-                requestsPerMinute: 0,
-                avgResponseTime: 0,
-                errorRate: 0,
-                timestamp: new Date().toISOString()
-            };
-        }
-    }
-
-    // Initialize database (run schema)
-    async initialize() {
-        try {
-            console.log('🔄 Initializing database...');
-            
-            // Read and execute schema
-            const fs = await import('fs');
-            const path = await import('path');
-            const { fileURLToPath } = await import('url');
-            
-            const __filename = fileURLToPath(import.meta.url);
-            const __dirname = path.dirname(__filename);
-            const schemaPath = path.join(__dirname, 'database', 'schema.sql');
-            
-            const schema = fs.readFileSync(schemaPath, 'utf8');
-            
-            // Split schema into individual statements
-            const statements = schema
-                .split(';')
-                .map(stmt => stmt.trim())
-                .filter(stmt => stmt.length > 0 && !stmt.startsWith('--'));
-            
-            // Execute each statement
-            for (const statement of statements) {
-                if (statement.trim()) {
-                    await sql`${sql.raw(statement)}`;
-                }
-            }
-            
-            console.log('✅ Database initialized successfully');
-            return true;
-        } catch (error) {
-            console.error('❌ Database initialization failed:', error);
-            return false;
+    async close() {
+        if (this.pool) {
+            await this.pool.end();
+            this.isConnected = false;
+            console.log('Database connection closed');
         }
     }
 }
 
-// Export singleton instance
-export const db = new Database();
+// Singleton instance
+const db = new Database();
+export default db;
