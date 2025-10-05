@@ -819,8 +819,8 @@ router.get('/users', (req, res, next) => authService.authenticateToken(req, res,
                 u.updated_at as last_used,
                 u.credits,
                 COUNT(s.id) as summaries_count,
-                COALESCE(SUM(s.word_count), 0) as total_words,
-                COALESCE(AVG(s.processing_time), 0) as avg_processing_time
+                COALESCE(SUM(s.text_length), 0) as total_words,
+                COALESCE(AVG(s.duration), 0) as avg_processing_time
             FROM users u
             LEFT JOIN summaries s ON u.user_id = s.user_id
             GROUP BY u.user_id, u.created_at, u.updated_at, u.credits
