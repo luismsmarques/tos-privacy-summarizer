@@ -164,7 +164,7 @@ document.addEventListener('DOMContentLoaded', function() {
         complexityText.textContent = complexity.text;
 
         // Tempo poupança
-        const estimatedReadingTime = Math.ceil(analysis.textLength / 200); // 200 chars por minuto
+        const estimatedReadingTime = calculateReadingTime(analysis.textLength, analysis.type, complexity);
         timeSaved.textContent = `≈ ${estimatedReadingTime} minutos de leitura`;
     }
 
@@ -181,6 +181,43 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             return { level: 5, text: 'Extrema' };
         }
+    }
+
+    // Calcular tempo de leitura baseado no tipo de documento e complexidade
+    function calculateReadingTime(textLength, documentType, complexity) {
+        // Velocidades base por tipo de documento (caracteres por minuto)
+        let baseSpeed;
+        
+        switch (documentType) {
+            case 'privacy_policy':
+                baseSpeed = 150; // Políticas de privacidade são mais complexas
+                break;
+            case 'terms_of_service':
+                baseSpeed = 180; // Termos de serviço são ligeiramente mais simples
+                break;
+            case 'unknown':
+            default:
+                baseSpeed = 200; // Velocidade padrão para documentos desconhecidos
+                break;
+        }
+        
+        // Ajustar velocidade baseada na complexidade do texto
+        if (complexity.level >= 5) {
+            baseSpeed *= 0.6; // 40% mais lento para textos extremamente complexos
+        } else if (complexity.level >= 4) {
+            baseSpeed *= 0.7; // 30% mais lento para textos muito complexos
+        } else if (complexity.level >= 3) {
+            baseSpeed *= 0.8; // 20% mais lento para textos complexos
+        } else if (complexity.level >= 2) {
+            baseSpeed *= 0.9; // 10% mais lento para textos de complexidade média
+        }
+        // Para complexidade baixa (level 1), manter velocidade base
+        
+        // Calcular tempo final
+        const readingTime = Math.ceil(textLength / baseSpeed);
+        
+        // Garantir tempo mínimo de 1 minuto
+        return Math.max(readingTime, 1);
     }
 
     // Atualizar indicador de complexidade
