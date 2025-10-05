@@ -480,6 +480,174 @@ router.get('/overview', async (req, res) => {
 
 // Endpoint removido - duplicado com o endpoint autenticado abaixo
 
+// Endpoint para obter histórico de resumos (dados individuais)
+router.get('/summaries-history', async (req, res) => {
+  try {
+    console.log('📄 Obtendo histórico de resumos...');
+    
+    if (!db.isConnected) {
+      const connected = await db.connect();
+      if (!connected) {
+        return res.status(500).json({
+          success: false,
+          error: 'Não foi possível conectar à base de dados'
+        });
+      }
+    }
+    
+    // Parâmetros de filtro opcionais
+    const { 
+      limit = 100, 
+      offset = 0, 
+      type, 
+      status, 
+      date_from, 
+      date_to,
+      search 
+    } = req.query;
+    
+    // Construir query base
+    let query = `
+      SELECT 
+        s.id,
+        s.summary_id,
+        s.user_id,
+        s.url,
+        s.success,
+        s.duration,
+        s.type as document_type,
+        s.text_length,
+        s.summary,
+        s.created_at,
+        s.updated_at
+      FROM summaries s
+      WHERE 1=1
+    `;
+    
+    const queryParams = [];
+    let paramCount = 0;
+    
+    // Aplicar filtros
+    if (type) {
+      paramCount++;
+      query += ` AND s.type = $${paramCount}`;
+      queryParams.push(type);
+    }
+    
+    if (status) {
+      paramCount++;
+      if (status === 'success') {
+        query += ` AND s.success = $${paramCount}`;
+        queryParams.push(true);
+      } else if (status === 'failed') {
+        query += ` AND s.success = $${paramCount}`;
+        queryParams.push(false);
+      }
+    }
+    
+    if (date_from) {
+      paramCount++;
+      query += ` AND s.created_at >= $${paramCount}`;
+      queryParams.push(date_from);
+    }
+    
+    if (date_to) {
+      paramCount++;
+      query += ` AND s.created_at <= $${paramCount}`;
+      queryParams.push(date_to);
+    }
+    
+    if (search) {
+      paramCount++;
+      query += ` AND (s.url ILIKE $${paramCount} OR s.summary ILIKE $${paramCount})`;
+      queryParams.push(`%${search}%`);
+    }
+    
+    // Ordenar e limitar
+    query += ` ORDER BY s.created_at DESC`;
+    
+    paramCount++;
+    query += ` LIMIT $${paramCount}`;
+    queryParams.push(parseInt(limit));
+    
+    paramCount++;
+    query += ` OFFSET $${paramCount}`;
+    queryParams.push(parseInt(offset));
+    
+    console.log('Query:', query);
+    console.log('Params:', queryParams);
+    
+    const result = await db.query(query, queryParams);
+    
+    // Obter contagem total para paginação
+    let countQuery = `
+      SELECT COUNT(*) as total
+      FROM summaries s
+      WHERE 1=1
+    `;
+    
+    const countParams = [];
+    let countParamCount = 0;
+    
+    if (type) {
+      countParamCount++;
+      countQuery += ` AND s.type = $${countParamCount}`;
+      countParams.push(type);
+    }
+    
+    if (status) {
+      countParamCount++;
+      if (status === 'success') {
+        countQuery += ` AND s.success = $${countParamCount}`;
+        countParams.push(true);
+      } else if (status === 'failed') {
+        countQuery += ` AND s.success = $${countParamCount}`;
+        countParams.push(false);
+      }
+    }
+    
+    if (date_from) {
+      countParamCount++;
+      countQuery += ` AND s.created_at >= $${countParamCount}`;
+      countParams.push(date_from);
+    }
+    
+    if (date_to) {
+      countParamCount++;
+      countQuery += ` AND s.created_at <= $${countParamCount}`;
+      countParams.push(date_to);
+    }
+    
+    if (search) {
+      countParamCount++;
+      countQuery += ` AND (s.url ILIKE $${countParamCount} OR s.summary ILIKE $${countParamCount})`;
+      countParams.push(`%${search}%`);
+    }
+    
+    const countResult = await db.query(countQuery, countParams);
+    const totalCount = parseInt(countResult.rows[0].total);
+    
+    res.json({
+      success: true,
+      data: result.rows,
+      pagination: {
+        total: totalCount,
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        hasMore: (parseInt(offset) + parseInt(limit)) < totalCount
+      },
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro ao obter histórico de resumos:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao obter histórico de resumos: ' + error.message
+    });
+  }
+});
+
 // Endpoint para obter dados de resumos
 router.get('/summaries', async (req, res) => {
   try {

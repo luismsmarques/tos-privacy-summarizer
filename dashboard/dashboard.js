@@ -99,6 +99,41 @@ class Dashboard {
         if (userFilter) {
             userFilter.addEventListener('change', () => this.applyUsersFilters());
         }
+
+        // Summaries section specific
+        const refreshSummariesBtn = document.getElementById('refreshSummariesBtn');
+        const exportAllBtn = document.getElementById('exportAllBtn');
+        
+        if (refreshSummariesBtn) {
+            refreshSummariesBtn.addEventListener('click', () => {
+                this.loadSummariesData();
+            });
+        }
+
+        if (exportAllBtn) {
+            exportAllBtn.addEventListener('click', () => {
+                this.exportAllSummaries();
+            });
+        }
+
+        // Summaries filters
+        const summaryTypeFilter = document.getElementById('summaryTypeFilter');
+        const summaryDateFilter = document.getElementById('summaryDateFilter');
+        const summaryStatusFilter = document.getElementById('summaryStatusFilter');
+        const summarySearch = document.getElementById('summarySearch');
+
+        if (summaryTypeFilter) {
+            summaryTypeFilter.addEventListener('change', () => this.applySummariesFilters());
+        }
+        if (summaryDateFilter) {
+            summaryDateFilter.addEventListener('change', () => this.applySummariesFilters());
+        }
+        if (summaryStatusFilter) {
+            summaryStatusFilter.addEventListener('change', () => this.applySummariesFilters());
+        }
+        if (summarySearch) {
+            summarySearch.addEventListener('input', debounce(() => this.applySummariesFilters(), 300));
+        }
         
         // Refresh FAB
         const refreshFab = document.getElementById('refreshFab');
@@ -701,6 +736,8 @@ class Dashboard {
         // Load section-specific data
         if (section === 'users') {
             this.loadUsersData();
+        } else if (section === 'summaries') {
+            this.loadSummariesData();
         }
     }
 
@@ -1787,6 +1824,453 @@ class Dashboard {
                 'Outros': 5
             }
         };
+    }
+
+    // ===== FUNCIONALIDADES DE HISTÓRICO DE RESUMOS =====
+
+    // Carregar dados de resumos
+    async loadSummariesData() {
+        try {
+            console.log('📊 Carregando dados de resumos...');
+            
+            const response = await this.fetchData('/api/analytics/summaries-history');
+            if (response && response.success && Array.isArray(response.data)) {
+                this.summariesData = response.data;
+                console.log(`✅ ${this.summariesData.length} resumos carregados da API`);
+            } else {
+                console.error('❌ Resposta da API inválida para resumos');
+                this.showSummariesError('Erro ao carregar dados de resumos da API');
+                return;
+            }
+            
+            this.updateSummariesStats();
+            this.renderSummariesTable();
+            
+        } catch (error) {
+            console.error('❌ Erro ao carregar dados de resumos:', error);
+            this.showSummariesError(`Erro ao conectar com a API: ${error.message}`);
+        }
+    }
+
+    // Mostrar erro na secção de resumos
+    showSummariesError(message) {
+        // Limpar dados existentes
+        this.summariesData = [];
+        
+        // Mostrar erro nas estatísticas
+        const totalSummariesEl = document.getElementById('totalSummariesCount');
+        const successfulSummariesEl = document.getElementById('successfulSummariesCount');
+        const failedSummariesEl = document.getElementById('failedSummariesCount');
+        const avgProcessingTimeEl = document.getElementById('avgProcessingTime');
+        
+        if (totalSummariesEl) totalSummariesEl.textContent = '-';
+        if (successfulSummariesEl) successfulSummariesEl.textContent = '-';
+        if (failedSummariesEl) failedSummariesEl.textContent = '-';
+        if (avgProcessingTimeEl) avgProcessingTimeEl.textContent = '-';
+        
+        // Mostrar erro na tabela
+        const tbody = document.getElementById('summariesTableBody');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px; color: var(--md-sys-color-error);">
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 16px;">
+                            <span class="material-symbols-outlined" style="font-size: 48px; opacity: 0.7;">error</span>
+                            <div style="font-size: 18px; font-weight: 500;">Erro ao Carregar Dados</div>
+                            <div style="font-size: 14px; opacity: 0.8;">${message}</div>
+                            <button onclick="dashboard.loadSummariesData()" style="
+                                background: var(--md-sys-color-primary);
+                                color: var(--md-sys-color-on-primary);
+                                border: none;
+                                padding: 8px 16px;
+                                border-radius: 8px;
+                                cursor: pointer;
+                                font-size: 14px;
+                                margin-top: 8px;
+                            ">
+                                Tentar Novamente
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+        
+        console.error('❌ Erro mostrado na interface de resumos:', message);
+    }
+
+    // Atualizar estatísticas de resumos
+    updateSummariesStats() {
+        const totalSummariesEl = document.getElementById('totalSummariesCount');
+        const successfulSummariesEl = document.getElementById('successfulSummariesCount');
+        const failedSummariesEl = document.getElementById('failedSummariesCount');
+        const avgProcessingTimeEl = document.getElementById('avgProcessingTime');
+
+        // Verificar se summariesData é um array válido
+        if (!Array.isArray(this.summariesData)) {
+            console.warn('⚠️ summariesData não é um array válido:', this.summariesData);
+            this.summariesData = [];
+        }
+
+        if (totalSummariesEl) {
+            totalSummariesEl.textContent = this.summariesData.length;
+        }
+
+        if (successfulSummariesEl) {
+            const successful = this.summariesData.filter(summary => 
+                summary && summary.success === true
+            ).length;
+            successfulSummariesEl.textContent = successful;
+        }
+
+        if (failedSummariesEl) {
+            const failed = this.summariesData.filter(summary => 
+                summary && summary.success === false
+            ).length;
+            failedSummariesEl.textContent = failed;
+        }
+
+        if (avgProcessingTimeEl) {
+            const successfulSummaries = this.summariesData.filter(summary => 
+                summary && summary.success === true && summary.duration
+            );
+            
+            if (successfulSummaries.length > 0) {
+                const avgDuration = successfulSummaries.reduce((sum, summary) => 
+                    sum + (summary.duration / 1000), 0
+                ) / successfulSummaries.length;
+                avgProcessingTimeEl.textContent = avgDuration.toFixed(1);
+            } else {
+                avgProcessingTimeEl.textContent = '0.0';
+            }
+        }
+    }
+
+    // Renderizar tabela de resumos
+    renderSummariesTable() {
+        const tbody = document.getElementById('summariesTableBody');
+        if (!tbody) return;
+
+        // Verificar se summariesData é um array válido
+        if (!Array.isArray(this.summariesData)) {
+            console.warn('⚠️ summariesData não é um array válido para renderização:', this.summariesData);
+            this.summariesData = [];
+        }
+
+        const filteredSummaries = this.getFilteredSummaries();
+        
+        if (filteredSummaries.length === 0) {
+            this.showSummariesEmptyState();
+            return;
+        }
+
+        tbody.innerHTML = filteredSummaries.map(summary => `
+            <tr>
+                <td>${this.formatDate(summary.created_at)}</td>
+                <td>${this.getDocumentTypeName(summary.document_type || summary.type)}</td>
+                <td>
+                    <a href="${summary.url}" target="_blank" class="summary-url" title="${summary.url}">
+                        ${this.truncateUrl(summary.url)}
+                    </a>
+                </td>
+                <td>
+                    <span class="status-badge ${summary.success ? 'status-success' : 'status-failed'}">
+                        ${summary.success ? 'Sucesso' : 'Falha'}
+                    </span>
+                </td>
+                <td>${summary.duration ? (summary.duration / 1000).toFixed(1) + 's' : '-'}</td>
+                <td>${summary.text_length ? summary.text_length.toLocaleString() + ' chars' : '-'}</td>
+                <td>
+                    <div class="summary-actions">
+                        <button class="summary-action-btn" onclick="dashboard.viewSummaryDetails('${summary.id}')" title="Ver detalhes">
+                            <span class="material-symbols-outlined">visibility</span>
+                        </button>
+                        <button class="summary-action-btn" onclick="dashboard.copySummary('${summary.id}')" title="Copiar resumo">
+                            <span class="material-symbols-outlined">content_copy</span>
+                        </button>
+                        <button class="summary-action-btn" onclick="dashboard.exportSummary('${summary.id}')" title="Exportar resumo">
+                            <span class="material-symbols-outlined">download</span>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+
+        // Esconder estado vazio
+        const emptyState = document.getElementById('summariesEmptyState');
+        if (emptyState) {
+            emptyState.style.display = 'none';
+        }
+    }
+
+    // Obter resumos filtrados
+    getFilteredSummaries() {
+        // Verificar se summariesData é um array válido
+        if (!Array.isArray(this.summariesData)) {
+            console.warn('⚠️ summariesData não é um array válido para filtros:', this.summariesData);
+            return [];
+        }
+
+        let filtered = [...this.summariesData];
+
+        // Filtro por tipo
+        const typeFilter = document.getElementById('summaryTypeFilter')?.value;
+        if (typeFilter) {
+            filtered = filtered.filter(summary => 
+                summary && (summary.document_type || summary.type) === typeFilter
+            );
+        }
+
+        // Filtro por status
+        const statusFilter = document.getElementById('summaryStatusFilter')?.value;
+        if (statusFilter) {
+            filtered = filtered.filter(summary => {
+                if (statusFilter === 'success') return summary && summary.success === true;
+                if (statusFilter === 'failed') return summary && summary.success === false;
+                return true;
+            });
+        }
+
+        // Filtro por data
+        const dateFilter = document.getElementById('summaryDateFilter')?.value;
+        if (dateFilter) {
+            const now = new Date();
+            filtered = filtered.filter(summary => {
+                if (!summary || !summary.created_at) return false;
+                const summaryDate = new Date(summary.created_at);
+                
+                switch (dateFilter) {
+                    case 'today':
+                        return summaryDate.toDateString() === now.toDateString();
+                    case 'week':
+                        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        return summaryDate >= weekAgo;
+                    case 'month':
+                        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                        return summaryDate >= monthAgo;
+                    default:
+                        return true;
+                }
+            });
+        }
+
+        // Filtro por pesquisa
+        const searchTerm = document.getElementById('summarySearch')?.value.toLowerCase();
+        if (searchTerm) {
+            filtered = filtered.filter(summary => {
+                if (!summary) return false;
+                const urlMatch = summary.url && summary.url.toLowerCase().includes(searchTerm);
+                const contentMatch = summary.summary && summary.summary.toLowerCase().includes(searchTerm);
+                return urlMatch || contentMatch;
+            });
+        }
+
+        // Ordenar por data (mais recente primeiro)
+        filtered.sort((a, b) => {
+            if (!a || !b) return 0;
+            return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+        });
+
+        return filtered;
+    }
+
+    // Aplicar filtros de resumos
+    applySummariesFilters() {
+        this.renderSummariesTable();
+    }
+
+    // Mostrar estado vazio de resumos
+    showSummariesEmptyState() {
+        const emptyState = document.getElementById('summariesEmptyState');
+        const tbody = document.getElementById('summariesTableBody');
+        
+        if (emptyState) {
+            emptyState.style.display = 'block';
+        }
+        if (tbody) {
+            tbody.innerHTML = '';
+        }
+    }
+
+    // Limpar filtros de resumos
+    clearSummariesFilters() {
+        const typeFilter = document.getElementById('summaryTypeFilter');
+        const dateFilter = document.getElementById('summaryDateFilter');
+        const statusFilter = document.getElementById('summaryStatusFilter');
+        const searchInput = document.getElementById('summarySearch');
+
+        if (typeFilter) typeFilter.value = '';
+        if (dateFilter) dateFilter.value = '';
+        if (statusFilter) statusFilter.value = '';
+        if (searchInput) searchInput.value = '';
+
+        this.applySummariesFilters();
+    }
+
+    // Ver detalhes do resumo
+    async viewSummaryDetails(summaryId) {
+        try {
+            const summary = this.summariesData.find(s => s.id === summaryId);
+            if (!summary) {
+                throw new Error('Resumo não encontrado');
+            }
+
+            this.createSummaryDetailsModal(summary);
+            
+        } catch (error) {
+            console.error('❌ Erro ao carregar detalhes do resumo:', error);
+            this.showError(`Erro ao carregar detalhes: ${error.message}`);
+        }
+    }
+
+    // Criar modal de detalhes do resumo
+    createSummaryDetailsModal(summary) {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content large">
+                <div class="modal-header">
+                    <h2>Detalhes do Resumo</h2>
+                    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="summary-details-grid">
+                        <div class="summary-info-card">
+                            <h3>Informações Básicas</h3>
+                            <div class="info-item">
+                                <label>Tipo de Documento:</label>
+                                <span>${this.getDocumentTypeName(summary.document_type || summary.type)}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>URL:</label>
+                                <span><a href="${summary.url}" target="_blank">${summary.url}</a></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Status:</label>
+                                <span class="status-badge ${summary.success ? 'status-success' : 'status-failed'}">
+                                    ${summary.success ? 'Sucesso' : 'Falha'}
+                                </span>
+                            </div>
+                            <div class="info-item">
+                                <label>Data de Criação:</label>
+                                <span>${new Date(summary.created_at).toLocaleString('pt-PT')}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Tempo de Processamento:</label>
+                                <span>${summary.duration ? (summary.duration / 1000).toFixed(1) + 's' : 'N/A'}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Tamanho do Texto:</label>
+                                <span>${summary.text_length ? summary.text_length.toLocaleString() + ' caracteres' : 'N/A'}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="summary-content-card">
+                            <h3>Conteúdo do Resumo</h3>
+                            <div class="summary-content">
+                                ${summary.summary || 'Resumo não disponível'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" onclick="window.dashboard.copySummary('${summary.id}'); this.closest('.modal-overlay').remove();">
+                        <span class="material-symbols-outlined">content_copy</span>
+                        Copiar Resumo
+                    </button>
+                    <button class="btn btn-secondary" onclick="window.dashboard.exportSummary('${summary.id}'); this.closest('.modal-overlay').remove();">
+                        <span class="material-symbols-outlined">download</span>
+                        Exportar
+                    </button>
+                    <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">
+                        Fechar
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+    }
+
+    // Copiar resumo
+    copySummary(summaryId) {
+        const summary = this.summariesData.find(s => s.id === summaryId);
+        if (summary) {
+            const text = `${this.getDocumentTypeName(summary.document_type || summary.type)}\n\nURL: ${summary.url}\nData: ${this.formatDate(summary.created_at)}\n\n${summary.summary || 'Resumo não disponível'}`;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                this.showSuccess('Resumo copiado para a área de transferência!');
+            }).catch(err => {
+                console.error('Erro ao copiar:', err);
+                this.showError('Erro ao copiar resumo');
+            });
+        }
+    }
+
+    // Exportar resumo
+    exportSummary(summaryId) {
+        const summary = this.summariesData.find(s => s.id === summaryId);
+        if (summary) {
+            const content = `${this.getDocumentTypeName(summary.document_type || summary.type)}\n\nURL: ${summary.url}\nData: ${this.formatDate(summary.created_at)}\nTempo: ${summary.duration ? (summary.duration / 1000).toFixed(1) + 's' : 'N/A'}\nTamanho: ${summary.text_length ? summary.text_length.toLocaleString() + ' caracteres' : 'N/A'}\n\n${summary.summary || 'Resumo não disponível'}`;
+            
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `resumo-${summaryId}-${new Date().toISOString().split('T')[0]}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            this.showSuccess('Resumo exportado com sucesso!');
+        }
+    }
+
+    // Exportar todos os resumos
+    exportAllSummaries() {
+        if (!Array.isArray(this.summariesData) || this.summariesData.length === 0) {
+            this.showError('Nenhum resumo disponível para exportar');
+            return;
+        }
+
+        const filteredSummaries = this.getFilteredSummaries();
+        if (filteredSummaries.length === 0) {
+            this.showError('Nenhum resumo corresponde aos filtros selecionados');
+            return;
+        }
+
+        const content = filteredSummaries.map(summary => 
+            `=== ${this.getDocumentTypeName(summary.document_type || summary.type)} ===\n` +
+            `URL: ${summary.url}\n` +
+            `Data: ${this.formatDate(summary.created_at)}\n` +
+            `Status: ${summary.success ? 'Sucesso' : 'Falha'}\n` +
+            `Tempo: ${summary.duration ? (summary.duration / 1000).toFixed(1) + 's' : 'N/A'}\n` +
+            `Tamanho: ${summary.text_length ? summary.text_length.toLocaleString() + ' caracteres' : 'N/A'}\n\n` +
+            `${summary.summary || 'Resumo não disponível'}\n\n` +
+            '='.repeat(80) + '\n\n'
+        ).join('');
+
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `todos-resumos-${new Date().toISOString().split('T')[0]}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        this.showSuccess(`${filteredSummaries.length} resumos exportados com sucesso!`);
+    }
+
+    // Funções auxiliares para resumos
+    truncateUrl(url, maxLength = 30) {
+        if (!url) return 'N/A';
+        if (url.length <= maxLength) return url;
+        return url.substring(0, maxLength) + '...';
     }
 }
 
