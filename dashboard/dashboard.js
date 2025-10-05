@@ -801,3 +801,4 @@ window.Dashboard = Dashboard;
 
 // Cache busting - Force reload
 console.log('Dashboard v2.0.1 loaded at:', new Date().toISOString());
+console.log('Deploy timestamp:', Date.now());
