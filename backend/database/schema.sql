@@ -20,11 +20,14 @@ CREATE TABLE IF NOT EXISTS summaries (
     id SERIAL PRIMARY KEY,
     summary_id VARCHAR(255) UNIQUE NOT NULL,
     user_id VARCHAR(255) NOT NULL,
+    url TEXT,
     success BOOLEAN NOT NULL,
     duration INTEGER NOT NULL, -- em milissegundos
     type VARCHAR(100) DEFAULT 'unknown',
     text_length INTEGER,
+    summary TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
@@ -94,6 +97,9 @@ CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_performance_hourly_updated_at BEFORE UPDATE ON performance_hourly
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_summaries_updated_at BEFORE UPDATE ON summaries
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Views para analytics (facilitam queries)

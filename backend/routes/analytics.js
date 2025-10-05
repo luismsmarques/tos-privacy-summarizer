@@ -512,14 +512,11 @@ router.get('/summaries-history', async (req, res) => {
         s.id,
         s.summary_id,
         s.user_id,
-        s.url,
         s.success,
         s.duration,
         s.type as document_type,
         s.text_length,
-        s.summary,
-        s.created_at,
-        s.updated_at
+        s.created_at
       FROM summaries s
       WHERE 1=1
     `;
@@ -559,7 +556,7 @@ router.get('/summaries-history', async (req, res) => {
     
     if (search) {
       paramCount++;
-      query += ` AND (s.url ILIKE $${paramCount} OR s.summary ILIKE $${paramCount})`;
+      query += ` AND (s.summary_id ILIKE $${paramCount} OR s.user_id ILIKE $${paramCount})`;
       queryParams.push(`%${search}%`);
     }
     
@@ -620,16 +617,24 @@ router.get('/summaries-history', async (req, res) => {
     
     if (search) {
       countParamCount++;
-      countQuery += ` AND (s.url ILIKE $${countParamCount} OR s.summary ILIKE $${countParamCount})`;
+      countQuery += ` AND (s.summary_id ILIKE $${countParamCount} OR s.user_id ILIKE $${countParamCount})`;
       countParams.push(`%${search}%`);
     }
     
     const countResult = await db.query(countQuery, countParams);
     const totalCount = parseInt(countResult.rows[0].total);
     
+    // Adicionar campos em falta para compatibilidade com o frontend
+    const processedData = result.rows.map(row => ({
+      ...row,
+      url: row.url || null,
+      summary: row.summary || null,
+      updated_at: row.updated_at || row.created_at
+    }));
+    
     res.json({
       success: true,
-      data: result.rows,
+      data: processedData,
       pagination: {
         total: totalCount,
         limit: parseInt(limit),
@@ -872,11 +877,11 @@ async function registerUser(userId, deviceId) {
 }
 
 // Função para registrar novo resumo
-async function registerSummary(userId, success = true, duration = 0, type = 'unknown', textLength = 0) {
+async function registerSummary(userId, success = true, duration = 0, type = 'unknown', textLength = 0, url = null, summary = null) {
   try {
-    console.log(`📝 Criando resumo: userId=${userId}, success=${success}, duration=${duration}, type=${type}, textLength=${textLength}`);
+    console.log(`📝 Criando resumo: userId=${userId}, success=${success}, duration=${duration}, type=${type}, textLength=${textLength}, url=${url}`);
     const summaryId = `summary_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const result = await db.createSummary(summaryId, userId, success, duration, type, textLength);
+    const result = await db.createSummary(summaryId, userId, success, duration, type, textLength, url, summary);
     console.log(`✅ Resumo criado com sucesso: ${summaryId}`);
     return result;
   } catch (error) {
@@ -884,6 +889,225 @@ async function registerSummary(userId, success = true, duration = 0, type = 'unk
     throw error;
   }
 }
+
+// Endpoint para migrar base de dados (adicionar colunas em falta)
+router.post('/migrate', async (req, res) => {
+  try {
+    console.log('🔄 Executando migração da base de dados...');
+    
+    if (!db.isConnected) {
+      const connected = await db.connect();
+      if (!connected) {
+        throw new Error('Não foi possível conectar à base de dados');
+      }
+    }
+
+    // Adicionar colunas em falta
+    await db.query(`
+      ALTER TABLE summaries 
+      ADD COLUMN IF NOT EXISTS url TEXT,
+      ADD COLUMN IF NOT EXISTS summary TEXT,
+      ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    `);
+
+    // Adicionar trigger para updated_at
+    await db.query(`
+      CREATE TRIGGER update_summaries_updated_at BEFORE UPDATE ON summaries
+      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()
+    `);
+
+    // Atualizar registros existentes
+    await db.query(`
+      UPDATE summaries 
+      SET updated_at = created_at 
+      WHERE updated_at IS NULL
+    `);
+
+    console.log('✅ Migração concluída com sucesso');
+    
+    res.json({
+      success: true,
+      message: 'Migração da base de dados concluída com sucesso',
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro na migração:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro na migração: ' + error.message
+    });
+  }
+});
+
+// Endpoint temporário para histórico de resumos (compatível com schema atual)
+router.get('/summaries-history-temp', async (req, res) => {
+  try {
+    console.log('📄 Obtendo histórico de resumos (versão temporária)...');
+    
+    if (!db.isConnected) {
+      const connected = await db.connect();
+      if (!connected) {
+        throw new Error('Não foi possível conectar à base de dados');
+      }
+    }
+
+    const {
+      limit = 100,
+      offset = 0,
+      type,
+      status,
+      date_from,
+      date_to,
+      search 
+    } = req.query;
+    
+    // Query que funciona com o schema atual
+    let query = `
+      SELECT 
+        s.id,
+        s.summary_id,
+        s.user_id,
+        s.success,
+        s.duration,
+        s.type as document_type,
+        s.text_length,
+        s.created_at
+      FROM summaries s
+      WHERE 1=1
+    `;
+    
+    const queryParams = [];
+    let paramCount = 0;
+    
+    // Aplicar filtros
+    if (type) {
+      paramCount++;
+      query += ` AND s.type = $${paramCount}`;
+      queryParams.push(type);
+    }
+    
+    if (status) {
+      paramCount++;
+      if (status === 'success') {
+        query += ` AND s.success = $${paramCount}`;
+        queryParams.push(true);
+      } else if (status === 'failed') {
+        query += ` AND s.success = $${paramCount}`;
+        queryParams.push(false);
+      }
+    }
+    
+    if (date_from) {
+      paramCount++;
+      query += ` AND s.created_at >= $${paramCount}`;
+      queryParams.push(date_from);
+    }
+    
+    if (date_to) {
+      paramCount++;
+      query += ` AND s.created_at <= $${paramCount}`;
+      queryParams.push(date_to);
+    }
+    
+    if (search) {
+      paramCount++;
+      query += ` AND (s.summary_id ILIKE $${paramCount} OR s.user_id ILIKE $${paramCount})`;
+      queryParams.push(`%${search}%`);
+    }
+    
+    // Ordenar e limitar
+    query += ` ORDER BY s.created_at DESC`;
+    
+    paramCount++;
+    query += ` LIMIT $${paramCount}`;
+    queryParams.push(parseInt(limit));
+    
+    paramCount++;
+    query += ` OFFSET $${paramCount}`;
+    queryParams.push(parseInt(offset));
+    
+    console.log('Query:', query);
+    console.log('Params:', queryParams);
+    
+    const result = await db.query(query, queryParams);
+    
+    // Obter contagem total para paginação
+    let countQuery = `
+      SELECT COUNT(*) as total
+      FROM summaries s
+      WHERE 1=1
+    `;
+    
+    const countParams = [];
+    let countParamCount = 0;
+    
+    if (type) {
+      countParamCount++;
+      countQuery += ` AND s.type = $${countParamCount}`;
+      countParams.push(type);
+    }
+    
+    if (status) {
+      countParamCount++;
+      if (status === 'success') {
+        countQuery += ` AND s.success = $${countParamCount}`;
+        countParams.push(true);
+      } else if (status === 'failed') {
+        countQuery += ` AND s.success = $${countParamCount}`;
+        countParams.push(false);
+      }
+    }
+    
+    if (date_from) {
+      countParamCount++;
+      countQuery += ` AND s.created_at >= $${countParamCount}`;
+      countParams.push(date_from);
+    }
+    
+    if (date_to) {
+      countParamCount++;
+      countQuery += ` AND s.created_at <= $${countParamCount}`;
+      countParams.push(date_to);
+    }
+    
+    if (search) {
+      countParamCount++;
+      countQuery += ` AND (s.summary_id ILIKE $${countParamCount} OR s.user_id ILIKE $${countParamCount})`;
+      countParams.push(`%${search}%`);
+    }
+    
+    const countResult = await db.query(countQuery, countParams);
+    const totalCount = parseInt(countResult.rows[0].total);
+    
+    // Adicionar campos em falta para compatibilidade com o frontend
+    const processedData = result.rows.map(row => ({
+      ...row,
+      url: null, // Campo não disponível no schema atual
+      summary: null, // Campo não disponível no schema atual
+      updated_at: row.created_at // Usar created_at como fallback
+    }));
+    
+    res.json({
+      success: true,
+      data: processedData,
+      pagination: {
+        total: totalCount,
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        hasMore: (parseInt(offset) + parseInt(limit)) < totalCount
+      },
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro ao obter histórico de resumos:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao obter histórico de resumos: ' + error.message
+    });
+  }
+});
 
 // Endpoint para popular dados de teste
 router.post('/seed', async (req, res) => {
@@ -898,6 +1122,36 @@ router.post('/seed', async (req, res) => {
           error: 'Não foi possível conectar à base de dados'
         });
       }
+    }
+
+    // Executar migração primeiro (adicionar colunas em falta)
+    try {
+      console.log('🔄 Executando migração da base de dados...');
+      
+      // Adicionar colunas em falta
+      await db.query(`
+        ALTER TABLE summaries 
+        ADD COLUMN IF NOT EXISTS url TEXT,
+        ADD COLUMN IF NOT EXISTS summary TEXT,
+        ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      `);
+
+      // Adicionar trigger para updated_at
+      await db.query(`
+        CREATE TRIGGER update_summaries_updated_at BEFORE UPDATE ON summaries
+        FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()
+      `);
+
+      // Atualizar registros existentes
+      await db.query(`
+        UPDATE summaries 
+        SET updated_at = created_at 
+        WHERE updated_at IS NULL
+      `);
+
+      console.log('✅ Migração concluída com sucesso');
+    } catch (migrationError) {
+      console.log('⚠️ Migração já executada ou erro:', migrationError.message);
     }
     
     // Criar utilizadores de teste

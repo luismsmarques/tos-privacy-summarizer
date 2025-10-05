@@ -150,13 +150,13 @@ class Database {
     }
 
     // Summary operations
-    async createSummary(summaryId, userId, success, duration, type = 'unknown', textLength = 0) {
+    async createSummary(summaryId, userId, success, duration, type = 'unknown', textLength = 0, url = null, summary = null) {
         try {
             const result = await this.query(`
-                INSERT INTO summaries (summary_id, user_id, success, duration, type, text_length)
-                VALUES ($1, $2, $3, $4, $5, $6)
+                INSERT INTO summaries (summary_id, user_id, success, duration, type, text_length, url, summary)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                 RETURNING *
-            `, [summaryId, userId, success, duration, type, textLength]);
+            `, [summaryId, userId, success, duration, type, textLength, url, summary]);
             
             // Update user summary count
             if (success) {
