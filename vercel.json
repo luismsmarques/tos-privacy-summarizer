@@ -1,5 +1,8 @@
 {
   "functions": {
+    "index.js": {
+      "maxDuration": 10
+    },
     "api/analytics.js": {
       "maxDuration": 10
     }
