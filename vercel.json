@@ -3,19 +3,7 @@
     "api/analytics.js": {
       "maxDuration": 10
     },
-    "api/analytics-v2.js": {
-      "maxDuration": 10
-    },
     "api/log-analytics.js": {
-      "maxDuration": 10
-    },
-    "api/debug-supabase.js": {
-      "maxDuration": 10
-    },
-    "api/test-supabase.js": {
-      "maxDuration": 10
-    },
-    "api/simple-test.js": {
       "maxDuration": 10
     }
   },

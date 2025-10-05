@@ -1,6 +1,6 @@
 {
   "name": "tos-privacy-summarizer",
-  "version": "1.0.2",
+  "version": "2.0.0",
   "description": "Chrome extension for summarizing Terms of Service and Privacy Policies",
   "main": "index.js",
   "scripts": {
@@ -8,9 +8,7 @@
     "build": "echo 'No build step required'",
     "deploy": "vercel --prod"
   },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.38.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "vercel": "^32.0.0"
   },
@@ -20,6 +18,6 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "_deployTimestamp": "2025-10-05T13:00:00Z",
-  "_forceRebuild": true
+  "_deployTimestamp": "2025-10-05T13:15:00Z",
+  "_systemVersion": "2.0.0-simple-analytics"
 }
