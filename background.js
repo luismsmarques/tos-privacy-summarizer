@@ -476,3 +476,20 @@ chrome.runtime.onInstalled.addListener((details) => {
     });
   });
 });
+
+// Listener para clique no ícone da extensão
+chrome.action.onClicked.addListener(async (tab) => {
+  try {
+    console.log('Ícone da extensão clicado, abrindo sidebar...');
+    
+    // Abrir sidebar em nova aba
+    await chrome.tabs.create({
+      url: chrome.runtime.getURL('sidebar.html'),
+      active: true
+    });
+    
+    console.log('Sidebar aberto com sucesso');
+  } catch (error) {
+    console.error('Erro ao abrir sidebar:', error);
+  }
+});

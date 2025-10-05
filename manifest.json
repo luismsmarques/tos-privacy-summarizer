@@ -12,7 +12,6 @@
     "service_worker": "background.js"
   },
   "action": {
-    "default_popup": "popup.html",
     "default_title": "ToS & Privacy Summarizer",
     "default_icon": {
       "16": "icon16.png",
@@ -30,7 +29,7 @@
   "options_page": "options.html",
   "web_accessible_resources": [
     {
-      "resources": ["privacy-policy.html", "TERMS-OF-SERVICE.md", "onboarding.html"],
+      "resources": ["privacy-policy.html", "TERMS-OF-SERVICE.md", "onboarding.html", "sidebar.html"],
       "matches": ["<all_urls>"]
     }
   ]
