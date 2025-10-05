@@ -125,6 +125,50 @@ router.get('/tables', async (req, res) => {
   }
 });
 
+// Endpoint para verificar resumos na base de dados
+router.get('/debug/summaries', async (req, res) => {
+  try {
+    console.log('🔍 Verificando resumos na base de dados...');
+    
+    if (!db.isConnected) {
+      const connected = await db.connect();
+      if (!connected) {
+        return res.status(500).json({
+          success: false,
+          error: 'Não foi possível conectar à base de dados'
+        });
+      }
+    }
+    
+    // Verificar tabela summaries
+    const summariesResult = await db.query('SELECT COUNT(*) as count FROM summaries');
+    const summariesCount = summariesResult.rows[0].count;
+    
+    // Verificar últimos resumos
+    const recentSummaries = await db.query(`
+      SELECT summary_id, user_id, success, duration, type, text_length, created_at 
+      FROM summaries 
+      ORDER BY created_at DESC 
+      LIMIT 10
+    `);
+    
+    res.json({
+      success: true,
+      data: {
+        total_summaries: summariesCount,
+        recent_summaries: recentSummaries.rows
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Erro ao verificar resumos:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao verificar resumos: ' + error.message
+    });
+  }
+});
+
 // Endpoint para inserir dados de teste
 router.post('/seed', async (req, res) => {
   try {
