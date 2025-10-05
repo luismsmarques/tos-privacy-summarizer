@@ -890,13 +890,47 @@ async function registerSummary(userId, success = true, duration = 0, documentTyp
   }
 }
 
-// Endpoint para obter histórico de resumos de um utilizador
+// Endpoint público para obter histórico de resumos de um utilizador (sem autenticação)
 router.get('/user-history/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     const { limit = 50, offset = 0 } = req.query;
     
-    console.log(`📊 Obtendo histórico para utilizador: ${userId}, limit: ${limit}, offset: ${offset}`);
+    console.log(`📊 Obtendo histórico público para utilizador: ${userId}, limit: ${limit}, offset: ${offset}`);
+    
+    const summaries = await db.getUserSummaries(userId, parseInt(limit), parseInt(offset));
+    const stats = await db.getUserSummaryStats(userId);
+    
+    res.json({
+      success: true,
+      data: summaries,
+      stats: stats,
+      pagination: {
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        total: stats.total_summaries
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro ao obter histórico:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao obter histórico de resumos',
+      details: error.message
+    });
+  }
+});
+
+// Endpoint protegido para obter histórico de resumos de um utilizador (com autenticação)
+router.get('/user-history-protected/:userId', [
+  authenticateAdmin
+], async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { limit = 50, offset = 0 } = req.query;
+    
+    console.log(`📊 Obtendo histórico protegido para utilizador: ${userId}, limit: ${limit}, offset: ${offset}`);
     
     const summaries = await db.getUserSummaries(userId, parseInt(limit), parseInt(offset));
     const stats = await db.getUserSummaryStats(userId);

@@ -95,15 +95,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Obter token de autenticação
+    // Obter token de autenticação (não necessário para endpoint público)
     async function getAuthToken() {
-        try {
-            const result = await chrome.storage.local.get(['adminToken']);
-            return result.adminToken || 'demo-token';
-        } catch (error) {
-            console.error('Erro ao obter token:', error);
-            return 'demo-token';
-        }
+        // Endpoint público não requer autenticação
+        return null;
     }
 
     // Configurar event listeners
