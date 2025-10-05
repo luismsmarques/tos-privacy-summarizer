@@ -12,32 +12,11 @@
     {
       "source": "/dashboard/(.*)",
       "destination": "/dashboard/$1"
-    },
-    {
-      "source": "/checkout.html",
-      "destination": "/checkout.html"
-    },
-    {
-      "source": "/privacy-policy.html",
-      "destination": "/privacy-policy.html"
-    },
-    {
-      "source": "/terms-of-service.html",
-      "destination": "/terms-of-service.html"
     }
   ],
   "headers": [
     {
       "source": "/dashboard/(.*)",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "text/html"
-        }
-      ]
-    },
-    {
-      "source": "/(.*\\.html)",
       "headers": [
         {
           "key": "Content-Type",
