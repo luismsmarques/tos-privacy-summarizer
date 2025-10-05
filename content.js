@@ -280,6 +280,5 @@ function summarizeCurrentPage() {
   });
 }
 
-// Executar automaticamente quando o script é injetado
-// (isto será chamado pelo popup.js via chrome.scripting.executeScript)
-summarizeCurrentPage();
+// REMOVIDO: Execução automática quando o script é injetado
+// summarizeCurrentPage(); // ← Esta linha estava a causar execução automática
