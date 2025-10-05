@@ -11,6 +11,9 @@
     },
     "api/test-supabase.js": {
       "maxDuration": 10
+    },
+    "api/simple-test.js": {
+      "maxDuration": 10
     }
   },
   "rewrites": [
