@@ -213,8 +213,8 @@ class Database {
                     (SELECT COUNT(*) FROM users) as total_users,
                     (SELECT COUNT(*) FROM summaries WHERE success = true) as successful_summaries,
                     (SELECT COUNT(*) FROM summaries WHERE success = false) as failed_summaries,
-                    (SELECT AVG(duration_ms) FROM summaries WHERE success = true) as avg_duration,
-                    (SELECT COUNT(*) FROM requests WHERE created_at >= CURRENT_DATE) as today_requests
+                    (SELECT AVG(duration) FROM summaries WHERE success = true) as avg_duration,
+                    (SELECT COUNT(*) FROM requests WHERE timestamp >= CURRENT_DATE) as today_requests
             `);
             return result.rows[0];
         } catch (error) {
