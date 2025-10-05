@@ -249,7 +249,7 @@ class Database {
                     COUNT(*) as total_summaries,
                     COUNT(CASE WHEN success = true THEN 1 END) as successful,
                     COUNT(CASE WHEN success = false THEN 1 END) as failed,
-                    AVG(CASE WHEN success = true THEN duration_ms END) as avg_duration,
+                    AVG(CASE WHEN success = true THEN duration END) as avg_duration,
                     COUNT(CASE WHEN created_at >= CURRENT_DATE THEN 1 END) as today_summaries,
                     COUNT(CASE WHEN created_at >= CURRENT_DATE - INTERVAL '7 days' THEN 1 END) as week_summaries
                 FROM summaries
