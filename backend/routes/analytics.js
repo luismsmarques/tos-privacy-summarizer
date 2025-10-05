@@ -521,10 +521,20 @@ router.get('/summaries', async (req, res) => {
       }
     }
     
+    // Obter dados básicos de resumos
     const summariesData = await db.getAnalyticsSummaries();
+    
+    // Obter dados de tipos de documentos para o gráfico
+    const documentTypesData = await getDocumentTypesData();
+    
+    const enhancedSummariesData = {
+      ...summariesData,
+      documentTypes: documentTypesData
+    };
+    
     res.json({
       success: true,
-      data: summariesData,
+      data: enhancedSummariesData,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
@@ -535,6 +545,47 @@ router.get('/summaries', async (req, res) => {
     });
   }
 });
+
+// Função para obter dados de tipos de documentos
+async function getDocumentTypesData() {
+  try {
+    console.log('📊 Obtendo dados de tipos de documentos...');
+    
+    const result = await db.query(`
+      SELECT 
+        CASE 
+          WHEN type = 'terms_of_service' THEN 'Termos de Serviço'
+          WHEN type = 'privacy_policy' THEN 'Políticas de Privacidade'
+          WHEN type = 'unknown' THEN 'Outros'
+          ELSE COALESCE(type, 'Outros')
+        END as document_type,
+        COUNT(*) as count
+      FROM summaries 
+      WHERE success = true
+      GROUP BY 
+        CASE 
+          WHEN type = 'terms_of_service' THEN 'Termos de Serviço'
+          WHEN type = 'privacy_policy' THEN 'Políticas de Privacidade'
+          WHEN type = 'unknown' THEN 'Outros'
+          ELSE COALESCE(type, 'Outros')
+        END
+      ORDER BY count DESC
+    `);
+    
+    // Converter resultado para objeto
+    const documentTypes = {};
+    result.rows.forEach(row => {
+      documentTypes[row.document_type] = parseInt(row.count);
+    });
+    
+    console.log('📊 Tipos de documentos obtidos:', documentTypes);
+    return documentTypes;
+    
+  } catch (error) {
+    console.error('Erro ao obter tipos de documentos:', error);
+    return {};
+  }
+}
 
 // Endpoint para obter dados de performance
 router.get('/performance', async (req, res) => {
@@ -581,13 +632,34 @@ router.get('/credits', async (req, res) => {
 // Endpoint para dados em tempo real
 router.get('/realtime', async (req, res) => {
   try {
-    // Mock data para tempo real (pode ser implementado depois)
-    const realtimeData = {
+    console.log('📊 Obtendo dados em tempo real...');
+    
+    if (!db.isConnected) {
+      const connected = await db.connect();
+      if (!connected) {
+        return res.status(500).json({
+          success: false,
+          error: 'Não foi possível conectar à base de dados'
+        });
+      }
+    }
+    
+    // Obter dados básicos em tempo real
+    const basicRealtimeData = {
       active_users: 0,
       requests_per_minute: 0,
       current_response_time: 0,
       uptime: 100
     };
+    
+    // Obter dados de atividade dos últimos 7 dias para o gráfico
+    const activityData = await getActivityData();
+    
+    const realtimeData = {
+      ...basicRealtimeData,
+      activity: activityData
+    };
+    
     res.json({
       success: true,
       data: realtimeData,
@@ -601,6 +673,52 @@ router.get('/realtime', async (req, res) => {
     });
   }
 });
+
+// Função para obter dados de atividade dos últimos 7 dias
+async function getActivityData() {
+  try {
+    console.log('📈 Obtendo dados de atividade dos últimos 7 dias...');
+    
+    const result = await db.query(`
+      SELECT 
+        DATE(created_at) as date,
+        COUNT(*) as summaries,
+        COUNT(DISTINCT user_id) as users
+      FROM summaries 
+      WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'
+      GROUP BY DATE(created_at)
+      ORDER BY date ASC
+    `);
+    
+    // Criar array com todos os dias da semana (incluindo dias sem dados)
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      
+      // Procurar dados para este dia
+      const dayData = result.rows.find(row => row.date === dateStr);
+      
+      // Nome do dia da semana em português
+      const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+      const dayName = dayNames[date.getDay()];
+      
+      last7Days.push({
+        date: dayName,
+        summaries: dayData ? parseInt(dayData.summaries) : 0,
+        users: dayData ? parseInt(dayData.users) : 0
+      });
+    }
+    
+    console.log('📊 Dados de atividade obtidos:', last7Days);
+    return last7Days;
+    
+  } catch (error) {
+    console.error('Erro ao obter dados de atividade:', error);
+    return [];
+  }
+}
 
 // Função para registrar novo utilizador
 async function registerUser(userId, deviceId) {

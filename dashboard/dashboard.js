@@ -373,17 +373,24 @@ class Dashboard {
         // Atualizar gráfico de atividade se tivermos dados
         if (this.data.realtime && this.charts.activity) {
             const activityData = this.data.realtime.activity || [];
+            console.log('📈 Dados de atividade recebidos:', activityData);
+            
             if (activityData.length > 0) {
                 this.charts.activity.data.datasets[0].data = activityData.map(d => d.summaries || 0);
                 this.charts.activity.data.datasets[1].data = activityData.map(d => d.users || 0);
                 this.charts.activity.data.labels = activityData.map(d => d.date || '');
                 this.charts.activity.update();
+                console.log('✅ Gráfico de atividade atualizado com dados reais');
+            } else {
+                console.log('⚠️ Nenhum dado de atividade disponível');
             }
         }
         
         // Atualizar gráfico de tipos de documentos se tivermos dados
         if (this.data.summaries && this.charts.documentTypes) {
             const documentTypes = this.data.summaries.documentTypes || {};
+            console.log('📊 Dados de tipos de documentos recebidos:', documentTypes);
+            
             if (Object.keys(documentTypes).length > 0) {
                 const labels = Object.keys(documentTypes);
                 const values = Object.values(documentTypes);
@@ -391,6 +398,9 @@ class Dashboard {
                 this.charts.documentTypes.data.labels = labels;
                 this.charts.documentTypes.data.datasets[0].data = values;
                 this.charts.documentTypes.update();
+                console.log('✅ Gráfico de tipos de documentos atualizado com dados reais');
+            } else {
+                console.log('⚠️ Nenhum dado de tipos de documentos disponível');
             }
         }
     }
