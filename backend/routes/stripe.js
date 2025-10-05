@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import { body, validationResult } from 'express-validator';
+import Stripe from 'stripe';
+
 const router = express.Router();
-const { body, validationResult } = require('express-validator');
-const Stripe = require('stripe');
 
 // Inicializar Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -145,8 +146,8 @@ router.post('/verify-payment',
             console.log('Pagamento verificado:', { credits, packageName, price });
 
             // Atualizar créditos do utilizador no banco de dados
-            const { updateUserCredits } = require('../utils/database');
-            const newBalance = await updateUserCredits(userId, credits);
+            const db = await import('../utils/database.js');
+            const newBalance = await db.default.updateUserCredits(userId, credits);
 
             // Log da transação
             console.log(`Créditos adicionados: ${credits} para utilizador ${userId}. Novo saldo: ${newBalance}`);
@@ -212,4 +213,4 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     res.json({ received: true });
 });
 
-module.exports = router;
+export default router;
