@@ -2,6 +2,22 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Popup script carregado');
 
+    // Sistema de logging melhorado
+    const Logger = {
+        log: (message, data = null) => {
+            console.log(`[ToS-Popup] ${message}`, data || '');
+        },
+        error: (message, error = null) => {
+            console.error(`[ToS-Popup ERROR] ${message}`, error || '');
+            if (error && error.stack) {
+                console.error('Stack trace:', error.stack);
+            }
+        },
+        warn: (message, data = null) => {
+            console.warn(`[ToS-Popup WARNING] ${message}`, data || '');
+        }
+    };
+
     // Elementos do DOM
     const actionButton = document.getElementById('actionButton');
     const actionButtonText = document.getElementById('actionButtonText');
@@ -35,6 +51,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentTab = null;
     let currentFocus = 'privacy';
     let pageAnalysis = null;
+    let processingStartTime = null;
+    let progressInterval = null;
 
     // Inicializar aplicação
     initializeApp();
@@ -414,95 +432,47 @@ document.addEventListener('DOMContentLoaded', function() {
         if (backBtn) backBtn.classList.add('hidden');
     }
 
-    // Mostrar progresso com feedback visual melhorado
+    // Mostrar progresso
     function showProgress() {
         if (progressContainer) progressContainer.classList.remove('hidden');
         if (summaryContainer) summaryContainer.classList.add('hidden');
         if (errorContainer) errorContainer.classList.add('hidden');
         
-        // Resetar progresso
-        if (progressFill) {
-            progressFill.style.width = '0%';
-            progressFill.style.transition = 'width 0.3s ease';
-        }
-        
-        if (progressText) {
-            progressText.textContent = 'Iniciando análise...';
-        }
-        
-        // Simular progresso inicial mais realista
+        // Simular progresso
         let progress = 0;
         const interval = setInterval(() => {
-            // Progresso mais gradual e realista
-            if (progress < 25) {
-                progress += Math.random() * 3 + 1; // 1-4% por vez
-            } else if (progress < 50) {
-                progress += Math.random() * 2 + 0.5; // 0.5-2.5% por vez
-            } else if (progress < 75) {
-                progress += Math.random() * 1.5 + 0.3; // 0.3-1.8% por vez
-            } else {
-                progress += Math.random() * 1 + 0.2; // 0.2-1.2% por vez
-            }
-            
-            if (progress > 95) progress = 95; // Não chegar a 100% até receber resultado
+            progress += Math.random() * 15;
+            if (progress > 90) progress = 90;
             
             if (progressFill) {
                 progressFill.style.width = `${progress}%`;
             }
             
             if (progressText) {
-                if (progress < 15) {
-                    progressText.textContent = 'Analisando página...';
-                } else if (progress < 30) {
+                if (progress < 30) {
                     progressText.textContent = 'Extraindo texto da página...';
-                } else if (progress < 50) {
+                } else if (progress < 60) {
                     progressText.textContent = 'Enviando para análise IA...';
-                } else if (progress < 75) {
+                } else if (progress < 90) {
                     progressText.textContent = 'Processando com Gemini...';
-                } else if (progress < 95) {
-                    progressText.textContent = 'Finalizando análise...';
                 }
             }
-        }, 300); // Intervalo mais frequente para progresso mais suave
+        }, 500);
         
         // Limpar intervalo quando receber resultado
         window.progressInterval = interval;
-        
-        // Adicionar animação de pulsação ao botão
-        if (actionButton) {
-            actionButton.classList.add('processing');
-        }
     }
 
-    // Esconder progresso com animação suave
+    // Esconder progresso
     function hideProgress() {
         if (window.progressInterval) {
             clearInterval(window.progressInterval);
             window.progressInterval = null;
         }
-        
-        // Completar progresso para 100% antes de esconder
-        if (progressFill) {
-            progressFill.style.width = '100%';
-            progressFill.style.transition = 'width 0.5s ease';
-        }
-        
-        if (progressText) {
-            progressText.textContent = 'Concluído!';
-        }
-        
-        // Aguardar um pouco antes de esconder
-        setTimeout(() => {
-            if (progressContainer) progressContainer.classList.add('hidden');
-            
-            // Remover animação de pulsação do botão
-            if (actionButton) {
-                actionButton.classList.remove('processing');
-            }
-        }, 500);
+        if (progressContainer) progressContainer.classList.add('hidden');
     }
 
-    // Mostrar resumo com feedback visual de sucesso
+    // Mostrar resumo
     function showSummary(summary) {
         console.log('Mostrando resumo:', summary);
         hideProgress();
@@ -524,21 +494,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log('Resumo parseado:', parsedSummary);
         
-        // Adicionar feedback visual de sucesso
-        if (actionButton) {
-            actionButton.classList.add('success');
-        }
-        
         // Mostrar resumo inline no popup
         displaySummaryInline(parsedSummary);
-        
-        // Adicionar animação de sucesso ao container do resumo
-        if (summaryContainer) {
-            summaryContainer.classList.add('summary-success');
-            setTimeout(() => {
-                summaryContainer.classList.remove('summary-success');
-            }, 2000);
-        }
         
         resetButton();
     }
@@ -691,54 +648,19 @@ document.addEventListener('DOMContentLoaded', function() {
         return html;
     }
 
-    // Mostrar erro com feedback visual melhorado
+    // Mostrar erro
     function showError(message) {
         hideProgress();
-        
-        if (errorContainer) {
-            errorContainer.classList.remove('hidden');
-            errorContainer.classList.add('error-shake'); // Adicionar animação de shake
-        }
-        
-        if (errorMessage) {
-            errorMessage.textContent = message;
-        }
-        
-        // Adicionar classe de erro ao botão
-        if (actionButton) {
-            actionButton.classList.add('error');
-        }
-        
-        // Remover animação de shake após um tempo
-        setTimeout(() => {
-            if (errorContainer) {
-                errorContainer.classList.remove('error-shake');
-            }
-        }, 1000);
-        
+        if (errorContainer) errorContainer.classList.remove('hidden');
+        if (errorMessage) errorMessage.textContent = message;
         resetButton();
     }
 
-    // Resetar botão com feedback visual
+    // Resetar botão
     function resetButton() {
         isProcessing = false;
-        
-        if (actionButton) {
-            actionButton.disabled = false;
-            actionButton.classList.remove('processing', 'error', 'success');
-        }
-        
-        if (actionButtonText) {
-            actionButtonText.textContent = 'Extrair & Resumir';
-        }
-        
-        // Adicionar animação de "pulse" quando o botão é resetado
-        if (actionButton) {
-            actionButton.classList.add('pulse');
-            setTimeout(() => {
-                actionButton.classList.remove('pulse');
-            }, 1000);
-        }
+        if (actionButton) actionButton.disabled = false;
+        if (actionButtonText) actionButtonText.textContent = 'Extrair & Resumir';
     }
 
     // Toggle tema

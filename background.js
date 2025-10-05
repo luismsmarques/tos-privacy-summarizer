@@ -14,295 +14,200 @@ const API_ENDPOINTS = {
     STRIPE: `${BACKEND_BASE_URL}/api/stripe`
 };
 
-// Sistema de logging melhorado para background script
-const BackgroundLogger = {
+// Sistema de logging melhorado
+const Logger = {
     log: (message, data = null) => {
-        console.log(`[Background] ${message}`, data || '');
+        console.log(`[ToS-Background] ${message}`, data || '');
     },
     error: (message, error = null) => {
-        console.error(`[Background ERROR] ${message}`, error || '');
+        console.error(`[ToS-Background ERROR] ${message}`, error || '');
+        if (error && error.stack) {
+            console.error('Stack trace:', error.stack);
+        }
     },
     warn: (message, data = null) => {
-        console.warn(`[Background WARNING] ${message}`, data || '');
+        console.warn(`[ToS-Background WARNING] ${message}`, data || '');
     }
 };
 
-// Sistema de tratamento de erros centralizado para background
-const BackgroundErrorHandler = {
-    handleError: (error, context = '', additionalData = {}) => {
-        const errorInfo = {
-            message: error.message || 'Erro desconhecido',
-            stack: error.stack,
-            context: context,
-            timestamp: new Date().toISOString(),
-            additionalData: additionalData,
-            userAgent: navigator.userAgent
-        };
+// Sistema de retry para requisições
+const RetryManager = {
+    maxRetries: 3,
+    baseDelay: 1000,
+    
+    async executeWithRetry(operation, context = '') {
+        let lastError;
         
-        BackgroundLogger.error(`Erro em ${context}:`, errorInfo);
-        
-        // Salvar erro no storage para análise posterior
-        chrome.storage.local.get(['errorLogs'], (result) => {
-            const logs = result.errorLogs || [];
-            logs.push(errorInfo);
-            
-            // Manter apenas os últimos 50 erros
-            if (logs.length > 50) {
-                logs.splice(0, logs.length - 50);
+        for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
+            try {
+                Logger.log(`Tentativa ${attempt}/${this.maxRetries} ${context}`);
+                return await operation();
+            } catch (error) {
+                lastError = error;
+                Logger.warn(`Tentativa ${attempt} falhou ${context}:`, error.message);
+                
+                if (attempt < this.maxRetries) {
+                    const delay = this.baseDelay * Math.pow(2, attempt - 1);
+                    Logger.log(`Aguardando ${delay}ms antes da próxima tentativa...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
             }
-            
-            chrome.storage.local.set({ errorLogs: logs });
-        });
+        }
         
-        return errorInfo;
-    },
-    
-    createSafeResponse: (success, data = null, error = null) => {
-        return {
-            success: success,
-            data: data,
-            error: error ? error.message || error : null,
-            timestamp: new Date().toISOString()
-        };
+        Logger.error(`Todas as tentativas falharam ${context}:`, lastError);
+        throw lastError;
     }
 };
 
-// Listener para mensagens com tratamento de erros melhorado
+// Listener para mensagens do content.js
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    try {
-        BackgroundLogger.log('Mensagem recebida:', request.action);
-        
-        switch (request.action) {
-            case 'summarizeText':
-                handleSummarizeText(request, sender, sendResponse);
-                break;
-                
-            case 'logError':
-                handleLogError(request, sender, sendResponse);
-                break;
-                
-            case 'test':
-                sendResponse(BackgroundErrorHandler.createSafeResponse(true, { message: 'Background script ativo' }));
-                break;
-                
-            default:
-                const error = new Error(`Ação não reconhecida: ${request.action}`);
-                sendResponse(BackgroundErrorHandler.createSafeResponse(false, null, error));
-        }
-    } catch (error) {
-        const errorInfo = BackgroundErrorHandler.handleError(error, 'messageListener');
-        sendResponse(BackgroundErrorHandler.createSafeResponse(false, null, errorInfo));
-    }
+  if (request.action === 'summarizeText') {
+    Logger.log('Recebido texto para resumir:', {
+      textLength: request.text?.length || 0,
+      focus: request.focus,
+      url: request.url,
+      title: request.title
+    });
+
+    // Processar de forma assíncrona mas sem usar sendResponse
+    processSummaryAsync(request.text, request.focus, request.url, request.title)
+      .catch(error => {
+        Logger.error('Erro no processamento assíncrono:', error);
+        chrome.runtime.sendMessage({
+          action: 'displaySummary',
+          summary: `Erro interno: ${error.message}`
+        });
+      });
     
-    return true; // Manter canal aberto para respostas assíncronas
+    // Responder imediatamente para evitar erro de canal fechado
+    sendResponse({ status: 'processing' });
+  }
 });
 
-// Handler para resumir texto
-function handleSummarizeText(request, sender, sendResponse) {
-    try {
-        BackgroundLogger.log('Processando resumo de texto...');
-        BackgroundLogger.log('Texto recebido:', request.text.substring(0, 100) + '...');
-        BackgroundLogger.log('Foco solicitado:', request.focus);
-
-        // Validar entrada
-        if (!request.text || request.text.length < 50) {
-            const error = new Error('Texto insuficiente para análise');
-            sendResponse(BackgroundErrorHandler.createSafeResponse(false, null, error));
-            return;
-        }
-
-        // Processar de forma assíncrona
-        processSummaryAsync(request.text, request.focus)
-            .then(() => {
-                BackgroundLogger.log('Processamento de resumo concluído');
-            })
-            .catch((error) => {
-                BackgroundErrorHandler.handleError(error, 'processSummaryAsync', {
-                    textLength: request.text.length,
-                    focus: request.focus
-                });
-            });
-        
-        // Responder imediatamente para evitar erro de canal fechado
-        sendResponse(BackgroundErrorHandler.createSafeResponse(true, { status: 'processing' }));
-        
-    } catch (error) {
-        const errorInfo = BackgroundErrorHandler.handleError(error, 'handleSummarizeText');
-        sendResponse(BackgroundErrorHandler.createSafeResponse(false, null, errorInfo));
+// Função assíncrona para processar o resumo
+async function processSummaryAsync(text, focus = 'privacy', url = '', title = '') {
+  try {
+    Logger.log('Processando resumo com foco:', focus);
+    
+    // Validar entrada
+    if (!text || typeof text !== 'string') {
+      throw new Error('Texto inválido fornecido');
     }
-}
-
-// Handler para logging de erros do content script
-function handleLogError(request, sender, sendResponse) {
-    try {
-        BackgroundLogger.log('Erro recebido do content script:', request.error);
-        
-        // Salvar erro no storage
-        chrome.storage.local.get(['errorLogs'], (result) => {
-            const logs = result.errorLogs || [];
-            logs.push({
-                ...request.error,
-                source: 'content_script',
-                timestamp: new Date().toISOString()
-            });
-            
-            // Manter apenas os últimos 50 erros
-            if (logs.length > 50) {
-                logs.splice(0, logs.length - 50);
-            }
-            
-            chrome.storage.local.set({ errorLogs: logs });
-        });
-        
-        sendResponse(BackgroundErrorHandler.createSafeResponse(true, { message: 'Erro registrado' }));
-        
-    } catch (error) {
-        const errorInfo = BackgroundErrorHandler.handleError(error, 'handleLogError');
-        sendResponse(BackgroundErrorHandler.createSafeResponse(false, null, errorInfo));
+    
+    if (text.length < 50) {
+      throw new Error('Texto muito curto para análise (mínimo 50 caracteres)');
     }
-}
+    
+    // Enviar atualização de progresso inicial
+    chrome.runtime.sendMessage({
+      action: 'progressUpdate',
+      step: 1,
+      text: 'Texto extraído com sucesso',
+      progress: 25
+    });
 
-// Função assíncrona para processar o resumo com tratamento de erros melhorado
-async function processSummaryAsync(text, focus = 'privacy') {
-    try {
-        BackgroundLogger.log('Iniciando processamento de resumo...');
-        BackgroundLogger.log('Foco:', focus);
-        BackgroundLogger.log('Tamanho do texto:', text.length);
-        
-        // Enviar atualização de progresso inicial
-        sendProgressUpdate(1, 'Texto extraído com sucesso', 25);
+    // Obter configuração da API do storage
+    const result = await new Promise((resolve) => {
+      chrome.storage.local.get(['geminiApiKey', 'apiType', 'userId'], resolve);
+    });
 
-        // Obter configuração da API do storage
-        const result = await new Promise((resolve, reject) => {
-            chrome.storage.local.get(['geminiApiKey', 'apiType', 'userId'], (result) => {
-                if (chrome.runtime.lastError) {
-                    reject(new Error(chrome.runtime.lastError.message));
-                } else {
-                    resolve(result);
-                }
-            });
-        });
+    // Forçar uso da API compartilhada (backend seguro)
+    let apiType = 'shared';
+    let userId = result.userId;
+    
+    Logger.log('🔧 Configuração forçada para API compartilhada');
 
-        // Forçar uso da API compartilhada (backend seguro)
-        let apiType = 'shared';
-        let userId = result.userId;
-        
-        BackgroundLogger.log('Configuração forçada para API compartilhada');
-
-        // Se não tem userId, criar um
-        if (!userId) {
-            userId = await createOrGetUserId();
-        }
-
-        // Enviar atualização de progresso
-        sendProgressUpdate(2, 'Enviando para análise IA', 50);
-
-        let summary;
-        
-        if (apiType === 'shared') {
-            // Usar backend seguro
-            summary = await summarizeWithBackend(text, userId, focus);
-        } else {
-            // Usar chave própria (método antigo)
-            const apiKey = result.geminiApiKey;
-            
-            if (!apiKey || apiKey === 'SHARED_API') {
-                const error = new Error('Chave da API não configurada. Por favor, configure a sua chave da API Gemini nas configurações da extensão.');
-                sendErrorToPopup(error);
-                return;
-            }
-            
-            summary = await summarizeWithGemini(text, apiKey);
-        }
-        
-        BackgroundLogger.log('Resumo gerado com sucesso');
-        
-        // Enviar atualização de progresso final
-        sendProgressUpdate(4, 'Processamento concluído', 100);
-        
-        // Aguardar um pouco antes de mostrar o resultado
-        setTimeout(() => {
-            BackgroundLogger.log('Enviando resumo para popup');
-            chrome.runtime.sendMessage({
-                action: 'displaySummary',
-                summary: summary
-            }).catch((error) => {
-                BackgroundErrorHandler.handleError(error, 'sendSummaryToPopup');
-            });
-        }, 500);
-
-    } catch (error) {
-        const errorInfo = BackgroundErrorHandler.handleError(error, 'processSummaryAsync', {
-            textLength: text.length,
-            focus: focus
-        });
-        
-        // Determinar tipo de erro e enviar mensagem apropriada
-        const errorMessage = formatErrorMessage(error);
-        
-        BackgroundLogger.log('Enviando erro para popup:', errorMessage);
-        
-        sendErrorToPopup(new Error(errorMessage));
+    // Se não tem userId, criar um
+    if (!userId) {
+      userId = await createOrGetUserId();
     }
-}
 
-// Função auxiliar para enviar atualizações de progresso
-function sendProgressUpdate(step, message, progress) {
-    try {
-        chrome.runtime.sendMessage({
-            action: 'progressUpdate',
-            step: step,
-            text: message,
-            progress: progress
-        }).catch((error) => {
-            BackgroundLogger.warn('Erro ao enviar progresso:', error);
-        });
-    } catch (error) {
-        BackgroundLogger.warn('Erro ao enviar progresso:', error);
+    // Enviar atualização de progresso
+    chrome.runtime.sendMessage({
+      action: 'progressUpdate',
+      step: 2,
+      text: 'Enviando para análise IA',
+      progress: 50
+    });
+
+    let summary;
+    
+    if (apiType === 'shared') {
+      // Usar backend seguro com retry
+      summary = await RetryManager.executeWithRetry(
+        () => summarizeWithBackend(text, userId, focus),
+        'summarizeWithBackend'
+      );
+    } else {
+      // Usar chave própria (método antigo)
+      const apiKey = result.geminiApiKey;
+      
+      if (!apiKey || apiKey === 'SHARED_API') {
+        throw new Error('Chave da API não configurada. Por favor, configure a sua chave da API Gemini nas configurações da extensão.');
+      }
+      
+      summary = await RetryManager.executeWithRetry(
+        () => summarizeWithGemini(text, apiKey),
+        'summarizeWithGemini'
+      );
     }
-}
+    
+    Logger.log('Resumo gerado com sucesso');
+    
+    // Enviar atualização de progresso final
+    chrome.runtime.sendMessage({
+      action: 'progressUpdate',
+      step: 4,
+      text: 'Processamento concluído',
+      progress: 100
+    });
+    
+    // Aguardar um pouco antes de mostrar o resultado
+    setTimeout(() => {
+      Logger.log('Enviando resumo para popup');
+      chrome.runtime.sendMessage({
+        action: 'displaySummary',
+        summary: summary
+      });
+    }, 500);
 
-// Função auxiliar para enviar erros para o popup
-function sendErrorToPopup(error) {
-    try {
-        chrome.runtime.sendMessage({
-            action: 'displaySummary',
-            summary: error.message
-        }).catch((sendError) => {
-            BackgroundLogger.error('Erro ao enviar erro para popup:', sendError);
-        });
-    } catch (error) {
-        BackgroundLogger.error('Erro ao enviar erro para popup:', error);
-    }
-}
-
-// Função para formatar mensagens de erro de forma mais amigável
-function formatErrorMessage(error) {
+  } catch (error) {
+    Logger.error('Erro ao gerar resumo:', error);
+    
+    // Determinar tipo de erro e enviar mensagem apropriada
     let errorMessage = 'Erro ao gerar resumo: ';
     
     if (error.message.includes('API Gemini')) {
-        if (error.message.includes('401') || error.message.includes('403')) {
-            errorMessage += 'Chave da API inválida ou sem permissões';
-        } else if (error.message.includes('429')) {
-            errorMessage += 'Limite de uso da API atingido';
-        } else {
-            errorMessage += 'Erro na API Gemini';
-        }
+      if (error.message.includes('401') || error.message.includes('403')) {
+        errorMessage += 'Chave da API inválida ou sem permissões';
+      } else if (error.message.includes('429')) {
+        errorMessage += 'Limite de uso da API atingido';
+      } else {
+        errorMessage += 'Erro na API Gemini';
+      }
     } else if (error.message.includes('fetch') || error.message.includes('network')) {
-        errorMessage += 'Erro de ligação à internet';
+      errorMessage += 'Erro de ligação à internet';
     } else if (error.message.includes('JSON')) {
-        errorMessage += 'Erro ao processar resposta da API';
+      errorMessage += 'Erro ao processar resposta da API';
     } else if (error.message.includes('Créditos insuficientes')) {
-        errorMessage += 'Créditos insuficientes. Compre mais créditos ou configure a sua própria chave da API.';
+      errorMessage += 'Créditos insuficientes. Compre mais créditos ou configure a sua própria chave da API.';
     } else if (error.message.includes('HTTP')) {
-        errorMessage += `Erro do servidor: ${error.message}`;
-    } else if (error.message.includes('Texto insuficiente')) {
-        errorMessage = error.message;
+      errorMessage += `Erro do servidor: ${error.message}`;
+    } else if (error.message.includes('Texto muito curto')) {
+      errorMessage = error.message;
+    } else if (error.message.includes('Texto inválido')) {
+      errorMessage = error.message;
     } else {
-        errorMessage += error.message;
+      errorMessage += error.message;
     }
     
-    return errorMessage;
+    Logger.log('Enviando erro para popup:', errorMessage);
+    
+    chrome.runtime.sendMessage({
+      action: 'displaySummary',
+      summary: errorMessage
+    });
+  }
 }
 
 // Função para criar ou obter ID do utilizador
@@ -371,11 +276,12 @@ function generateDeviceId() {
 // Função para usar backend seguro
 async function summarizeWithBackend(text, userId, focus = 'privacy') {
   try {
-    console.log('Usando backend seguro para resumir texto...');
-    console.log('URL:', API_ENDPOINTS.PROXY);
-    console.log('UserId:', userId);
-    console.log('Focus:', focus);
-    console.log('Text length:', text.length);
+    Logger.log('Usando backend seguro para resumir texto...', {
+      url: API_ENDPOINTS.PROXY,
+      userId: userId,
+      focus: focus,
+      textLength: text.length
+    });
     
     const response = await fetch(API_ENDPOINTS.PROXY, {
       method: 'POST',
@@ -390,8 +296,8 @@ async function summarizeWithBackend(text, userId, focus = 'privacy') {
       })
     });
     
-    console.log('Response status:', response.status);
-    console.log('Response ok:', response.ok);
+    Logger.log('Response status:', response.status);
+    Logger.log('Response ok:', response.ok);
     
     if (!response.ok) {
       let errorData;
@@ -400,12 +306,12 @@ async function summarizeWithBackend(text, userId, focus = 'privacy') {
       } catch (e) {
         errorData = { error: `Erro HTTP: ${response.status} ${response.statusText}` };
       }
-      console.error('Backend error:', errorData);
+      Logger.error('Backend error:', errorData);
       throw new Error(errorData.error || `Erro HTTP: ${response.status}`);
     }
     
     const result = await response.json();
-    console.log('Backend result:', result);
+    Logger.log('Backend result:', result);
     
     // Atualizar créditos no storage se disponível
     if (result.credits !== undefined) {
@@ -415,7 +321,7 @@ async function summarizeWithBackend(text, userId, focus = 'privacy') {
     return result.summary;
     
   } catch (error) {
-    console.error('Erro no backend:', error);
+    Logger.error('Erro no backend:', error);
     throw error;
   }
 }

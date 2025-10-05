@@ -8,107 +8,107 @@ const Logger = {
     },
     error: (message, error = null) => {
         console.error(`[ToS-Extension ERROR] ${message}`, error || '');
+        if (error && error.stack) {
+            console.error('Stack trace:', error.stack);
+        }
     },
     warn: (message, data = null) => {
         console.warn(`[ToS-Extension WARNING] ${message}`, data || '');
     }
 };
 
-// Sistema de tratamento de erros centralizado
-const ErrorHandler = {
-    handleError: (error, context = '') => {
-        const errorInfo = {
-            message: error.message || 'Erro desconhecido',
-            stack: error.stack,
-            context: context,
-            timestamp: new Date().toISOString(),
-            url: window.location.href,
-            userAgent: navigator.userAgent
-        };
-        
-        Logger.error(`Erro em ${context}:`, errorInfo);
-        
-        // Enviar erro para background script para logging centralizado
-        chrome.runtime.sendMessage({
-            action: 'logError',
-            error: errorInfo
-        }).catch(() => {
-            // Ignorar erros de comunicação para evitar loops
-        });
-        
-        return errorInfo;
-    },
-    
-    createSafeResponse: (success, data = null, error = null) => {
-        return {
-            success: success,
-            data: data,
-            error: error ? error.message || error : null,
-            timestamp: new Date().toISOString()
-        };
-    }
-};
-
-// Listener para mensagens do popup com tratamento de erros melhorado
+// Listener para mensagens do popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    Logger.log('Mensagem recebida:', request.action);
+    Logger.log('Content script recebeu mensagem:', request.action);
     
     try {
         switch (request.action) {
             case 'ping':
-                sendResponse(ErrorHandler.createSafeResponse(true, { message: 'Content script ativo' }));
+                sendResponse({ success: true, message: 'Content script ativo' });
                 break;
                 
             case 'analyzePage':
                 try {
                     const analysis = analyzePage();
-                    sendResponse(ErrorHandler.createSafeResponse(true, analysis));
+                    Logger.log('Análise da página concluída:', analysis);
+                    sendResponse({ success: true, analysis: analysis });
                 } catch (error) {
-                    const errorInfo = ErrorHandler.handleError(error, 'analyzePage');
-                    sendResponse(ErrorHandler.createSafeResponse(false, null, errorInfo));
+                    Logger.error('Erro na análise da página:', error);
+                    sendResponse({ 
+                        success: false, 
+                        error: error.message,
+                        errorType: 'analysis_error',
+                        timestamp: new Date().toISOString()
+                    });
                 }
                 break;
                 
             case 'summarizeText':
                 try {
                     const text = extractPageText();
-                    if (!text || text.length < 50) {
-                        const error = new Error('Texto insuficiente para análise. Certifique-se de estar numa página com conteúdo legal.');
-                        sendResponse(ErrorHandler.createSafeResponse(false, null, error));
+                    Logger.log(`Texto extraído: ${text.length} caracteres`);
+                    
+                    if (text.length < 50) {
+                        Logger.warn('Texto insuficiente para análise', { length: text.length });
+                        sendResponse({ 
+                            success: false, 
+                            error: 'Texto insuficiente para análise (mínimo 50 caracteres)',
+                            errorType: 'insufficient_text',
+                            textLength: text.length
+                        });
                         return;
                     }
                     
-                    // Enviar para background script com tratamento de erro
+                    // Enviar para background script
                     chrome.runtime.sendMessage({
                         action: 'summarizeText',
                         text: text,
-                        focus: request.focus || 'privacy'
+                        focus: request.focus || 'privacy',
+                        url: window.location.href,
+                        title: document.title
                     }, (response) => {
                         if (chrome.runtime.lastError) {
                             Logger.error('Erro ao enviar para background:', chrome.runtime.lastError);
+                        } else {
+                            Logger.log('Texto enviado para background com sucesso');
                         }
                     });
                     
-                    sendResponse(ErrorHandler.createSafeResponse(true, { message: 'Texto enviado para análise' }));
+                    sendResponse({ success: true, message: 'Texto enviado para análise' });
                 } catch (error) {
-                    const errorInfo = ErrorHandler.handleError(error, 'summarizeText');
-                    sendResponse(ErrorHandler.createSafeResponse(false, null, errorInfo));
+                    Logger.error('Erro ao extrair texto:', error);
+                    sendResponse({ 
+                        success: false, 
+                        error: error.message,
+                        errorType: 'extraction_error',
+                        timestamp: new Date().toISOString()
+                    });
                 }
                 break;
                 
             default:
-                const error = new Error(`Ação não reconhecida: ${request.action}`);
-                sendResponse(ErrorHandler.createSafeResponse(false, null, error));
+                Logger.warn('Ação não reconhecida:', request.action);
+                sendResponse({ 
+                    success: false, 
+                    error: 'Ação não reconhecida',
+                    errorType: 'unknown_action',
+                    receivedAction: request.action
+                });
         }
     } catch (error) {
-        const errorInfo = ErrorHandler.handleError(error, 'messageHandler');
-        sendResponse(ErrorHandler.createSafeResponse(false, null, errorInfo));
+        Logger.error('Erro geral no content script:', error);
+        sendResponse({ 
+            success: false, 
+            error: 'Erro interno do content script',
+            errorType: 'general_error',
+            timestamp: new Date().toISOString()
+        });
     }
     
     return true; // Manter canal aberto para resposta assíncrona
 });
 
-// Função para analisar a página com tratamento de erros melhorado
+// Função para analisar a página
 function analyzePage() {
     try {
         Logger.log('Iniciando análise da página...');
@@ -125,422 +125,294 @@ function analyzePage() {
             title: document.title,
             isLegalPage: isLegal,
             complexity: complexity,
-            confidence: calculateDetectionConfidence(text, type, isLegal),
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            domain: window.location.hostname
         };
         
         Logger.log('Análise concluída:', analysis);
         return analysis;
         
     } catch (error) {
-        const errorInfo = ErrorHandler.handleError(error, 'analyzePage');
-        Logger.warn('Análise falhou, retornando dados básicos');
-        
+        Logger.error('Erro ao analisar página:', error);
         return {
             textLength: 0,
             type: 'unknown',
             url: window.location.href,
             title: document.title,
             isLegalPage: false,
-            complexity: 'unknown',
-            confidence: 0,
-            error: errorInfo.message,
-            timestamp: new Date().toISOString()
+            complexity: { level: 0, text: 'Erro' },
+            error: error.message,
+            timestamp: new Date().toISOString(),
+            domain: window.location.hostname
         };
+    }
+}
+
+// Função para calcular complexidade do texto
+function calculateTextComplexity(text) {
+    try {
+        const wordCount = text.split(/\s+/).length;
+        const sentenceCount = text.split(/[.!?]+/).length;
+        const avgWordsPerSentence = wordCount / sentenceCount;
+        
+        let complexity;
+        if (avgWordsPerSentence < 10) {
+            complexity = { level: 1, text: 'Baixa' };
+        } else if (avgWordsPerSentence < 15) {
+            complexity = { level: 2, text: 'Média' };
+        } else if (avgWordsPerSentence < 20) {
+            complexity = { level: 3, text: 'Alta' };
+        } else {
+            complexity = { level: 4, text: 'Muito Alta' };
+        }
+        
+        return {
+            ...complexity,
+            wordCount,
+            sentenceCount,
+            avgWordsPerSentence: Math.round(avgWordsPerSentence * 100) / 100
+        };
+    } catch (error) {
+        Logger.error('Erro ao calcular complexidade:', error);
+        return { level: 0, text: 'Erro', wordCount: 0, sentenceCount: 0, avgWordsPerSentence: 0 };
     }
 }
 
 // Função para detectar tipo de documento
 function detectDocumentType(text) {
-    const lowerText = text.toLowerCase();
-    
-    // Palavras-chave para Política de Privacidade
-    const privacyKeywords = [
-        'privacy policy', 'política de privacidade', 'privacidade',
-        'personal data', 'dados pessoais', 'data protection',
-        'cookie policy', 'política de cookies', 'gdpr',
-        'data collection', 'recolha de dados', 'data processing'
-    ];
-    
-    // Palavras-chave para Termos de Serviço
-    const termsKeywords = [
-        'terms of service', 'termos de serviço', 'terms and conditions',
-        'user agreement', 'contrato de utilizador', 'service agreement',
-        'terms of use', 'condições de uso', 'user terms'
-    ];
-    
-    // Contar ocorrências
-    const privacyCount = privacyKeywords.reduce((count, keyword) => {
-        return count + (lowerText.includes(keyword) ? 1 : 0);
-    }, 0);
-    
-    const termsCount = termsKeywords.reduce((count, keyword) => {
-        return count + (lowerText.includes(keyword) ? 1 : 0);
-    }, 0);
-    
-    // Determinar tipo baseado na contagem
-    if (privacyCount > termsCount) {
-        return 'privacy_policy';
-    } else if (termsCount > privacyCount) {
-        return 'terms_of_service';
-    } else {
-        // Se não conseguir determinar, usar padrão baseado no contexto
-        if (lowerText.includes('privacy') || lowerText.includes('privacidade')) {
+    try {
+        const lowerText = text.toLowerCase();
+        
+        // Palavras-chave expandidas para Política de Privacidade
+        const privacyKeywords = [
+            'privacy policy', 'política de privacidade', 'privacidade',
+            'personal data', 'dados pessoais', 'data protection',
+            'cookie policy', 'política de cookies', 'gdpr',
+            'data collection', 'recolha de dados', 'data processing',
+            'information we collect', 'informações que coletamos',
+            'how we use your data', 'como usamos seus dados',
+            'data sharing', 'compartilhamento de dados',
+            'your rights', 'seus direitos', 'data retention',
+            'retenção de dados', 'privacy notice', 'aviso de privacidade'
+        ];
+        
+        // Palavras-chave expandidas para Termos de Serviço
+        const termsKeywords = [
+            'terms of service', 'termos de serviço', 'terms and conditions',
+            'user agreement', 'contrato de utilizador', 'service agreement',
+            'terms of use', 'condições de uso', 'user terms',
+            'service terms', 'termos do serviço', 'user conditions',
+            'conditions of use', 'condições de utilização',
+            'acceptable use', 'uso aceitável', 'prohibited uses',
+            'usos proibidos', 'liability', 'responsabilidade',
+            'limitation of liability', 'limitação de responsabilidade'
+        ];
+        
+        // Contar ocorrências com peso
+        const privacyCount = privacyKeywords.reduce((count, keyword) => {
+            const matches = (lowerText.match(new RegExp(keyword, 'g')) || []).length;
+            return count + matches;
+        }, 0);
+        
+        const termsCount = termsKeywords.reduce((count, keyword) => {
+            const matches = (lowerText.match(new RegExp(keyword, 'g')) || []).length;
+            return count + matches;
+        }, 0);
+        
+        Logger.log('Detecção de tipo:', { privacyCount, termsCount });
+        
+        // Determinar tipo baseado na contagem
+        if (privacyCount > termsCount && privacyCount > 0) {
             return 'privacy_policy';
-        } else if (lowerText.includes('terms') || lowerText.includes('termos')) {
+        } else if (termsCount > privacyCount && termsCount > 0) {
             return 'terms_of_service';
         } else {
-            return 'unknown';
-        }
-    }
-}
-
-// Função para extrair texto da página com otimizações e tratamento de erros melhorado
-function extractPageText() {
-    try {
-        Logger.log('Iniciando extração de texto...');
-        
-        // Verificar se a página está carregada
-        if (document.readyState !== 'complete') {
-            Logger.warn('Página ainda não carregada completamente');
-        }
-        
-        let pageText = '';
-        let extractionMethod = '';
-        
-        // Método 1: Tentar extrair de elementos específicos primeiro (mais preciso)
-        const contentSelectors = [
-            'main',
-            '[role="main"]',
-            '.content',
-            '.main-content',
-            '.terms',
-            '.privacy',
-            '.legal',
-            'article',
-            '.page-content',
-            '.document-content',
-            '.policy-content',
-            '.terms-content',
-            '#content',
-            '#main-content'
-        ];
-        
-        for (const selector of contentSelectors) {
-            try {
-                const element = document.querySelector(selector);
-                if (element && element.innerText) {
-                    const text = element.innerText.trim();
-                    if (text.length > 500) {
-                        pageText = text;
-                        extractionMethod = `seletor: ${selector}`;
-                        Logger.log(`Texto extraído usando seletor '${selector}': ${text.length} caracteres`);
-                        break;
-                    }
-                }
-            } catch (selectorError) {
-                Logger.warn(`Erro ao processar seletor ${selector}:`, selectorError);
-                continue;
-            }
-        }
-        
-        // Método 2: Se não encontrou conteúdo suficiente, usar estratégia de limpeza do corpo
-        if (pageText.length < 500) {
-            Logger.log('Usando método de extração do corpo da página...');
+            // Verificar contexto adicional
+            const url = window.location.href.toLowerCase();
+            const title = document.title.toLowerCase();
             
-            try {
-                // Criar uma cópia do DOM para manipulação segura
-                const clonedBody = document.body.cloneNode(true);
-                
-                // Remover elementos desnecessários de forma mais eficiente
-                const elementsToRemove = clonedBody.querySelectorAll(
-                    'script, style, nav, header, footer, aside, ' +
-                    '.advertisement, .ads, .sidebar, .menu, .navigation, ' +
-                    '.social-media, .share-buttons, .comments, .related-posts, ' +
-                    '.cookie-notice, .popup, .modal, .overlay, ' +
-                    '[role="banner"], [role="navigation"], [role="complementary"]'
-                );
-                
-                elementsToRemove.forEach(element => {
-                    try {
-                        element.remove();
-                    } catch (e) {
-                        // Ignorar erros de remoção
-                    }
-                });
-                
-                // Extrair texto da versão limpa
-                pageText = clonedBody.innerText || clonedBody.textContent || '';
-                extractionMethod = 'corpo limpo';
-                
-            } catch (bodyError) {
-                Logger.warn('Erro na limpeza do corpo, usando método direto:', bodyError);
-                
-                // Fallback: extrair diretamente do corpo
-                pageText = document.body.innerText || document.body.textContent || '';
-                extractionMethod = 'corpo direto';
+            if (url.includes('privacy') || title.includes('privacy') || 
+                url.includes('privacidade') || title.includes('privacidade')) {
+                return 'privacy_policy';
+            } else if (url.includes('terms') || title.includes('terms') || 
+                      url.includes('termos') || title.includes('termos')) {
+                return 'terms_of_service';
+            } else {
+                return 'unknown';
             }
         }
-        
-        // Método 3: Se ainda não tem texto suficiente, tentar extrair de parágrafos
-        if (pageText.length < 200) {
-            Logger.log('Tentando extrair de parágrafos...');
-            
-            try {
-                const paragraphs = document.querySelectorAll('p');
-                const paragraphTexts = Array.from(paragraphs)
-                    .map(p => p.innerText?.trim())
-                    .filter(text => text && text.length > 50)
-                    .slice(0, 10); // Limitar a 10 parágrafos
-                
-                if (paragraphTexts.length > 0) {
-                    pageText = paragraphTexts.join('\n\n');
-                    extractionMethod = 'parágrafos';
-                    Logger.log(`Texto extraído de ${paragraphTexts.length} parágrafos: ${pageText.length} caracteres`);
-                }
-            } catch (paragraphError) {
-                Logger.warn('Erro ao extrair parágrafos:', paragraphError);
-            }
-        }
-        
-        // Limpar e formatar o texto
-        const cleanedText = cleanExtractedText(pageText);
-        
-        Logger.log(`Texto final extraído: ${cleanedText.length} caracteres (método: ${extractionMethod})`);
-        
-        if (cleanedText.length > 0) {
-            Logger.log('Primeiros 200 caracteres:', cleanedText.substring(0, 200));
-        } else {
-            Logger.warn('Nenhum texto foi extraído da página');
-        }
-        
-        return cleanedText;
-        
     } catch (error) {
-        const errorInfo = ErrorHandler.handleError(error, 'extractPageText');
-        Logger.error('Falha crítica na extração de texto:', errorInfo);
-        
-        // Tentar fallback básico
-        try {
-            const fallbackText = document.body?.innerText || document.body?.textContent || '';
-            return cleanExtractedText(fallbackText);
-        } catch (fallbackError) {
-            Logger.error('Fallback também falhou:', fallbackError);
-            return '';
-        }
-    }
-}
-
-// Função auxiliar para limpar texto extraído
-function cleanExtractedText(text) {
-    if (!text || typeof text !== 'string') {
-        return '';
-    }
-    
-    return text
-        .replace(/\s+/g, ' ') // Substituir múltiplos espaços por um único
-        .replace(/\n\s*\n/g, '\n') // Remover linhas vazias desnecessárias
-        .replace(/[^\w\s\.,;:!?\-\(\)\[\]\/]/g, '') // Remover caracteres especiais desnecessários
-        .replace(/\s+/g, ' ') // Limpar espaços duplos novamente
-        .trim();
-}
-
-// Função para calcular complexidade do texto
-function calculateTextComplexity(text) {
-    if (!text || text.length === 0) {
+        Logger.error('Erro ao detectar tipo de documento:', error);
         return 'unknown';
     }
-    
-    const wordCount = text.split(/\s+/).length;
-    const sentenceCount = text.split(/[.!?]+/).length;
-    const avgWordsPerSentence = wordCount / sentenceCount;
-    
-    if (avgWordsPerSentence > 25) return 'very_high';
-    if (avgWordsPerSentence > 20) return 'high';
-    if (avgWordsPerSentence > 15) return 'medium';
-    if (avgWordsPerSentence > 10) return 'low';
-    return 'very_low';
 }
 
-// Função para calcular confiança na detecção
-function calculateDetectionConfidence(text, type, isLegal) {
-    let confidence = 0;
+// Função para extrair texto da página
+function extractPageText() {
+  try {
+    Logger.log('Iniciando extração de texto...');
     
-    // Baseado no tipo detectado
-    if (type === 'privacy_policy' || type === 'terms_of_service') {
-        confidence += 40;
+    // Tentar diferentes métodos de extração
+    let pageText = '';
+    let extractionMethod = 'unknown';
+    
+    // Método 1: Tentar extrair de elementos específicos primeiro
+    const contentSelectors = [
+      'main',
+      '[role="main"]',
+      '.content',
+      '.main-content',
+      '.terms',
+      '.privacy',
+      '.legal',
+      'article',
+      '.page-content',
+      '.document-content',
+      '.policy-content',
+      '.terms-content',
+      '#content',
+      '#main-content',
+      '.container .content',
+      '.wrapper .content'
+    ];
+    
+    for (const selector of contentSelectors) {
+      const element = document.querySelector(selector);
+      if (element) {
+        pageText = element.innerText || element.textContent || '';
+        if (pageText.length > 500) {
+          extractionMethod = `selector: ${selector}`;
+          Logger.log(`Texto extraído usando seletor '${selector}': ${pageText.length} caracteres`);
+          break;
+        }
+      }
     }
     
-    // Baseado na detecção de página legal
-    if (isLegal) {
-        confidence += 30;
+    // Método 2: Se não encontrou conteúdo suficiente, usar o corpo da página
+    if (pageText.length < 500) {
+      Logger.log('Usando método de extração do corpo da página...');
+      extractionMethod = 'body_extraction';
+      
+      // Remover elementos desnecessários que podem conter texto irrelevante
+      const elementsToRemove = document.querySelectorAll(
+        'script, style, nav, header, footer, aside, .advertisement, .ads, .sidebar, .menu, .navigation, .breadcrumb, .social-share, .comments, .related-posts'
+      );
+      const originalElements = [];
+      
+      // Guardar elementos originais e removê-los temporariamente
+      elementsToRemove.forEach(element => {
+        originalElements.push({
+          element: element,
+          parent: element.parentNode,
+          nextSibling: element.nextSibling
+        });
+        element.remove();
+      });
+      
+      // Extrair texto do corpo da página
+      pageText = document.body.innerText || document.body.textContent || '';
+      
+      // Restaurar elementos originais
+      originalElements.forEach(({ element, parent, nextSibling }) => {
+        if (parent) {
+          if (nextSibling) {
+            parent.insertBefore(element, nextSibling);
+          } else {
+            parent.appendChild(element);
+          }
+        }
+      });
     }
     
-    // Baseado no tamanho do texto
-    if (text.length > 1000) confidence += 20;
-    else if (text.length > 500) confidence += 10;
+    // Método 3: Fallback - tentar extrair de todos os parágrafos
+    if (pageText.length < 100) {
+      Logger.log('Usando método de fallback - extração de parágrafos...');
+      extractionMethod = 'paragraph_fallback';
+      
+      const paragraphs = document.querySelectorAll('p, div, span');
+      pageText = Array.from(paragraphs)
+        .map(p => p.innerText || p.textContent || '')
+        .filter(text => text.trim().length > 10)
+        .join(' ');
+    }
     
-    // Baseado em palavras-chave específicas
-    const legalKeywords = ['terms', 'privacy', 'policy', 'agreement', 'conditions', 'service'];
-    const keywordMatches = legalKeywords.filter(keyword => 
-        text.toLowerCase().includes(keyword)
-    ).length;
+    // Limpar e formatar o texto
+    const cleanedText = pageText
+      .replace(/\s+/g, ' ') // Substituir múltiplos espaços por um único
+      .replace(/\n\s*\n/g, '\n') // Remover linhas vazias desnecessárias
+      .replace(/[\u200B-\u200D\uFEFF]/g, '') // Remover caracteres invisíveis
+      .trim();
     
-    confidence += Math.min(keywordMatches * 5, 20);
+    Logger.log(`Texto final extraído: ${cleanedText.length} caracteres usando método: ${extractionMethod}`);
+    Logger.log('Primeiros 200 caracteres:', cleanedText.substring(0, 200));
     
-    return Math.min(confidence, 100);
+    // Validar qualidade do texto extraído
+    if (cleanedText.length < 50) {
+      Logger.warn('Texto extraído muito curto', { length: cleanedText.length, method: extractionMethod });
+    }
+    
+    return cleanedText;
+    
+  } catch (error) {
+    Logger.error('Erro ao extrair texto da página:', error);
+    return 'Erro ao extrair texto da página';
+  }
 }
 
-// Função melhorada para detectar se a página parece ser Termos de Serviço ou Política de Privacidade
+// Função para detectar se a página parece ser Termos de Serviço ou Política de Privacidade
 function isLegalPage() {
-    try {
-        const url = window.location.href.toLowerCase();
-        const title = document.title.toLowerCase();
-        const bodyText = (document.body?.innerText || '').toLowerCase();
-        
-        // Palavras-chave expandidas e mais específicas
-        const legalKeywords = {
-            // Inglês
-            'terms of service': 10,
-            'terms and conditions': 10,
-            'privacy policy': 10,
-            'privacy notice': 8,
-            'terms of use': 8,
-            'user agreement': 8,
-            'service agreement': 8,
-            'legal terms': 7,
-            'user terms': 7,
-            'data protection': 6,
-            'cookie policy': 6,
-            'gdpr': 5,
-            
-            // Português
-            'termos de serviço': 10,
-            'política de privacidade': 10,
-            'termos e condições': 10,
-            'contrato de utilizador': 8,
-            'termos de uso': 8,
-            'acordo de utilizador': 8,
-            'política de cookies': 6,
-            'proteção de dados': 6,
-            'rgpd': 5,
-            
-            // Padrões de URL
-            '/terms': 8,
-            '/privacy': 8,
-            '/legal': 6,
-            '/tos': 8,
-            '/policy': 6
-        };
-        
-        // Calcular score baseado em múltiplos fatores
-        let totalScore = 0;
-        let matches = [];
-        
-        // Verificar URL
-        for (const [keyword, score] of Object.entries(legalKeywords)) {
-            if (url.includes(keyword)) {
-                totalScore += score;
-                matches.push(`URL: ${keyword}`);
-            }
-        }
-        
-        // Verificar título
-        for (const [keyword, score] of Object.entries(legalKeywords)) {
-            if (title.includes(keyword)) {
-                totalScore += score * 1.5; // Título tem peso maior
-                matches.push(`Título: ${keyword}`);
-            }
-        }
-        
-        // Verificar conteúdo (apenas primeiros 2000 caracteres para performance)
-        const contentSample = bodyText.substring(0, 2000);
-        for (const [keyword, score] of Object.entries(legalKeywords)) {
-            if (contentSample.includes(keyword)) {
-                totalScore += score * 0.8; // Conteúdo tem peso menor
-                matches.push(`Conteúdo: ${keyword}`);
-            }
-        }
-        
-        // Verificar elementos específicos da página
-        const legalElements = document.querySelectorAll(
-            'h1, h2, h3, [class*="terms"], [class*="privacy"], [class*="legal"], [id*="terms"], [id*="privacy"]'
-        );
-        
-        let elementMatches = 0;
-        legalElements.forEach(element => {
-            const text = element.textContent?.toLowerCase() || '';
-            for (const keyword of Object.keys(legalKeywords)) {
-                if (text.includes(keyword)) {
-                    elementMatches++;
-                    break;
-                }
-            }
-        });
-        
-        if (elementMatches > 0) {
-            totalScore += Math.min(elementMatches * 2, 10);
-            matches.push(`Elementos: ${elementMatches} matches`);
-        }
-        
-        // Verificar padrões estruturais
-        const hasLegalStructure = checkLegalStructure();
-        if (hasLegalStructure) {
-            totalScore += 5;
-            matches.push('Estrutura legal detectada');
-        }
-        
-        const isLegal = totalScore >= 15; // Threshold ajustável
-        
-        Logger.log('Detecção de página legal:', {
-            url: url.substring(0, 100),
-            title: title.substring(0, 50),
-            score: totalScore,
-            matches: matches,
-            isLegal: isLegal,
-            confidence: Math.min(totalScore / 2, 100)
-        });
-        
-        return isLegal;
-        
-    } catch (error) {
-        ErrorHandler.handleError(error, 'isLegalPage');
-        return false;
-    }
-}
-
-// Função auxiliar para verificar estrutura legal
-function checkLegalStructure() {
-    try {
-        // Verificar se há seções típicas de documentos legais
-        const legalSections = [
-            'introduction', 'definitions', 'acceptance', 'modifications',
-            'termination', 'liability', 'governing law', 'contact',
-            'introdução', 'definições', 'aceitação', 'modificações',
-            'rescisão', 'responsabilidade', 'lei aplicável', 'contacto'
-        ];
-        
-        const bodyText = (document.body?.innerText || '').toLowerCase();
-        const sectionMatches = legalSections.filter(section => 
-            bodyText.includes(section)
-        ).length;
-        
-        // Verificar se há listas numeradas ou com bullets (comum em documentos legais)
-        const lists = document.querySelectorAll('ol, ul');
-        const hasLists = lists.length > 2;
-        
-        // Verificar se há parágrafos longos (característico de documentos legais)
-        const paragraphs = document.querySelectorAll('p');
-        const longParagraphs = Array.from(paragraphs).filter(p => 
-            p.textContent && p.textContent.length > 200
-        ).length;
-        
-        return sectionMatches >= 3 || (hasLists && longParagraphs > 5);
-        
-    } catch (error) {
-        Logger.warn('Erro ao verificar estrutura legal:', error);
-        return false;
-    }
+  try {
+    const url = window.location.href.toLowerCase();
+    const title = document.title.toLowerCase();
+    const bodyText = document.body.innerText.toLowerCase();
+    
+    // Palavras-chave expandidas para páginas legais
+    const legalKeywords = [
+      'terms of service', 'terms and conditions', 'privacy policy',
+      'privacy notice', 'terms of use', 'user agreement', 'legal',
+      'termsos', 'termos de serviço', 'política de privacidade',
+      'termos e condições', 'contrato de utilizador',
+      'service agreement', 'user terms', 'conditions of use',
+      'acceptable use policy', 'data protection', 'cookie policy',
+      'gdpr', 'privacy statement', 'legal notice', 'disclaimer',
+      'terms of sale', 'terms of purchase', 'refund policy',
+      'cancellation policy', 'shipping policy', 'return policy'
+    ];
+    
+    // Verificar URL, título e conteúdo
+    const urlMatch = legalKeywords.some(keyword => url.includes(keyword));
+    const titleMatch = legalKeywords.some(keyword => title.includes(keyword));
+    const contentMatch = legalKeywords.some(keyword => bodyText.includes(keyword));
+    
+    const hasLegalKeyword = urlMatch || titleMatch || contentMatch;
+    
+    // Verificar padrões específicos na URL
+    const urlPatterns = [
+      /\/terms/, /\/privacy/, /\/legal/, /\/policy/, /\/tos/, /\/tos\//,
+      /\/terms-of-service/, /\/privacy-policy/, /\/legal-notice/
+    ];
+    
+    const hasUrlPattern = urlPatterns.some(pattern => pattern.test(url));
+    
+    const isLegal = hasLegalKeyword || hasUrlPattern;
+    
+    Logger.log('Detecção de página legal:', {
+      url: url,
+      title: title,
+      hasLegalKeyword,
+      hasUrlPattern,
+      isLegal,
+      urlMatch,
+      titleMatch,
+      contentMatch
+    });
+    
+    return isLegal;
+    
+  } catch (error) {
+    Logger.error('Erro ao detectar página legal:', error);
+    return false;
+  }
 }
 
 // Função principal que será chamada pelo popup
