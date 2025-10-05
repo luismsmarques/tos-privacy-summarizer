@@ -3,6 +3,9 @@
     "api/analytics.js": {
       "maxDuration": 10
     },
+    "api/analytics-v2.js": {
+      "maxDuration": 10
+    },
     "api/log-analytics.js": {
       "maxDuration": 10
     },
