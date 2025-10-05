@@ -22,9 +22,13 @@ app.set('trust proxy', 1);
 app.use(helmet());
 app.use(morgan('combined'));
 
-// CORS configurado para a extensão
+// CORS configurado para a extensão e dashboard
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || 'chrome-extension://*',
+    origin: [
+        process.env.CORS_ORIGIN || 'chrome-extension://*',
+        'https://tos-privacy-summarizer.vercel.app',
+        'http://localhost:3000'
+    ],
     credentials: true
 }));
 
@@ -60,6 +64,9 @@ app.use('/api/users', userRoutes);
 app.use('/api/credits', creditsRoutes);
 app.use('/api/stripe', stripeRoutes);
 app.use('/api/analytics', analyticsRoutes);
+
+// Servir arquivos estáticos do dashboard
+app.use('/dashboard', express.static(path.join(__dirname, '../dashboard')));
 
 // Rota para servir o dashboard
 app.get('/dashboard', (req, res) => {
