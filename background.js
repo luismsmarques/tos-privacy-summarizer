@@ -23,22 +23,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // Processar de forma assíncrona
     processSummaryAsync(request.text, request.focus)
       .then(() => {
-        console.log('Processamento concluído com sucesso');
+        // Sucesso - não precisamos de enviar resposta aqui pois usamos chrome.runtime.sendMessage
+        console.log('Processamento assíncrono concluído');
       })
       .catch((error) => {
-        console.error('Erro no processamento:', error);
-        // Garantir que o erro é enviado para o popup
-        chrome.runtime.sendMessage({
-          action: 'displaySummary',
-          summary: `Erro ao processar resumo: ${error.message}`
-        });
+        console.error('Erro no processamento assíncrono:', error);
+        // Não enviar erro aqui pois já foi enviado na função processSummaryAsync
+        console.log('Erro já tratado na função processSummaryAsync');
       });
     
-    // Retornar true para indicar resposta assíncrona
+    // Retornar true para indicar que vamos responder assincronamente
     return true;
   }
   
-  // Para outras ações, não retornar true
+  // Para outras ações, não manter canal aberto
   return false;
 });
 
@@ -48,12 +46,16 @@ async function processSummaryAsync(text, focus = 'privacy') {
     console.log('Processando resumo com foco:', focus);
     
     // Enviar atualização de progresso inicial
-    chrome.runtime.sendMessage({
-      action: 'progressUpdate',
-      step: 1,
-      text: 'Texto extraído com sucesso',
-      progress: 25
-    });
+    try {
+      chrome.runtime.sendMessage({
+        action: 'progressUpdate',
+        step: 1,
+        text: 'Texto extraído com sucesso',
+        progress: 25
+      });
+    } catch (error) {
+      console.error('Erro ao enviar progresso inicial:', error);
+    }
 
     // Obter configuração da API do storage
     const result = await new Promise((resolve) => {
@@ -72,12 +74,16 @@ async function processSummaryAsync(text, focus = 'privacy') {
     }
 
     // Enviar atualização de progresso
-    chrome.runtime.sendMessage({
-      action: 'progressUpdate',
-      step: 2,
-      text: 'Enviando para análise IA',
-      progress: 50
-    });
+    try {
+      chrome.runtime.sendMessage({
+        action: 'progressUpdate',
+        step: 2,
+        text: 'Enviando para análise IA',
+        progress: 50
+      });
+    } catch (error) {
+      console.error('Erro ao enviar progresso:', error);
+    }
 
     let summary;
     
@@ -89,10 +95,14 @@ async function processSummaryAsync(text, focus = 'privacy') {
       const apiKey = result.geminiApiKey;
       
       if (!apiKey || apiKey === 'SHARED_API') {
-        chrome.runtime.sendMessage({
-          action: 'displaySummary',
-          summary: 'Erro: Chave da API não configurada. Por favor, configure a sua chave da API Gemini nas configurações da extensão.'
-        });
+        try {
+          chrome.runtime.sendMessage({
+            action: 'displaySummary',
+            summary: 'Erro: Chave da API não configurada. Por favor, configure a sua chave da API Gemini nas configurações da extensão.'
+          });
+        } catch (error) {
+          console.error('Erro ao enviar mensagem de erro:', error);
+        }
         return;
       }
       
@@ -102,20 +112,28 @@ async function processSummaryAsync(text, focus = 'privacy') {
     console.log('Resumo gerado com sucesso');
     
     // Enviar atualização de progresso final
-    chrome.runtime.sendMessage({
-      action: 'progressUpdate',
-      step: 4,
-      text: 'Processamento concluído',
-      progress: 100
-    });
+    try {
+      chrome.runtime.sendMessage({
+        action: 'progressUpdate',
+        step: 4,
+        text: 'Processamento concluído',
+        progress: 100
+      });
+    } catch (error) {
+      console.error('Erro ao enviar progresso final:', error);
+    }
     
     // Aguardar um pouco antes de mostrar o resultado
     setTimeout(() => {
       console.log('Enviando resumo para popup:', summary);
-      chrome.runtime.sendMessage({
-        action: 'displaySummary',
-        summary: summary
-      });
+      try {
+        chrome.runtime.sendMessage({
+          action: 'displaySummary',
+          summary: summary
+        });
+      } catch (error) {
+        console.error('Erro ao enviar mensagem para popup:', error);
+      }
     }, 500);
 
   } catch (error) {
@@ -147,10 +165,18 @@ async function processSummaryAsync(text, focus = 'privacy') {
     
     console.log('Enviando erro para popup:', errorMessage);
     
-    chrome.runtime.sendMessage({
-      action: 'displaySummary',
-      summary: errorMessage
-    });
+    // Enviar erro para o popup
+    try {
+      chrome.runtime.sendMessage({
+        action: 'displaySummary',
+        summary: errorMessage
+      });
+    } catch (error) {
+      console.error('Erro ao enviar mensagem de erro para popup:', error);
+    }
+    
+    // Re-throw o erro para ser capturado pelo .catch() do listener
+    throw error;
   }
 }
 
