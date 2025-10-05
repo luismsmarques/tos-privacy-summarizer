@@ -1,5 +1,7 @@
 import express from 'express';
 import db from '../utils/database.js';
+import authService from '../utils/auth.js';
+
 const router = express.Router();
 
 // Middleware para logging de requests (desabilitado temporariamente)
@@ -821,7 +823,7 @@ router.post('/seed', async (req, res) => {
 });
 
 // GET /users - Obter lista de utilizadores
-router.get('/users', authenticateToken, async (req, res) => {
+router.get('/users', (req, res, next) => authService.authenticateToken(req, res, next), async (req, res) => {
     try {
         console.log('📊 Obter lista de utilizadores');
         
