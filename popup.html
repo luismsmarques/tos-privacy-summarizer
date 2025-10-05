@@ -14,22 +14,24 @@
             box-sizing: border-box;
         }
 
+        /* Ensure popup is always visible and properly sized */
+        html {
+            height: 100%;
+            min-height: 100%;
+        }
+
         body {
             width: 420px;
-            height: 100vh;
-            max-height: 100vh;
+            min-height: 100vh;
+            height: auto;
             font-family: 'Roboto', sans-serif;
             background: var(--md-sys-color-surface);
             color: var(--md-sys-color-on-surface);
             overflow-x: hidden;
             overflow-y: auto;
-            position: fixed;
-            top: 0;
-            right: 0;
             margin: 0;
             padding: 0;
-            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
-            z-index: 9999;
+            box-sizing: border-box;
         }
 
         :root {
@@ -171,8 +173,8 @@
         .main-container {
             display: flex;
             flex-direction: column;
-            height: calc(100vh - 60px);
-            overflow-y: auto;
+            min-height: calc(100vh - 60px);
+            height: auto;
         }
 
         /* Value Communication Zone */
@@ -457,6 +459,7 @@
             border: 1px solid var(--md-sys-color-outline-variant);
             overflow-y: auto;
             margin: 16px;
+            min-height: 300px;
         }
 
         .summary-content {
@@ -667,9 +670,9 @@
         }
 
         /* Responsive adjustments */
-        @media (max-height: 600px) {
+        @media (max-height: 800px) {
             .main-container {
-                height: calc(100vh - 50px);
+                min-height: calc(100vh - 50px);
             }
             
             .value-zone, .context-zone, .action-zone {
@@ -679,10 +682,11 @@
             .summary-container {
                 padding: 16px;
                 margin: 12px;
+                min-height: 250px;
             }
         }
 
-        @media (max-height: 500px) {
+        @media (max-height: 600px) {
             .header {
                 padding: 8px 16px;
             }
@@ -692,7 +696,11 @@
             }
             
             .main-container {
-                height: calc(100vh - 40px);
+                min-height: calc(100vh - 40px);
+            }
+            
+            .summary-container {
+                min-height: 200px;
             }
         }
     </style>
