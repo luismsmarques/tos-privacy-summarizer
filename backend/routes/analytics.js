@@ -154,22 +154,34 @@ router.get('/tables', async (req, res) => {
 // Endpoint para obter analytics overview
 router.get('/overview', async (req, res) => {
   try {
+    console.log('📊 Iniciando overview analytics...');
+    
     // Verificar se a base de dados está conectada
     if (!db.isConnected) {
-      await db.connect();
+      console.log('🔌 Tentando conectar à base de dados...');
+      const connected = await db.connect();
+      if (!connected) {
+        return res.status(500).json({
+          success: false,
+          error: 'Não foi possível conectar à base de dados'
+        });
+      }
     }
     
+    console.log('📈 Obtendo dados de overview...');
     const overview = await db.getAnalyticsOverview();
+    
+    console.log('✅ Overview obtido:', overview);
     res.json({
       success: true,
       data: overview,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Erro ao obter overview:', error);
+    console.error('❌ Erro ao obter overview:', error);
     res.status(500).json({
       success: false,
-      error: 'Erro ao obter dados de overview'
+      error: 'Erro ao obter dados de overview: ' + error.message
     });
   }
 });
@@ -177,6 +189,18 @@ router.get('/overview', async (req, res) => {
 // Endpoint para obter dados de utilizadores
 router.get('/users', async (req, res) => {
   try {
+    console.log('👥 Obtendo dados de utilizadores...');
+    
+    if (!db.isConnected) {
+      const connected = await db.connect();
+      if (!connected) {
+        return res.status(500).json({
+          success: false,
+          error: 'Não foi possível conectar à base de dados'
+        });
+      }
+    }
+    
     const usersData = await db.getAnalyticsUsers();
     res.json({
       success: true,
@@ -184,10 +208,10 @@ router.get('/users', async (req, res) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Erro ao obter dados de utilizadores:', error);
+    console.error('❌ Erro ao obter dados de utilizadores:', error);
     res.status(500).json({
       success: false,
-      error: 'Erro ao obter dados de utilizadores'
+      error: 'Erro ao obter dados de utilizadores: ' + error.message
     });
   }
 });
@@ -195,6 +219,18 @@ router.get('/users', async (req, res) => {
 // Endpoint para obter dados de resumos
 router.get('/summaries', async (req, res) => {
   try {
+    console.log('📄 Obtendo dados de resumos...');
+    
+    if (!db.isConnected) {
+      const connected = await db.connect();
+      if (!connected) {
+        return res.status(500).json({
+          success: false,
+          error: 'Não foi possível conectar à base de dados'
+        });
+      }
+    }
+    
     const summariesData = await db.getAnalyticsSummaries();
     res.json({
       success: true,
@@ -202,10 +238,10 @@ router.get('/summaries', async (req, res) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Erro ao obter dados de resumos:', error);
+    console.error('❌ Erro ao obter dados de resumos:', error);
     res.status(500).json({
       success: false,
-      error: 'Erro ao obter dados de resumos'
+      error: 'Erro ao obter dados de resumos: ' + error.message
     });
   }
 });
