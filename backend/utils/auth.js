@@ -75,7 +75,8 @@ class AuthService {
 
     // Middleware para proteger dashboard
     protectDashboard(req, res, next) {
-        const token = req.cookies.adminToken || req.headers['x-admin-token'];
+        const cookies = req.cookies || {};
+        const token = cookies.adminToken || req.headers['x-admin-token'];
 
         if (!token) {
             return res.status(401).send(`
