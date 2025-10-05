@@ -52,7 +52,7 @@ import userRoutes from './routes/users.js';
 import creditsRoutes from './routes/credits.js';
 import stripeRoutes from './routes/stripe.js';
 import { router as analyticsRoutes } from './routes/analytics.js';
-import { db } from './utils/database.js';
+import db from './utils/database.js';
 
 // Rotas da API
 app.use('/api/gemini', geminiRoutes);

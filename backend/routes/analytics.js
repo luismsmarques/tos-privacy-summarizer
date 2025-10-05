@@ -1,5 +1,5 @@
 import express from 'express';
-import { db } from '../utils/database.js';
+import db from '../utils/database.js';
 const router = express.Router();
 
 // Middleware para logging de requests

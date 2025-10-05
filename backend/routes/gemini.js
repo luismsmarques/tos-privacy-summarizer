@@ -1,7 +1,7 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import { registerUser, registerSummary } from './analytics.js';
-import { db } from '../utils/database.js';
+import db from '../utils/database.js';
 const router = express.Router();
 
 // Middleware para verificar se a chave da API está configurada
