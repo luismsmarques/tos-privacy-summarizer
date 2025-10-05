@@ -16,11 +16,13 @@
 
         body {
             width: 420px;
-            min-height: 600px;
+            min-height: 500px;
+            max-height: 600px;
             font-family: 'Roboto', sans-serif;
             background: var(--md-sys-color-surface);
             color: var(--md-sys-color-on-surface);
             overflow-x: hidden;
+            overflow-y: auto;
         }
 
         :root {
@@ -136,6 +138,24 @@
         }
 
         .theme-toggle:hover, .settings-btn:hover {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--md-sys-color-on-primary-container);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 20px;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .back-btn:hover {
             background: var(--md-sys-color-primary);
             color: var(--md-sys-color-on-primary);
         }
@@ -637,6 +657,9 @@
     <div class="header">
         <h1>ToS Summarizer</h1>
         <div class="header-controls">
+            <button class="back-btn hidden" id="backBtn" title="Voltar">
+                <span class="material-symbols-outlined">arrow_back</span>
+            </button>
             <button class="theme-toggle" id="themeToggle" title="Alternar tema">
                 <span class="material-symbols-outlined">dark_mode</span>
             </button>

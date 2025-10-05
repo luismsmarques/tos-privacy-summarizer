@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const themeToggle = document.getElementById('themeToggle');
     const settingsBtn = document.getElementById('settingsBtn');
     const refreshButton = document.getElementById('refreshButton');
+    const backBtn = document.getElementById('backBtn');
 
     // Context elements
     const pageUrl = document.getElementById('pageUrl');
@@ -235,6 +236,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Botão de refresh
         refreshButton.addEventListener('click', handleRefresh);
         
+        // Botão voltar
+        backBtn.addEventListener('click', handleBack);
+        
         // Toggle de tema
         themeToggle.addEventListener('click', toggleTheme);
         
@@ -324,6 +328,26 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Atualizando análise da página...');
         await analyzeCurrentPage();
     }
+    
+    // Handler para voltar
+    function handleBack() {
+        console.log('Voltando ao estado inicial...');
+        
+        // Esconder resumo
+        summaryContainer.classList.add('hidden');
+        
+        // Mostrar zonas originais
+        document.querySelector('.value-zone').classList.remove('hidden');
+        document.querySelector('.context-zone').classList.remove('hidden');
+        document.querySelector('.action-zone').classList.remove('hidden');
+        
+        // Restaurar altura original
+        document.body.style.height = '';
+        document.body.style.minHeight = '';
+        
+        // Esconder botão voltar
+        backBtn.classList.add('hidden');
+    }
 
     // Mostrar progresso
     function showProgress() {
@@ -383,10 +407,39 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log('Resumo parseado:', parsedSummary);
         
-        // Abrir página dedicada para o resumo
-        openSummaryPage(parsedSummary);
+        // Mostrar resumo inline no popup
+        displaySummaryInline(parsedSummary);
         
         resetButton();
+    }
+
+    // Mostrar resumo inline no popup
+    function displaySummaryInline(parsedSummary) {
+        console.log('Exibindo resumo inline:', parsedSummary);
+        
+        // Esconder zonas que não são necessárias quando há resumo
+        document.querySelector('.value-zone').classList.add('hidden');
+        document.querySelector('.context-zone').classList.add('hidden');
+        document.querySelector('.action-zone').classList.add('hidden');
+        
+        // Mostrar container do resumo
+        summaryContainer.classList.remove('hidden');
+        
+        // Renderizar resumo baseado na estrutura
+        if (parsedSummary.resumo_conciso || parsedSummary.summary) {
+            console.log('Renderizando resumo com estrutura:', Object.keys(parsedSummary));
+            summaryContent.innerHTML = formatStructuredSummary(parsedSummary);
+        } else {
+            console.log('Nenhum resumo encontrado no objeto');
+            summaryContent.innerHTML = '<p>Resumo não disponível</p>';
+        }
+        
+        // Expandir altura do popup
+        document.body.style.height = '600px';
+        document.body.style.minHeight = '600px';
+        
+        // Mostrar botão voltar
+        backBtn.classList.remove('hidden');
     }
 
     // Abrir página dedicada para o resumo
