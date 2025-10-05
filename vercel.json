@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/analytics.js": {
+      "maxDuration": 10
+    }
+  },
   "rewrites": [
     {
       "source": "/dashboard",
