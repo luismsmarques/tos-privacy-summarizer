@@ -1982,13 +1982,13 @@ class Dashboard {
                 <td>${summary.text_length ? summary.text_length.toLocaleString() + ' chars' : '-'}</td>
                 <td>
                     <div class="summary-actions">
-                        <button class="summary-action-btn" onclick="dashboard.viewSummaryDetails('${summary.id}')" title="Ver detalhes">
+                        <button class="summary-action-btn" onclick="window.dashboard.viewSummaryDetails('${summary.id}')" title="Ver detalhes">
                             <span class="material-symbols-outlined">visibility</span>
                         </button>
-                        <button class="summary-action-btn" onclick="dashboard.copySummary('${summary.id}')" title="Copiar resumo">
+                        <button class="summary-action-btn" onclick="window.dashboard.copySummary('${summary.id}')" title="Copiar resumo">
                             <span class="material-symbols-outlined">content_copy</span>
                         </button>
-                        <button class="summary-action-btn" onclick="dashboard.exportSummary('${summary.id}')" title="Exportar resumo">
+                        <button class="summary-action-btn" onclick="window.dashboard.exportSummary('${summary.id}')" title="Exportar resumo">
                             <span class="material-symbols-outlined">download</span>
                         </button>
                     </div>
@@ -2145,7 +2145,7 @@ class Dashboard {
                             </div>
                             <div class="info-item">
                                 <label>URL:</label>
-                                <span><a href="${summary.url}" target="_blank">${summary.url}</a></span>
+                                <span>${summary.url ? `<a href="${summary.url}" target="_blank">${summary.url}</a>` : 'URL não disponível'}</span>
                             </div>
                             <div class="info-item">
                                 <label>Status:</label>
@@ -2198,7 +2198,9 @@ class Dashboard {
     copySummary(summaryId) {
         const summary = this.summariesData.find(s => s.id === summaryId);
         if (summary) {
-            const text = `${this.getDocumentTypeName(summary.document_type || summary.type)}\n\nURL: ${summary.url}\nData: ${this.formatDate(summary.created_at)}\n\n${summary.summary || 'Resumo não disponível'}`;
+            const url = summary.url || 'URL não disponível';
+            const summaryText = summary.summary || 'Resumo não disponível';
+            const text = `${this.getDocumentTypeName(summary.document_type || summary.type)}\n\nURL: ${url}\nData: ${this.formatDate(summary.created_at)}\n\n${summaryText}`;
             
             navigator.clipboard.writeText(text).then(() => {
                 this.showSuccess('Resumo copiado para a área de transferência!');
@@ -2206,6 +2208,8 @@ class Dashboard {
                 console.error('Erro ao copiar:', err);
                 this.showError('Erro ao copiar resumo');
             });
+        } else {
+            this.showError('Resumo não encontrado');
         }
     }
 
@@ -2213,19 +2217,23 @@ class Dashboard {
     exportSummary(summaryId) {
         const summary = this.summariesData.find(s => s.id === summaryId);
         if (summary) {
-            const content = `${this.getDocumentTypeName(summary.document_type || summary.type)}\n\nURL: ${summary.url}\nData: ${this.formatDate(summary.created_at)}\nTempo: ${summary.duration ? (summary.duration / 1000).toFixed(1) + 's' : 'N/A'}\nTamanho: ${summary.text_length ? summary.text_length.toLocaleString() + ' caracteres' : 'N/A'}\n\n${summary.summary || 'Resumo não disponível'}`;
+            const url = summary.url || 'URL não disponível';
+            const summaryText = summary.summary || 'Resumo não disponível';
+            const content = `${this.getDocumentTypeName(summary.document_type || summary.type)}\n\nURL: ${url}\nData: ${this.formatDate(summary.created_at)}\nTempo: ${summary.duration ? (summary.duration / 1000).toFixed(1) + 's' : 'N/A'}\nTamanho: ${summary.text_length ? summary.text_length.toLocaleString() + ' caracteres' : 'N/A'}\n\n${summaryText}`;
             
             const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
+            const url_download = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url;
+            a.href = url_download;
             a.download = `resumo-${summaryId}-${new Date().toISOString().split('T')[0]}.txt`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            URL.revokeObjectURL(url_download);
             
             this.showSuccess('Resumo exportado com sucesso!');
+        } else {
+            this.showError('Resumo não encontrado');
         }
     }
 
