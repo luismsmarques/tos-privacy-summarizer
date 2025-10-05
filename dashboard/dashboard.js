@@ -571,16 +571,17 @@ class Dashboard {
             console.log('📊 Carregando dados de utilizadores...');
             
             const response = await this.fetchData('/api/analytics/users');
-            if (response && response.success) {
+            if (response && response.success && Array.isArray(response.data)) {
                 this.usersData = response.data;
-                this.updateUsersStats();
-                this.renderUsersTable();
+                console.log(`✅ ${this.usersData.length} utilizadores carregados da API`);
             } else {
-                console.log('Usando dados mock para utilizadores');
+                console.log('⚠️ Resposta da API inválida, usando dados mock');
                 this.usersData = this.getMockUsersData();
-                this.updateUsersStats();
-                this.renderUsersTable();
             }
+            
+            this.updateUsersStats();
+            this.renderUsersTable();
+            
         } catch (error) {
             console.error('❌ Erro ao carregar dados de utilizadores:', error);
             this.usersData = this.getMockUsersData();
@@ -595,6 +596,12 @@ class Dashboard {
         const activeUsersEl = document.getElementById('activeUsersCount');
         const newUsersEl = document.getElementById('newUsersCount');
 
+        // Verificar se usersData é um array válido
+        if (!Array.isArray(this.usersData)) {
+            console.warn('⚠️ usersData não é um array válido:', this.usersData);
+            this.usersData = [];
+        }
+
         if (totalUsersEl) {
             totalUsersEl.textContent = this.usersData.length;
         }
@@ -602,7 +609,7 @@ class Dashboard {
         if (activeUsersEl) {
             const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
             const activeUsers = this.usersData.filter(user => 
-                new Date(user.last_used || user.created_at) > weekAgo
+                user && (new Date(user.last_used || user.created_at) > weekAgo)
             ).length;
             activeUsersEl.textContent = activeUsers;
         }
@@ -610,7 +617,7 @@ class Dashboard {
         if (newUsersEl) {
             const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
             const newUsers = this.usersData.filter(user => 
-                new Date(user.created_at) > monthAgo
+                user && (new Date(user.created_at) > monthAgo)
             ).length;
             newUsersEl.textContent = newUsers;
         }
@@ -620,6 +627,12 @@ class Dashboard {
     renderUsersTable() {
         const tbody = document.getElementById('usersTableBody');
         if (!tbody) return;
+
+        // Verificar se usersData é um array válido
+        if (!Array.isArray(this.usersData)) {
+            console.warn('⚠️ usersData não é um array válido para renderização:', this.usersData);
+            this.usersData = [];
+        }
 
         const filteredUsers = this.getFilteredUsers();
         
@@ -643,26 +656,33 @@ class Dashboard {
 
     // Get filtered users
     getFilteredUsers() {
+        // Verificar se usersData é um array válido
+        if (!Array.isArray(this.usersData)) {
+            console.warn('⚠️ usersData não é um array válido para filtros:', this.usersData);
+            return [];
+        }
+
         let filtered = [...this.usersData];
 
         // Search filter
         const searchTerm = document.getElementById('userSearch')?.value.toLowerCase();
         if (searchTerm) {
             filtered = filtered.filter(user => 
-                user.user_id.toLowerCase().includes(searchTerm)
+                user && user.user_id && user.user_id.toLowerCase().includes(searchTerm)
             );
         }
 
         // Status filter
         const statusFilter = document.getElementById('userFilter')?.value;
         if (statusFilter) {
-            filtered = filtered.filter(user => this.getUserStatus(user) === statusFilter);
+            filtered = filtered.filter(user => user && this.getUserStatus(user) === statusFilter);
         }
 
         // Sort
         const sortBy = document.getElementById('userSort')?.value;
         if (sortBy) {
             filtered.sort((a, b) => {
+                if (!a || !b) return 0;
                 if (sortBy === 'created_at' || sortBy === 'last_used') {
                     return new Date(b[sortBy] || 0) - new Date(a[sortBy] || 0);
                 }
