@@ -136,15 +136,16 @@ class AuthService {
             `);
         }
 
-        // Usar a instância da classe para verificar o token
-        const authService = new AuthService();
-        const decoded = authService.verifyToken(token);
-        if (!decoded) {
+        // Verificar token diretamente usando JWT
+        try {
+            const jwtSecret = process.env.JWT_SECRET || 'your-secret-key';
+            const decoded = jwt.verify(token, jwtSecret);
+            req.user = decoded;
+            next();
+        } catch (error) {
+            console.error('Token verification failed:', error);
             return res.status(401).send('Token inválido');
         }
-
-        req.user = decoded;
-        next();
     }
 }
 
