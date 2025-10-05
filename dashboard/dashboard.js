@@ -2110,11 +2110,24 @@ class Dashboard {
     // Ver detalhes do resumo
     async viewSummaryDetails(summaryId) {
         try {
-            const summary = this.summariesData.find(s => s.id === summaryId);
+            console.log('🔍 Procurando resumo com ID:', summaryId, 'Tipo:', typeof summaryId);
+            console.log('📊 Dados disponíveis:', this.summariesData?.length || 0, 'resumos');
+            console.log('🔍 IDs disponíveis:', this.summariesData?.map(s => ({ id: s.id, type: typeof s.id })) || []);
+            
+            // Tentar busca por ID como número e como string
+            let summary = this.summariesData.find(s => s.id === summaryId);
             if (!summary) {
-                throw new Error('Resumo não encontrado');
+                summary = this.summariesData.find(s => s.id == summaryId); // Comparação flexível
+            }
+            if (!summary) {
+                summary = this.summariesData.find(s => String(s.id) === String(summaryId)); // Comparação de strings
+            }
+            
+            if (!summary) {
+                throw new Error(`Resumo não encontrado. ID procurado: ${summaryId} (${typeof summaryId})`);
             }
 
+            console.log('✅ Resumo encontrado:', summary);
             this.createSummaryDetailsModal(summary);
             
         } catch (error) {
@@ -2196,7 +2209,17 @@ class Dashboard {
 
     // Copiar resumo
     copySummary(summaryId) {
-        const summary = this.summariesData.find(s => s.id === summaryId);
+        console.log('📋 Copiando resumo com ID:', summaryId);
+        
+        // Tentar busca por ID como número e como string
+        let summary = this.summariesData.find(s => s.id === summaryId);
+        if (!summary) {
+            summary = this.summariesData.find(s => s.id == summaryId); // Comparação flexível
+        }
+        if (!summary) {
+            summary = this.summariesData.find(s => String(s.id) === String(summaryId)); // Comparação de strings
+        }
+        
         if (summary) {
             const url = summary.url || 'URL não disponível';
             const summaryText = summary.summary || 'Resumo não disponível';
@@ -2209,13 +2232,23 @@ class Dashboard {
                 this.showError('Erro ao copiar resumo');
             });
         } else {
-            this.showError('Resumo não encontrado');
+            this.showError(`Resumo não encontrado. ID: ${summaryId}`);
         }
     }
 
     // Exportar resumo
     exportSummary(summaryId) {
-        const summary = this.summariesData.find(s => s.id === summaryId);
+        console.log('💾 Exportando resumo com ID:', summaryId);
+        
+        // Tentar busca por ID como número e como string
+        let summary = this.summariesData.find(s => s.id === summaryId);
+        if (!summary) {
+            summary = this.summariesData.find(s => s.id == summaryId); // Comparação flexível
+        }
+        if (!summary) {
+            summary = this.summariesData.find(s => String(s.id) === String(summaryId)); // Comparação de strings
+        }
+        
         if (summary) {
             const url = summary.url || 'URL não disponível';
             const summaryText = summary.summary || 'Resumo não disponível';
@@ -2233,7 +2266,7 @@ class Dashboard {
             
             this.showSuccess('Resumo exportado com sucesso!');
         } else {
-            this.showError('Resumo não encontrado');
+            this.showError(`Resumo não encontrado. ID: ${summaryId}`);
         }
     }
 
