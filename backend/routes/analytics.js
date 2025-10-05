@@ -743,5 +743,82 @@ async function registerSummary(userId, success = true, duration = 0, type = 'unk
   }
 }
 
+// Endpoint para popular dados de teste
+router.post('/seed', async (req, res) => {
+  try {
+    console.log('🌱 Populando base de dados com dados de teste...');
+    
+    if (!db.isConnected) {
+      const connected = await db.connect();
+      if (!connected) {
+        return res.status(500).json({
+          success: false,
+          error: 'Não foi possível conectar à base de dados'
+        });
+      }
+    }
+    
+    // Criar utilizadores de teste
+    const testUsers = [
+      { userId: 'test_user_1', deviceId: 'device_1' },
+      { userId: 'test_user_2', deviceId: 'device_2' },
+      { userId: 'test_user_3', deviceId: 'device_3' }
+    ];
+    
+    for (const user of testUsers) {
+      try {
+        await db.createUser(user.userId, user.deviceId);
+        console.log(`✅ Utilizador criado: ${user.userId}`);
+      } catch (error) {
+        console.log(`⚠️ Utilizador já existe: ${user.userId}`);
+      }
+    }
+    
+    // Criar resumos de teste com datas históricas
+    const now = new Date();
+    const testSummaries = [
+      { userId: 'test_user_1', success: true, duration: 2500, type: 'terms_of_service', textLength: 1500, daysAgo: 6 },
+      { userId: 'test_user_1', success: true, duration: 1800, type: 'privacy_policy', textLength: 1200, daysAgo: 5 },
+      { userId: 'test_user_2', success: true, duration: 3200, type: 'terms_of_service', textLength: 2000, daysAgo: 4 },
+      { userId: 'test_user_2', success: true, duration: 2100, type: 'privacy_policy', textLength: 1800, daysAgo: 3 },
+      { userId: 'test_user_3', success: true, duration: 2800, type: 'terms_of_service', textLength: 1600, daysAgo: 2 },
+      { userId: 'test_user_1', success: true, duration: 1900, type: 'privacy_policy', textLength: 1400, daysAgo: 1 },
+      { userId: 'test_user_2', success: true, duration: 2400, type: 'terms_of_service', textLength: 1700, daysAgo: 0 }
+    ];
+    
+    for (const summary of testSummaries) {
+      const summaryId = `test_summary_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const createdAt = new Date(now.getTime() - (summary.daysAgo * 24 * 60 * 60 * 1000));
+      
+      try {
+        // Inserir com data específica
+        await db.query(`
+          INSERT INTO summaries (summary_id, user_id, success, duration, type, text_length, created_at)
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
+          ON CONFLICT (summary_id) DO NOTHING
+        `, [summaryId, summary.userId, summary.success, summary.duration, summary.type, summary.textLength, createdAt]);
+        
+        console.log(`✅ Resumo criado: ${summaryId} (${summary.daysAgo} dias atrás)`);
+      } catch (error) {
+        console.log(`⚠️ Resumo já existe: ${summaryId}`);
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: 'Base de dados populada com dados de teste',
+      usersCreated: testUsers.length,
+      summariesCreated: testSummaries.length
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro ao popular dados de teste:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao popular dados de teste: ' + error.message
+    });
+  }
+});
+
 // Exportar funções para uso em outras rotas
 export { router, registerUser, registerSummary };

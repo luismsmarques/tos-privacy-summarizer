@@ -14,6 +14,51 @@ const checkGeminiKey = (req, res, next) => {
     next();
 };
 
+// Função para detectar tipo de documento baseado no conteúdo
+function detectDocumentType(text) {
+    const lowerText = text.toLowerCase();
+    
+    // Palavras-chave para Política de Privacidade
+    const privacyKeywords = [
+        'privacy policy', 'política de privacidade', 'privacidade',
+        'personal data', 'dados pessoais', 'data protection',
+        'cookie policy', 'política de cookies', 'gdpr',
+        'data collection', 'recolha de dados', 'data processing'
+    ];
+    
+    // Palavras-chave para Termos de Serviço
+    const termsKeywords = [
+        'terms of service', 'termos de serviço', 'terms and conditions',
+        'user agreement', 'contrato de utilizador', 'service agreement',
+        'terms of use', 'condições de uso', 'user terms'
+    ];
+    
+    // Contar ocorrências
+    const privacyCount = privacyKeywords.reduce((count, keyword) => {
+        return count + (lowerText.includes(keyword) ? 1 : 0);
+    }, 0);
+    
+    const termsCount = termsKeywords.reduce((count, keyword) => {
+        return count + (lowerText.includes(keyword) ? 1 : 0);
+    }, 0);
+    
+    // Determinar tipo baseado na contagem
+    if (privacyCount > termsCount) {
+        return 'privacy_policy';
+    } else if (termsCount > privacyCount) {
+        return 'terms_of_service';
+    } else {
+        // Se não conseguir determinar, usar padrão baseado no contexto
+        if (lowerText.includes('privacy') || lowerText.includes('privacidade')) {
+            return 'privacy_policy';
+        } else if (lowerText.includes('terms') || lowerText.includes('termos')) {
+            return 'terms_of_service';
+        } else {
+            return 'unknown';
+        }
+    }
+}
+
 // Endpoint principal para proxy da API Gemini
 router.post('/proxy', [
     checkGeminiKey,
@@ -55,11 +100,14 @@ router.post('/proxy', [
         const geminiResponse = await callGeminiAPI(text);
         success = true;
         
+        // Detectar tipo de documento baseado no conteúdo
+        const documentType = detectDocumentType(text);
+        
         // Registrar resumo no analytics
         const duration = Date.now() - startTime;
-        console.log(`📊 Registrando resumo: userId=${userId}, success=${success}, duration=${duration}ms, textLength=${text.length}`);
+        console.log(`📊 Registrando resumo: userId=${userId}, success=${success}, duration=${duration}ms, type=${documentType}, textLength=${text.length}`);
         try {
-            await registerSummary(userId, true, duration, 'terms_of_service', text.length);
+            await registerSummary(userId, true, duration, documentType, text.length);
             console.log('✅ Resumo registrado com sucesso no analytics');
         } catch (error) {
             console.error('❌ Erro ao registrar resumo no analytics:', error);

@@ -382,7 +382,21 @@ class Dashboard {
                 this.charts.activity.update();
                 console.log('✅ Gráfico de atividade atualizado com dados reais');
             } else {
-                console.log('⚠️ Nenhum dado de atividade disponível');
+                console.log('⚠️ Nenhum dado de atividade disponível, usando dados mock');
+                // Usar dados mock para demonstração
+                const mockActivityData = [
+                    { date: 'Seg', summaries: 2, users: 1 },
+                    { date: 'Ter', summaries: 1, users: 1 },
+                    { date: 'Qua', summaries: 0, users: 0 },
+                    { date: 'Qui', summaries: 3, users: 2 },
+                    { date: 'Sex', summaries: 1, users: 1 },
+                    { date: 'Sáb', summaries: 0, users: 0 },
+                    { date: 'Dom', summaries: 1, users: 1 }
+                ];
+                this.charts.activity.data.datasets[0].data = mockActivityData.map(d => d.summaries);
+                this.charts.activity.data.datasets[1].data = mockActivityData.map(d => d.users);
+                this.charts.activity.data.labels = mockActivityData.map(d => d.date);
+                this.charts.activity.update();
             }
         }
         
@@ -400,7 +414,16 @@ class Dashboard {
                 this.charts.documentTypes.update();
                 console.log('✅ Gráfico de tipos de documentos atualizado com dados reais');
             } else {
-                console.log('⚠️ Nenhum dado de tipos de documentos disponível');
+                console.log('⚠️ Nenhum dado de tipos de documentos disponível, usando dados mock');
+                // Usar dados mock para demonstração
+                const mockDocumentTypes = {
+                    'Termos de Serviço': 3,
+                    'Políticas de Privacidade': 2,
+                    'Outros': 0
+                };
+                this.charts.documentTypes.data.labels = Object.keys(mockDocumentTypes);
+                this.charts.documentTypes.data.datasets[0].data = Object.values(mockDocumentTypes);
+                this.charts.documentTypes.update();
             }
         }
     }
