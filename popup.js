@@ -364,17 +364,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.error('Erro ao comunicar com content script:', chrome.runtime.lastError);
                     showError('Erro ao comunicar com a página. Tente recarregar a página.');
                     resetButton();
-                } else {
+                    return;
+                }
+                
+                if (response && response.success) {
                     console.log('Resposta do content script:', response);
+                    // O resumo será enviado pelo background script via chrome.runtime.onMessage
                     
-                    // Fallback: se não receber resposta em 10 segundos, mostrar erro
+                    // Timeout de segurança: se não receber resumo em 15 segundos, mostrar erro
                     setTimeout(() => {
                         if (isProcessing) {
-                            console.log('Timeout - não recebeu resumo em 10 segundos');
+                            console.log('Timeout - não recebeu resumo em 15 segundos');
                             showError('Timeout: O resumo demorou muito para ser processado. Tente novamente.');
                             resetButton();
                         }
-                    }, 10000);
+                    }, 15000);
+                } else {
+                    console.error('Erro na resposta do content script:', response);
+                    showError('Erro ao extrair texto da página. Tente recarregar a página.');
+                    resetButton();
                 }
             });
             

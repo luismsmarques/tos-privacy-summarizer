@@ -20,12 +20,26 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log('Recebido texto para resumir:', request.text.substring(0, 100) + '...');
     console.log('Foco solicitado:', request.focus);
 
-    // Processar de forma assíncrona mas sem usar sendResponse
-    processSummaryAsync(request.text, request.focus);
+    // Processar de forma assíncrona
+    processSummaryAsync(request.text, request.focus)
+      .then(() => {
+        console.log('Processamento concluído com sucesso');
+      })
+      .catch((error) => {
+        console.error('Erro no processamento:', error);
+        // Garantir que o erro é enviado para o popup
+        chrome.runtime.sendMessage({
+          action: 'displaySummary',
+          summary: `Erro ao processar resumo: ${error.message}`
+        });
+      });
     
-    // Responder imediatamente para evitar erro de canal fechado
-    sendResponse({ status: 'processing' });
+    // Retornar true para indicar resposta assíncrona
+    return true;
   }
+  
+  // Para outras ações, não retornar true
+  return false;
 });
 
 // Função assíncrona para processar o resumo
