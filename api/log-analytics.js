@@ -1,6 +1,6 @@
 // API de Logging Simples - Guarda dados em ficheiros JSON
-import fs from 'fs';
-import path from 'path';
+const fs = require('fs');
+const path = require('path');
 
 // Caminho para dados
 const DATA_DIR = process.env.NODE_ENV === 'production' ? '/tmp' : './data';
@@ -41,7 +41,7 @@ function saveData(filename, data) {
   }
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');

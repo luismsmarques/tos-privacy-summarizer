@@ -1,6 +1,6 @@
 // Sistema de Analytics Simples - Sem dependências externas
-import fs from 'fs';
-import path from 'path';
+const fs = require('fs');
+const path = require('path');
 
 // Caminho para dados (em produção, usar /tmp no Vercel)
 const DATA_DIR = process.env.NODE_ENV === 'production' ? '/tmp' : './data';
@@ -78,7 +78,7 @@ function initializeData() {
   return { users, summaries, analytics };
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
