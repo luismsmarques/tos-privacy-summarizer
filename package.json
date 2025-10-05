@@ -1,6 +1,6 @@
 {
   "name": "tos-privacy-summarizer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Chrome extension for summarizing Terms of Service and Privacy Policies",
   "main": "index.js",
   "scripts": {
@@ -16,5 +16,9 @@
   },
   "keywords": ["chrome-extension", "ai", "summarizer", "terms-of-service", "privacy-policy"],
   "author": "Luis Marques",
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "_deployTimestamp": "2025-10-05T13:50:00Z"
 }

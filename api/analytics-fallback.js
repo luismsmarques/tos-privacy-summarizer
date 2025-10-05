@@ -1,21 +1,15 @@
-// API Analytics com verificação robusta de dependências
+// API Analytics com fallback para dados mock se Supabase não estiver disponível
 let supabase = null;
-let supabaseAvailable = false;
 
-// Verificar se Supabase está disponível
 try {
-  if (typeof require !== 'undefined') {
-    const { createClient } = require('@supabase/supabase-js');
-    supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_ANON_KEY
-    );
-    supabaseAvailable = true;
-    console.log('✅ Supabase client created successfully');
-  }
+  const { createClient } = require('@supabase/supabase-js');
+  supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY
+  );
+  console.log('✅ Supabase client created successfully');
 } catch (error) {
-  console.warn('⚠️ Supabase not available:', error.message);
-  supabaseAvailable = false;
+  console.warn('⚠️ Supabase not available, using mock data:', error.message);
 }
 
 export default async function handler(req, res) {
@@ -32,21 +26,16 @@ export default async function handler(req, res) {
   try {
     const { endpoint } = req.query;
 
-    // Verificar se Supabase está disponível e configurado
-    const hasEnvVars = !!(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY);
-    
-    if (!supabaseAvailable || !hasEnvVars) {
-      console.log('🔄 Using mock data - Supabase not available or not configured');
+    // Se Supabase não estiver disponível, usar dados mock
+    if (!supabase || !process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
+      console.log('🔄 Using mock data - Supabase not configured');
       return res.json({
         success: true,
         data: getMockData(endpoint),
         timestamp: new Date().toISOString(),
         debug: {
-          supabaseAvailable,
-          hasEnvVars,
-          supabaseUrl: !!process.env.SUPABASE_URL,
-          supabaseKey: !!process.env.SUPABASE_ANON_KEY,
-          reason: supabaseAvailable ? 'Environment variables missing' : 'Supabase dependency not available'
+          supabaseAvailable: false,
+          reason: 'Supabase not configured or dependency not available'
         }
       });
     }
@@ -87,9 +76,7 @@ export default async function handler(req, res) {
       timestamp: new Date().toISOString(),
       debug: {
         supabaseAvailable: true,
-        hasEnvVars: true,
-        endpoint: endpoint,
-        usingRealData: true
+        endpoint: endpoint
       }
     });
 
