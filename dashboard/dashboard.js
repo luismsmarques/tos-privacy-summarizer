@@ -390,6 +390,53 @@ class Dashboard {
                 `;
             }
         }
+        
+        // Atualizar badge de performance baseado nos dados reais
+        this.updatePerformanceBadge(overview);
+    }
+    
+    // Atualizar badge de performance baseado nos dados reais
+    updatePerformanceBadge(overview) {
+        const requestsBadgeEl = document.getElementById('requestsBadge');
+        if (!requestsBadgeEl) return;
+        
+        // Determinar performance baseado nos dados reais
+        let performanceLevel = 'Média';
+        let badgeClass = 'secondary';
+        let icon = 'speed';
+        
+        // Critérios baseados em dados reais:
+        const todayRequests = parseInt(overview.today_requests || 0);
+        const requestsChange = parseFloat(overview.requestsChange || 0);
+        const avgDuration = parseFloat(overview.avg_duration || 0);
+        
+        // Performance alta: muitos requests hoje + crescimento positivo + tempo de resposta razoável
+        if (todayRequests > 200 && requestsChange > 50 && avgDuration < 5000) {
+            performanceLevel = 'Alta Performance';
+            badgeClass = 'success';
+            icon = 'speed';
+        }
+        // Performance média: requests moderados ou crescimento moderado
+        else if (todayRequests > 100 || requestsChange > 0) {
+            performanceLevel = 'Performance Média';
+            badgeClass = 'primary';
+            icon = 'trending_up';
+        }
+        // Performance baixa: poucos requests ou crescimento negativo
+        else {
+            performanceLevel = 'Performance Baixa';
+            badgeClass = 'error';
+            icon = 'trending_down';
+        }
+        
+        // Atualizar o badge
+        requestsBadgeEl.className = `badge ${badgeClass}`;
+        requestsBadgeEl.innerHTML = `
+            <span class="material-symbols-outlined">${icon}</span>
+            <span>${performanceLevel}</span>
+        `;
+        
+        console.log(`✅ Badge de performance atualizado: ${performanceLevel} (${todayRequests} requests, ${requestsChange}% mudança)`);
     }
     
     initializeCharts() {
