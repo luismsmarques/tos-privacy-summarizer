@@ -1113,6 +1113,45 @@ class Dashboard {
         }, 5000);
     }
     
+    showSuccess(message) {
+        const contentArea = document.getElementById('contentArea');
+        
+        // Remover mensagens existentes
+        const existingSuccess = contentArea.querySelector('.success-message');
+        if (existingSuccess) {
+            existingSuccess.remove();
+        }
+        
+        // Criar nova mensagem de sucesso
+        const successDiv = document.createElement('div');
+        successDiv.className = 'success-message';
+        successDiv.style.cssText = `
+            background-color: var(--md-sys-color-tertiary-container);
+            color: var(--md-sys-color-on-tertiary-container);
+            padding: 16px;
+            border-radius: var(--md-sys-shape-corner-medium);
+            margin: 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: var(--md-sys-elevation-level1);
+        `;
+        successDiv.innerHTML = `
+            <span class="material-symbols-outlined">check_circle</span>
+            <span>${message}</span>
+        `;
+        
+        // Inserir no topo do conteúdo
+        contentArea.insertBefore(successDiv, contentArea.firstChild);
+        
+        // Auto-remover após 5 segundos
+        setTimeout(() => {
+            if (successDiv.parentNode) {
+                successDiv.remove();
+            }
+        }, 5000);
+    }
+    
     // ===== FUNCIONALIDADES AVANÇADAS DE GESTÃO DE UTILIZADORES =====
     
     // Mostrar modal de detalhes do utilizador
