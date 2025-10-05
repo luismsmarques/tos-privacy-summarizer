@@ -196,32 +196,47 @@ class Dashboard {
     
     updateMetrics() {
         console.log('📈 Atualizando métricas...');
+        console.log('Dados overview:', this.data.overview);
         
         const overview = this.data.overview;
         if (!overview) return;
         
         // Total de utilizadores
         const totalUsersEl = document.getElementById('totalUsers');
-        if (totalUsersEl && overview.totalUsers !== undefined) {
-            totalUsersEl.textContent = overview.totalUsers.toLocaleString();
+        if (totalUsersEl && overview.total_users !== undefined) {
+            totalUsersEl.textContent = parseInt(overview.total_users).toLocaleString();
+            console.log('✅ Total users atualizado:', overview.total_users);
         }
         
-        // Total de resumos
+        // Total de resumos (usar successful_summaries)
         const totalSummariesEl = document.getElementById('totalSummaries');
-        if (totalSummariesEl && overview.totalSummaries !== undefined) {
-            totalSummariesEl.textContent = overview.totalSummaries.toLocaleString();
+        if (totalSummariesEl && overview.successful_summaries !== undefined) {
+            totalSummariesEl.textContent = parseInt(overview.successful_summaries).toLocaleString();
+            console.log('✅ Total summaries atualizado:', overview.successful_summaries);
         }
         
-        // Total de requests
+        // Total de requests (usar today_requests)
         const totalRequestsEl = document.getElementById('totalRequests');
-        if (totalRequestsEl && overview.totalRequests !== undefined) {
-            totalRequestsEl.textContent = overview.totalRequests.toLocaleString();
+        if (totalRequestsEl && overview.today_requests !== undefined) {
+            totalRequestsEl.textContent = parseInt(overview.today_requests).toLocaleString();
+            console.log('✅ Total requests atualizado:', overview.today_requests);
         }
         
-        // Taxa de sucesso
+        // Taxa de sucesso (calcular baseado em successful e failed)
         const successRateEl = document.getElementById('successRate');
-        if (successRateEl && overview.successRate !== undefined) {
-            successRateEl.textContent = `${overview.successRate.toFixed(1)}%`;
+        if (successRateEl && overview.successful_summaries !== undefined && overview.failed_summaries !== undefined) {
+            const successful = parseInt(overview.successful_summaries);
+            const failed = parseInt(overview.failed_summaries);
+            const total = successful + failed;
+            
+            if (total > 0) {
+                const successRate = (successful / total) * 100;
+                successRateEl.textContent = `${successRate.toFixed(1)}%`;
+                console.log('✅ Success rate atualizado:', successRate.toFixed(1) + '%');
+            } else {
+                successRateEl.textContent = '0%';
+                console.log('✅ Success rate atualizado: 0%');
+            }
         }
         
         // Atualizar mudanças percentuais se disponíveis
