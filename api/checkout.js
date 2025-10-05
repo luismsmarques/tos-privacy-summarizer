@@ -1,493 +1,174 @@
 // api/checkout.js - Função API para servir checkout.html
 export default function handler(req, res) {
-    // Servir o checkout.html como HTML
+    // Verificar método HTTP
+    if (req.method !== 'GET') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    // Servir uma página HTML simples primeiro
     const html = `<!DOCTYPE html>
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Comprar Créditos - ToS & Privacy Summarizer</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" />
-    <link rel="stylesheet" href="material-design-tokens.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Roboto', sans-serif;
-            background: var(--md-sys-color-surface);
-            color: var(--md-sys-color-on-surface);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
+            font-family: Arial, sans-serif;
             max-width: 600px;
             margin: 0 auto;
-            background: var(--md-sys-color-surface-container);
-            border-radius: 16px;
-            padding: 32px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 32px;
-        }
-
-        .header h1 {
-            font-size: 28px;
-            font-weight: 500;
-            color: var(--md-sys-color-primary);
-            margin-bottom: 8px;
-        }
-
-        .header p {
-            color: var(--md-sys-color-on-surface-variant);
-            font-size: 16px;
-        }
-
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            color: var(--md-sys-color-primary);
-            text-decoration: none;
-            font-weight: 500;
-            margin-bottom: 24px;
-            transition: opacity 0.2s;
-        }
-
-        .back-link:hover {
-            opacity: 0.8;
-        }
-
-        .back-link .material-icons {
-            margin-right: 8px;
-            font-size: 20px;
-        }
-
-        .credits-info {
-            background: var(--md-sys-color-primary-container);
-            color: var(--md-sys-color-on-primary-container);
             padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 24px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
             text-align: center;
+            margin-bottom: 30px;
         }
-
-        .credits-info h3 {
-            font-size: 18px;
-            margin-bottom: 8px;
-        }
-
-        .credits-info p {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-
-        .packages {
-            display: grid;
-            gap: 16px;
-            margin-bottom: 32px;
-        }
-
         .package {
-            border: 2px solid var(--md-sys-color-outline-variant);
-            border-radius: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
             padding: 20px;
+            margin: 15px 0;
             cursor: pointer;
-            transition: all 0.2s;
-            position: relative;
+            transition: border-color 0.3s;
         }
-
         .package:hover {
-            border-color: var(--md-sys-color-primary);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-color: #007bff;
         }
-
         .package.selected {
-            border-color: var(--md-sys-color-primary);
-            background: var(--md-sys-color-primary-container);
-            color: var(--md-sys-color-on-primary-container);
+            border-color: #007bff;
+            background: #f8f9fa;
         }
-
-        .package.popular {
-            border-color: var(--md-sys-color-primary);
-            position: relative;
-        }
-
-        .package.popular::before {
-            content: "MAIS POPULAR";
-            position: absolute;
-            top: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--md-sys-color-primary);
-            color: var(--md-sys-color-on-primary);
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-
         .package-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
-
         .package-name {
             font-size: 18px;
-            font-weight: 500;
+            font-weight: bold;
         }
-
         .package-price {
             font-size: 24px;
-            font-weight: 700;
-            color: var(--md-sys-color-primary);
+            color: #007bff;
+            font-weight: bold;
         }
-
-        .package.selected .package-price {
-            color: var(--md-sys-color-on-primary-container);
-        }
-
-        .package-details {
-            font-size: 14px;
-            color: var(--md-sys-color-on-surface-variant);
-            margin-bottom: 8px;
-        }
-
-        .package.selected .package-details {
-            color: var(--md-sys-color-on-primary-container);
-            opacity: 0.9;
-        }
-
-        .package-features {
-            list-style: none;
-            padding: 0;
-        }
-
-        .package-features li {
-            display: flex;
-            align-items: center;
-            margin-bottom: 4px;
-            font-size: 14px;
-        }
-
-        .package-features .material-icons {
-            font-size: 16px;
-            margin-right: 8px;
-            color: var(--md-sys-color-primary);
-        }
-
-        .package.selected .package-features .material-icons {
-            color: var(--md-sys-color-on-primary-container);
-        }
-
         .checkout-button {
             width: 100%;
-            background: var(--md-sys-color-primary);
-            color: var(--md-sys-color-on-primary);
+            background: #007bff;
+            color: white;
             border: none;
-            border-radius: 12px;
-            padding: 16px;
+            padding: 15px;
+            border-radius: 8px;
             font-size: 16px;
-            font-weight: 500;
             cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            margin-top: 20px;
         }
-
-        .checkout-button:hover {
-            background: var(--md-sys-color-primary-container);
-            color: var(--md-sys-color-on-primary-container);
-        }
-
         .checkout-button:disabled {
-            opacity: 0.6;
+            background: #ccc;
             cursor: not-allowed;
         }
-
-        .checkout-button .material-icons {
-            font-size: 20px;
-        }
-
-        .payment-info {
-            background: var(--md-sys-color-surface-container-low);
-            padding: 16px;
-            border-radius: 8px;
-            margin-top: 24px;
-            text-align: center;
-        }
-
-        .payment-info h4 {
-            font-size: 14px;
-            margin-bottom: 8px;
-            color: var(--md-sys-color-on-surface-variant);
-        }
-
-        .payment-info p {
-            font-size: 12px;
-            color: var(--md-sys-color-on-surface-variant);
-            opacity: 0.8;
-        }
-
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .loading .material-icons {
-            font-size: 32px;
-            animation: spin 1s linear infinite;
-            color: var(--md-sys-color-primary);
-        }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
         .error-message {
-            background: var(--md-sys-color-error-container);
-            color: var(--md-sys-color-on-error-container);
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 16px;
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
             display: none;
         }
-
         .success-message {
-            background: var(--md-sys-color-primary-container);
-            color: var(--md-sys-color-on-primary-container);
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 16px;
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
             display: none;
-        }
-
-        /* Dark theme */
-        [data-theme="dark"] {
-            --md-sys-color-surface: #1c1b1f;
-            --md-sys-color-surface-container: #2b2930;
-            --md-sys-color-surface-container-low: #25232a;
-            --md-sys-color-on-surface: #e6e0e9;
-            --md-sys-color-on-surface-variant: #cac4d0;
-            --md-sys-color-primary: #d0bcff;
-            --md-sys-color-primary-container: #4f378b;
-            --md-sys-color-on-primary-container: #eaddff;
-            --md-sys-color-outline-variant: #49454f;
-            --md-sys-color-error-container: #601410;
-            --md-sys-color-on-error-container: #ffdad6;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <a href="javascript:history.back()" class="back-link">
-            <span class="material-icons">arrow_back</span>
-            Voltar à Extensão
-        </a>
-
-        <div class="header">
-            <h1>💳 Comprar Créditos</h1>
-            <p>Escolha o pacote que melhor se adequa às suas necessidades</p>
-        </div>
-
-        <div class="credits-info">
-            <h3>Créditos Atuais</h3>
-            <p id="currentCredits">A carregar...</p>
-        </div>
-
+        <h1>💳 Comprar Créditos</h1>
+        
         <div class="error-message" id="errorMessage"></div>
         <div class="success-message" id="successMessage"></div>
-
+        
         <div class="packages">
             <div class="package" data-package="starter" data-price="2.99" data-credits="20">
                 <div class="package-header">
                     <div class="package-name">Pacote Starter</div>
                     <div class="package-price">€2.99</div>
                 </div>
-                <div class="package-details">20 créditos • €0.15 por crédito</div>
-                <ul class="package-features">
-                    <li><span class="material-icons">check</span>20 análises completas</li>
-                    <li><span class="material-icons">check</span>Suporte por email</li>
-                    <li><span class="material-icons">check</span>Créditos não expiram</li>
-                </ul>
+                <div>20 créditos • €0.15 por crédito</div>
             </div>
-
-            <div class="package popular" data-package="professional" data-price="9.99" data-credits="100">
+            
+            <div class="package" data-package="professional" data-price="9.99" data-credits="100">
                 <div class="package-header">
                     <div class="package-name">Pacote Professional</div>
                     <div class="package-price">€9.99</div>
                 </div>
-                <div class="package-details">100 créditos • €0.10 por crédito</div>
-                <ul class="package-features">
-                    <li><span class="material-icons">check</span>100 análises completas</li>
-                    <li><span class="material-icons">check</span>Suporte prioritário</li>
-                    <li><span class="material-icons">check</span>Créditos não expiram</li>
-                    <li><span class="material-icons">check</span>Desconto de 33%</li>
-                </ul>
+                <div>100 créditos • €0.10 por crédito</div>
             </div>
-
+            
             <div class="package" data-package="business" data-price="19.99" data-credits="250">
                 <div class="package-header">
                     <div class="package-name">Pacote Business</div>
                     <div class="package-price">€19.99</div>
                 </div>
-                <div class="package-details">250 créditos • €0.08 por crédito</div>
-                <ul class="package-features">
-                    <li><span class="material-icons">check</span>250 análises completas</li>
-                    <li><span class="material-icons">check</span>Suporte prioritário</li>
-                    <li><span class="material-icons">check</span>Créditos não expiram</li>
-                    <li><span class="material-icons">check</span>Desconto de 47%</li>
-                    <li><span class="material-icons">check</span>Relatórios detalhados</li>
-                </ul>
+                <div>250 créditos • €0.08 por crédito</div>
             </div>
         </div>
-
+        
         <button class="checkout-button" id="checkoutButton" disabled>
-            <span class="material-icons">shopping_cart</span>
             Selecionar um Pacote
         </button>
-
-        <div class="loading" id="loading">
-            <span class="material-icons">refresh</span>
-            <p>Processando pagamento...</p>
-        </div>
-
-        <div class="payment-info">
-            <h4>🔒 Pagamento Seguro</h4>
-            <p>Processado pelo Stripe • Cartões aceites: Visa, Mastercard, American Express</p>
-        </div>
     </div>
 
     <script>
-        // Checkout script para compra de créditos
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Checkout script carregado');
-
-            // Elementos do DOM
+            console.log('Checkout carregado');
+            
             const packages = document.querySelectorAll('.package');
             const checkoutButton = document.getElementById('checkoutButton');
-            const currentCredits = document.getElementById('currentCredits');
             const errorMessage = document.getElementById('errorMessage');
             const successMessage = document.getElementById('successMessage');
-            const loading = document.getElementById('loading');
-
-            // Estado da aplicação
+            
             let selectedPackage = null;
-            let userId = null;
-
-            // Inicializar aplicação
-            initializeCheckout();
-
-            // Função de inicialização
-            async function initializeCheckout() {
-                console.log('Inicializando checkout...');
-                
-                // Carregar créditos atuais
-                await loadCurrentCredits();
-                
-                // Configurar event listeners
-                setupEventListeners();
-                
-                console.log('Checkout inicializado');
-            }
-
-            // Carregar créditos atuais
-            async function loadCurrentCredits() {
-                try {
-                    // Simular carregamento de créditos (sem Chrome extension API)
-                    const credits = 5; // Valor padrão
-                    currentCredits.textContent = \`\${credits} Créditos Grátis Restantes\`;
+            let userId = 'user_' + Date.now();
+            
+            // Seleção de pacotes
+            packages.forEach(packageEl => {
+                packageEl.addEventListener('click', () => {
+                    packages.forEach(pkg => pkg.classList.remove('selected'));
+                    packageEl.classList.add('selected');
                     
-                    // Gerar userId se não existir
-                    userId = localStorage.getItem('userId') || 'user_' + Date.now();
-                    localStorage.setItem('userId', userId);
+                    selectedPackage = {
+                        name: packageEl.dataset.package,
+                        price: parseFloat(packageEl.dataset.price),
+                        credits: parseInt(packageEl.dataset.credits)
+                    };
                     
-                } catch (error) {
-                    console.error('Erro ao carregar créditos:', error);
-                    currentCredits.textContent = 'Erro ao carregar créditos';
-                }
-            }
-
-            // Configurar event listeners
-            function setupEventListeners() {
-                // Seleção de pacotes
-                packages.forEach(packageEl => {
-                    packageEl.addEventListener('click', () => {
-                        selectPackage(packageEl);
-                    });
+                    checkoutButton.disabled = false;
+                    checkoutButton.textContent = \`Comprar \${selectedPackage.credits} Créditos - €\${selectedPackage.price.toFixed(2)}\`;
                 });
-
-                // Botão de checkout
-                checkoutButton.addEventListener('click', handleCheckout);
-            }
-
-            // Selecionar pacote
-            function selectPackage(packageEl) {
-                // Remover seleção anterior
-                packages.forEach(pkg => pkg.classList.remove('selected'));
-                
-                // Selecionar novo pacote
-                packageEl.classList.add('selected');
-                selectedPackage = {
-                    name: packageEl.dataset.package,
-                    price: parseFloat(packageEl.dataset.price),
-                    credits: parseInt(packageEl.dataset.credits)
-                };
-
-                // Atualizar botão
-                checkoutButton.disabled = false;
-                checkoutButton.innerHTML = \`
-                    <span class="material-icons">shopping_cart</span>
-                    Comprar \${selectedPackage.credits} Créditos - €\${selectedPackage.price.toFixed(2)}
-                \`;
-
-                console.log('Pacote selecionado:', selectedPackage);
-            }
-
-            // Handler para checkout
-            async function handleCheckout() {
+            });
+            
+            // Checkout
+            checkoutButton.addEventListener('click', async () => {
                 if (!selectedPackage) return;
-
+                
                 try {
-                    console.log('Iniciando checkout para:', selectedPackage);
+                    checkoutButton.disabled = true;
+                    checkoutButton.textContent = 'Processando...';
                     
-                    // Mostrar loading
-                    showLoading(true);
-                    hideMessages();
-
-                    // Criar sessão de checkout no Stripe
-                    const checkoutSession = await createCheckoutSession(selectedPackage);
-                    
-                    if (checkoutSession && checkoutSession.url) {
-                        // Redirecionar para o Stripe Checkout
-                        window.location.href = checkoutSession.url;
-                    } else {
-                        throw new Error('Erro ao criar sessão de checkout');
-                    }
-
-                } catch (error) {
-                    console.error('Erro no checkout:', error);
-                    showError('Erro ao processar pagamento: ' + error.message);
-                    showLoading(false);
-                }
-            }
-
-            // Criar sessão de checkout no Stripe
-            async function createCheckoutSession(packageData) {
-                try {
                     const response = await fetch('https://tos-privacy-summarizer.vercel.app/api/stripe/create-checkout-session', {
                         method: 'POST',
                         headers: {
@@ -495,118 +176,50 @@ export default function handler(req, res) {
                         },
                         body: JSON.stringify({
                             userId: userId,
-                            package: packageData.name,
-                            credits: packageData.credits,
-                            price: packageData.price,
+                            package: selectedPackage.name,
+                            credits: selectedPackage.credits,
+                            price: selectedPackage.price,
                             currency: 'EUR'
                         })
                     });
-
+                    
                     if (!response.ok) {
                         throw new Error(\`HTTP \${response.status}: \${response.statusText}\`);
                     }
-
+                    
                     const data = await response.json();
-                    console.log('Sessão de checkout criada:', data);
-                    return data;
-
-                } catch (error) {
-                    console.error('Erro ao criar sessão de checkout:', error);
-                    throw error;
-                }
-            }
-
-            // Verificar status do pagamento (quando retorna do Stripe)
-            async function checkPaymentStatus() {
-                const urlParams = new URLSearchParams(window.location.search);
-                const sessionId = urlParams.get('session_id');
-                const success = urlParams.get('success');
-
-                if (success === 'true' && sessionId) {
-                    try {
-                        console.log('Verificando status do pagamento...');
-                        showLoading(true);
-
-                        const response = await fetch('https://tos-privacy-summarizer.vercel.app/api/stripe/verify-payment', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                sessionId: sessionId,
-                                userId: userId
-                            })
-                        });
-
-                        if (response.ok) {
-                            const result = await response.json();
-                            if (result.success) {
-                                showSuccess(\`Pagamento confirmado! \${result.credits} créditos adicionados à sua conta.\`);
-                                
-                                // Atualizar créditos locais
-                                await updateLocalCredits(result.newBalance);
-                                
-                                // Limpar URL
-                                window.history.replaceState({}, document.title, window.location.pathname);
-                            } else {
-                                showError('Erro ao confirmar pagamento: ' + result.error);
-                            }
-                        } else {
-                            showError('Erro ao verificar pagamento');
-                        }
-
-                    } catch (error) {
-                        console.error('Erro ao verificar pagamento:', error);
-                        showError('Erro ao verificar pagamento: ' + error.message);
-                    } finally {
-                        showLoading(false);
+                    console.log('Sessão criada:', data);
+                    
+                    if (data.url) {
+                        window.location.href = data.url;
+                    } else {
+                        throw new Error('URL não recebida');
                     }
-                }
-            }
-
-            // Atualizar créditos locais
-            async function updateLocalCredits(newBalance) {
-                try {
-                    localStorage.setItem('sharedCredits', newBalance);
-                    await loadCurrentCredits();
+                    
                 } catch (error) {
-                    console.error('Erro ao atualizar créditos locais:', error);
+                    console.error('Erro:', error);
+                    errorMessage.textContent = 'Erro: ' + error.message;
+                    errorMessage.style.display = 'block';
+                    checkoutButton.disabled = false;
+                    checkoutButton.textContent = 'Tentar Novamente';
                 }
-            }
-
-            // Mostrar loading
-            function showLoading(show) {
-                if (show) {
-                    loading.style.display = 'block';
-                    checkoutButton.disabled = true;
-                } else {
-                    loading.style.display = 'none';
-                    checkoutButton.disabled = !selectedPackage;
-                }
-            }
-
-            // Mostrar erro
-            function showError(message) {
-                errorMessage.textContent = message;
-                errorMessage.style.display = 'block';
-                successMessage.style.display = 'none';
-            }
-
-            // Mostrar sucesso
-            function showSuccess(message) {
-                successMessage.textContent = message;
+            });
+            
+            // Verificar status do pagamento
+            const urlParams = new URLSearchParams(window.location.search);
+            const sessionId = urlParams.get('session_id');
+            const success = urlParams.get('success');
+            
+            if (success === 'true' && sessionId) {
+                successMessage.textContent = 'Pagamento confirmado! Créditos adicionados à sua conta.';
                 successMessage.style.display = 'block';
-                errorMessage.style.display = 'none';
+                
+                // Limpar URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else if (success === 'false') {
+                errorMessage.textContent = 'Pagamento cancelado.';
+                errorMessage.style.display = 'block';
             }
-
-            // Esconder mensagens
-            function hideMessages() {
-                errorMessage.style.display = 'none';
-                successMessage.style.display = 'none';
-            }
-
-            // Verificar status do pagamento quando a página carrega
-            checkPaymentStatus();
         });
     </script>
 </body>
