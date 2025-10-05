@@ -136,7 +136,9 @@ class AuthService {
             `);
         }
 
-        const decoded = this.verifyToken(token);
+        // Usar a instância da classe para verificar o token
+        const authService = new AuthService();
+        const decoded = authService.verifyToken(token);
         if (!decoded) {
             return res.status(401).send('Token inválido');
         }
