@@ -4,657 +4,665 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ToS & Privacy Summarizer</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
-    <link rel="stylesheet" href="material-design-tokens.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" />
     <style>
         * {
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: var(--md-sys-typescale-body-large-font);
-            font-size: var(--md-sys-typescale-body-large-size);
-            line-height: var(--md-sys-typescale-body-large-line-height);
-            color: var(--md-sys-color-on-surface);
-            background-color: var(--md-sys-color-background);
             margin: 0;
             padding: 0;
-            width: 380px;
-            min-height: 500px;
+            box-sizing: border-box;
         }
-        
-        .container {
+
+        body {
+            width: 420px;
+            min-height: 600px;
+            font-family: 'Roboto', sans-serif;
+            background: var(--md-sys-color-surface);
+            color: var(--md-sys-color-on-surface);
+            overflow-x: hidden;
+        }
+
+        :root {
+            /* Light theme colors */
+            --md-sys-color-primary: #6750A4;
+            --md-sys-color-on-primary: #FFFFFF;
+            --md-sys-color-primary-container: #EADDFF;
+            --md-sys-color-on-primary-container: #21005D;
+            --md-sys-color-secondary: #625B71;
+            --md-sys-color-on-secondary: #FFFFFF;
+            --md-sys-color-secondary-container: #E8DEF8;
+            --md-sys-color-on-secondary-container: #1D192B;
+            --md-sys-color-tertiary: #7D5260;
+            --md-sys-color-on-tertiary: #FFFFFF;
+            --md-sys-color-tertiary-container: #FFD8E4;
+            --md-sys-color-on-tertiary-container: #31111D;
+            --md-sys-color-error: #BA1A1A;
+            --md-sys-color-on-error: #FFFFFF;
+            --md-sys-color-error-container: #FFDAD6;
+            --md-sys-color-on-error-container: #410002;
+            --md-sys-color-surface: #FFFBFE;
+            --md-sys-color-on-surface: #1C1B1F;
+            --md-sys-color-surface-variant: #E7E0EC;
+            --md-sys-color-on-surface-variant: #49454F;
+            --md-sys-color-outline: #79747E;
+            --md-sys-color-outline-variant: #CAC4D0;
+            --md-sys-color-shadow: #000000;
+            --md-sys-color-scrim: #000000;
+            --md-sys-color-inverse-surface: #313033;
+            --md-sys-color-inverse-on-surface: #F4EFF4;
+            --md-sys-color-inverse-primary: #D0BCFF;
+            --md-sys-color-surface-container-lowest: #FFFFFF;
+            --md-sys-color-surface-container-low: #F7F2FA;
+            --md-sys-color-surface-container: #F3EDF7;
+            --md-sys-color-surface-container-high: #ECE6F0;
+            --md-sys-color-surface-container-highest: #E6E0E9;
+            --md-sys-color-success: #4CAF50;
+            --md-sys-color-warning: #FF9800;
+        }
+
+        /* Dark theme */
+        [data-theme="dark"] {
+            --md-sys-color-primary: #D0BCFF;
+            --md-sys-color-on-primary: #381E72;
+            --md-sys-color-primary-container: #4F378B;
+            --md-sys-color-on-primary-container: #EADDFF;
+            --md-sys-color-secondary: #CCC2DC;
+            --md-sys-color-on-secondary: #332D41;
+            --md-sys-color-secondary-container: #4A4458;
+            --md-sys-color-on-secondary-container: #E8DEF8;
+            --md-sys-color-tertiary: #EFB8C8;
+            --md-sys-color-on-tertiary: #492532;
+            --md-sys-color-tertiary-container: #633B48;
+            --md-sys-color-on-tertiary-container: #FFD8E4;
+            --md-sys-color-error: #FFB4AB;
+            --md-sys-color-on-error: #690005;
+            --md-sys-color-error-container: #93000A;
+            --md-sys-color-on-error-container: #FFDAD6;
+            --md-sys-color-surface: #1C1B1F;
+            --md-sys-color-on-surface: #E6E0E9;
+            --md-sys-color-surface-variant: #49454F;
+            --md-sys-color-on-surface-variant: #CAC4D0;
+            --md-sys-color-outline: #938F99;
+            --md-sys-color-outline-variant: #49454F;
+            --md-sys-color-shadow: #000000;
+            --md-sys-color-scrim: #000000;
+            --md-sys-color-inverse-surface: #E6E0E9;
+            --md-sys-color-inverse-on-surface: #313033;
+            --md-sys-color-inverse-primary: #6750A4;
+            --md-sys-color-surface-container-lowest: #0F0D13;
+            --md-sys-color-surface-container-low: #1C1B1F;
+            --md-sys-color-surface-container: #211F26;
+            --md-sys-color-surface-container-high: #2B2930;
+            --md-sys-color-surface-container-highest: #36343B;
+            --md-sys-color-success: #81C784;
+            --md-sys-color-warning: #FFB74D;
+        }
+
+        /* Header */
+        .header {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
             padding: 16px;
             display: flex;
-            flex-direction: column;
-            gap: 16px;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
         }
-        
-        .header {
+
+        .header h1 {
+            font-size: 18px;
+            font-weight: 500;
+            margin: 0;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .theme-toggle, .settings-btn {
+            background: none;
+            border: none;
+            color: var(--md-sys-color-on-primary-container);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 20px;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-toggle:hover, .settings-btn:hover {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+        }
+
+        /* Value Communication Zone */
+        .value-zone {
+            padding: 16px;
+            background: var(--md-sys-color-surface-container);
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+        }
+
+        .credits-status {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
         }
-        
-        .logo {
+
+        .credits-info {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
         }
-        
-        .logo-icon {
-            width: 32px;
-            height: 32px;
-            background: linear-gradient(135deg, var(--md-sys-color-primary), var(--md-sys-color-tertiary));
-            border-radius: var(--md-sys-shape-corner-small);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+
+        .credits-badge {
+            background: var(--md-sys-color-primary);
             color: var(--md-sys-color-on-primary);
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
             font-weight: 500;
         }
-        
-        .logo-text {
-            font-family: var(--md-sys-typescale-title-large-font);
-            font-size: var(--md-sys-typescale-title-large-size);
-            font-weight: var(--md-sys-typescale-title-large-weight);
-            line-height: var(--md-sys-typescale-title-large-line-height);
+
+        .credits-badge.premium {
+            background: var(--md-sys-color-warning);
             color: var(--md-sys-color-on-surface);
         }
-        
-        .header-actions {
+
+        .security-status {
             display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--md-sys-color-success);
+            font-size: 14px;
+        }
+
+        .rating-indicators {
+            display: flex;
+            gap: 16px;
+            margin-top: 8px;
+        }
+
+        .rating-item {
+            display: flex;
+            align-items: center;
             gap: 4px;
-            align-items: center;
-        }
-
-        .header-action-btn {
-            background: none;
-            border: none;
+            font-size: 12px;
             color: var(--md-sys-color-on-surface-variant);
-            cursor: pointer;
-            padding: 8px;
-            border-radius: var(--md-sys-shape-corner-small);
-            transition: background-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        }
+
+        .rating-bar {
             width: 40px;
-            height: 40px;
+            height: 4px;
+            background: var(--md-sys-color-surface-container-high);
+            border-radius: 2px;
+            overflow: hidden;
         }
 
-        .header-action-btn:hover {
-            background-color: color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-sys-state-hover-state-layer-opacity * 100), transparent);
+        .rating-fill {
+            height: 100%;
+            background: var(--md-sys-color-success);
+            border-radius: 2px;
+            transition: width 0.3s ease;
         }
 
-        .header-action-btn .material-symbols-outlined {
-            font-size: 20px;
-            font-weight: normal;
-            font-style: normal;
-            line-height: 1;
-            letter-spacing: normal;
-            text-transform: none;
-            display: inline-block;
-            white-space: nowrap;
-            word-wrap: normal;
-            direction: ltr;
-            -webkit-font-feature-settings: 'liga';
-            -webkit-font-smoothing: antialiased;
-        }
-
-        .status-indicator {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
-            border-radius: var(--md-sys-shape-corner-small);
-            transition: all var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
-        }
-
-        .status-indicator .material-symbols-outlined {
-            font-size: 20px;
-            font-weight: normal;
-            font-style: normal;
-            line-height: 1;
-            letter-spacing: normal;
-            text-transform: none;
-            display: inline-block;
-            white-space: nowrap;
-            word-wrap: normal;
-            direction: ltr;
-            -webkit-font-feature-settings: 'liga';
-            -webkit-font-smoothing: antialiased;
-        }
-
-        /* Estados do indicador de status */
-        .status-indicator.status-ready {
-            color: var(--md-sys-color-tertiary);
-        }
-
-        .status-indicator.status-warning {
-            color: var(--md-sys-color-warning);
-        }
-
-        .status-indicator.status-error {
-            color: var(--md-sys-color-error);
-        }
-
-        .status-indicator.status-configuring {
-            color: var(--md-sys-color-primary);
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
-
-        /* Sistema de Notificações */
-        .notification-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            max-width: 300px;
-        }
-
-        .notification {
-            background-color: var(--md-sys-color-surface-container-high);
-            border-radius: var(--md-sys-shape-corner-medium);
+        /* Context Data Zone */
+        .context-zone {
             padding: 16px;
-            margin-bottom: 12px;
-            box-shadow: var(--md-sys-elevation-level3);
-            border-left: 4px solid;
+            background: var(--md-sys-color-surface-container-low);
+        }
+
+        .context-item {
             display: flex;
             align-items: flex-start;
             gap: 12px;
-            transform: translateX(100%);
-            transition: transform 0.3s ease;
-            animation: slideIn 0.3s ease forwards;
+            margin-bottom: 12px;
+            padding: 12px;
+            background: var(--md-sys-color-surface-container);
+            border-radius: 8px;
+            border: 1px solid var(--md-sys-color-outline-variant);
         }
 
-        .notification.show {
-            transform: translateX(0);
+        .context-item:last-child {
+            margin-bottom: 0;
         }
 
-        .notification.hide {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        .notification-icon {
+        .context-icon {
+            color: var(--md-sys-color-primary);
             font-size: 20px;
-            flex-shrink: 0;
             margin-top: 2px;
         }
 
-        .notification-content {
+        .context-content {
             flex: 1;
         }
 
-        .notification-title {
-            font-size: var(--md-sys-typescale-title-small-font-size);
-            font-weight: var(--md-sys-typescale-title-small-font-weight);
+        .context-label {
+            font-size: 12px;
+            color: var(--md-sys-color-on-surface-variant);
+            margin-bottom: 4px;
+        }
+
+        .context-value {
+            font-size: 14px;
             color: var(--md-sys-color-on-surface);
-            margin: 0 0 4px 0;
+            font-weight: 500;
         }
 
-        .notification-message {
-            font-size: var(--md-sys-typescale-body-small-font-size);
-            color: var(--md-sys-color-on-surface-variant);
-            margin: 0;
-            line-height: 1.4;
+        .url-display {
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 12px;
         }
 
-        .notification-close {
-            background: none;
-            border: none;
-            color: var(--md-sys-color-on-surface-variant);
-            cursor: pointer;
-            padding: 4px;
-            border-radius: var(--md-sys-shape-corner-small);
-            transition: background-color 0.2s ease;
-            flex-shrink: 0;
+        .content-type-badge {
+            background: var(--md-sys-color-secondary-container);
+            color: var(--md-sys-color-on-secondary-container);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
         }
 
-        .notification-close:hover {
-            background-color: var(--md-sys-color-surface-container-highest);
-        }
-
-        /* Tipos de notificação */
-        .notification.success {
-            border-left-color: var(--md-sys-color-tertiary);
-        }
-
-        .notification.success .notification-icon {
-            color: var(--md-sys-color-tertiary);
-        }
-
-        .notification.error {
-            border-left-color: var(--md-sys-color-error);
-        }
-
-        .notification.error .notification-icon {
-            color: var(--md-sys-color-error);
-        }
-
-        .notification.warning {
-            border-left-color: var(--md-sys-color-warning);
-        }
-
-        .notification.warning .notification-icon {
-            color: var(--md-sys-color-warning);
-        }
-
-        .notification.info {
-            border-left-color: var(--md-sys-color-primary);
-        }
-
-        .notification.info .notification-icon {
-            color: var(--md-sys-color-primary);
-        }
-        
-        .main-card {
-            background-color: var(--md-sys-color-surface-container);
-            border-radius: var(--md-sys-shape-corner-large);
-            box-shadow: var(--md-sys-elevation-level1);
-            padding: 24px;
-        }
-        
-        .button-group {
+        .complexity-bar {
             display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        
-        .md-button {
-            display: inline-flex;
             align-items: center;
-            justify-content: center;
-            padding: 10px 24px;
-            border-radius: var(--md-sys-shape-corner-large);
-            border: none;
-            font-family: var(--md-sys-typescale-label-large-font);
-            font-size: var(--md-sys-typescale-label-large-size);
-            font-weight: var(--md-sys-typescale-label-large-weight);
-            line-height: var(--md-sys-typescale-label-large-line-height);
-            cursor: pointer;
-            transition: all var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
-            text-decoration: none;
-            min-height: 40px;
             gap: 8px;
         }
-        
-        .md-button--filled {
-            background-color: var(--md-sys-color-primary);
-            color: var(--md-sys-color-on-primary);
-            box-shadow: var(--md-sys-elevation-level0);
+
+        .complexity-indicator {
+            display: flex;
+            gap: 2px;
         }
-        
-        .md-button--filled:hover {
-            background-color: color-mix(in srgb, var(--md-sys-color-primary) 92%, black);
-            box-shadow: var(--md-sys-elevation-level1);
+
+        .complexity-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--md-sys-color-surface-container-high);
         }
-        
-        .md-button--filled:disabled {
-            background-color: var(--md-sys-color-surface-variant);
-            color: var(--md-sys-color-on-surface-variant);
-            cursor: not-allowed;
-            box-shadow: none;
+
+        .complexity-dot.active {
+            background: var(--md-sys-color-primary);
         }
-        
-        .md-button--outlined {
-            background-color: transparent;
-            color: var(--md-sys-color-primary);
-            border: 1px solid var(--md-sys-color-outline);
+
+        .complexity-dot.high {
+            background: var(--md-sys-color-warning);
         }
-        
-        .md-button--outlined:hover {
-            background-color: color-mix(in srgb, var(--md-sys-color-primary) var(--md-sys-state-hover-state-layer-opacity * 100), transparent);
+
+        .time-saved {
+            color: var(--md-sys-color-success);
+            font-weight: 600;
         }
-        
-        .loading {
-            display: none;
-            background-color: var(--md-sys-color-surface-container);
-            border-radius: var(--md-sys-shape-corner-large);
-            padding: 24px;
-            box-shadow: var(--md-sys-elevation-level1);
+
+        /* Action Zone */
+        .action-zone {
+            padding: 16px;
+            background: var(--md-sys-color-surface-container);
         }
-        
-        .progress-container {
+
+        .customization-section {
             margin-bottom: 16px;
         }
-        
-        .progress-text {
-            font-family: var(--md-sys-typescale-body-medium-font);
-            font-size: var(--md-sys-typescale-body-medium-size);
+
+        .customization-label {
+            font-size: 14px;
             color: var(--md-sys-color-on-surface);
             margin-bottom: 8px;
-        }
-        
-        .md-progress-bar {
-            width: 100%;
-            height: 4px;
-            background-color: var(--md-sys-color-surface-variant);
-            border-radius: 2px;
-            overflow: hidden;
-            margin-bottom: 8px;
-        }
-        
-        .md-progress-bar-fill {
-            height: 100%;
-            background-color: var(--md-sys-color-primary);
-            border-radius: 2px;
-            transition: width var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-standard);
-            width: 0%;
-            position: relative;
-        }
-        
-        .md-progress-bar-fill::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            animation: shimmer 2s infinite;
-        }
-        
-        @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-        }
-        
-        .progress-percentage {
-            font-family: var(--md-sys-typescale-body-small-font);
-            font-size: var(--md-sys-typescale-body-small-size);
-            color: var(--md-sys-color-on-surface-variant);
-            text-align: right;
-        }
-        
-        .loading-steps {
-            margin-top: 16px;
-        }
-        
-        .loading-step {
             display: flex;
             align-items: center;
-            margin: 12px 0;
-            font-family: var(--md-sys-typescale-body-medium-font);
-            font-size: var(--md-sys-typescale-body-medium-size);
-            color: var(--md-sys-color-on-surface-variant);
-        }
-        
-        .loading-step.active {
-            color: var(--md-sys-color-on-surface);
-        }
-        
-        .loading-step.completed {
-            color: var(--md-sys-color-primary);
-        }
-        
-        .loading-step-icon {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background-color: var(--md-sys-color-surface-variant);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 12px;
-            font-size: 12px;
-            flex-shrink: 0;
-            transition: all var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
-        }
-        
-        .loading-step.active .loading-step-icon {
-            background-color: var(--md-sys-color-primary);
-            color: var(--md-sys-color-on-primary);
-            animation: pulse 1.5s infinite;
-        }
-        
-        .loading-step.completed .loading-step-icon {
-            background-color: var(--md-sys-color-primary);
-            color: var(--md-sys-color-on-primary);
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.1); opacity: 0.8; }
-        }
-        
-        .estimated-time {
-            font-family: var(--md-sys-typescale-body-small-font);
-            font-size: var(--md-sys-typescale-body-small-size);
-            color: var(--md-sys-color-on-surface-variant);
-            margin-top: 16px;
-            text-align: center;
-        }
-        
-        #summaryResult {
-            background-color: var(--md-sys-color-surface-container);
-            color: var(--md-sys-color-on-surface);
-            padding: 24px;
-            border-radius: var(--md-sys-shape-corner-large);
-            min-height: 200px;
-            max-height: 400px;
-            overflow-y: auto;
-            box-shadow: var(--md-sys-elevation-level1);
-        }
-        
-        #summaryResult:empty {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            color: var(--md-sys-color-on-surface-variant);
-            font-style: italic;
-        }
-        
-        #summaryResult:empty::before {
-            content: "Clique em 'Extrair & Resumir' para obter o resumo.";
-        }
-        
-        .status-message {
-            margin-top: 12px;
-            padding: 12px 16px;
-            border-radius: var(--md-sys-shape-corner-small);
-            font-family: var(--md-sys-typescale-body-medium-font);
-            font-size: var(--md-sys-typescale-body-medium-size);
-            text-align: center;
-        }
-        
-        .status-message.error {
-            background-color: var(--md-sys-color-error-container);
-            color: var(--md-sys-color-on-error-container);
-        }
-        
-        .status-message.success {
-            background-color: var(--md-sys-color-tertiary-container);
-            color: var(--md-sys-color-on-tertiary-container);
-        }
-        
-        .status-message.warning {
-            background-color: var(--md-sys-color-secondary-container);
-            color: var(--md-sys-color-on-secondary-container);
-        }
-        
-        /* Summary content styles */
-        .summary-section {
-            margin-bottom: 24px;
-            padding: 16px;
-            background-color: var(--md-sys-color-surface-container-high);
-            border-radius: var(--md-sys-shape-corner-medium);
-            border-left: 4px solid var(--md-sys-color-primary);
-        }
-        
-        .summary-section h2 {
-            margin: 0 0 12px 0;
-            font-family: var(--md-sys-typescale-title-medium-font);
-            font-size: var(--md-sys-typescale-title-medium-size);
-            font-weight: var(--md-sys-typescale-title-medium-weight);
-            color: var(--md-sys-color-on-surface);
-        }
-        
-        .key-points {
-            margin: 0;
-            padding-left: 20px;
-        }
-        
-        .key-points li {
-            margin: 8px 0;
-            line-height: 1.5;
-        }
-        
-        .privacy-alerts {
-            display: flex;
-            flex-direction: column;
             gap: 8px;
         }
-        
-        .alert-item {
+
+        .focus-selector {
             display: flex;
-            align-items: flex-start;
-            padding: 12px;
-            border-radius: var(--md-sys-shape-corner-small);
-            border-left: 4px solid;
-            background-color: var(--md-sys-color-surface-container-high);
+            gap: 8px;
+            margin-bottom: 12px;
         }
-        
-        .alert-icon {
-            font-size: 20px;
-            margin-right: 12px;
-            flex-shrink: 0;
-        }
-        
-        .alert-text {
+
+        .focus-option {
             flex: 1;
-            font-size: var(--md-sys-typescale-body-medium-size);
-            line-height: 1.4;
-        }
-        
-        .alert-data-sharing {
-            border-left-color: var(--md-sys-color-error);
-        }
-        
-        .alert-content-ownership {
-            border-left-color: var(--md-sys-color-tertiary);
-        }
-        
-        .alert-terms-changes {
-            border-left-color: var(--md-sys-color-secondary);
-        }
-        
-        .alert-jurisdiction {
-            border-left-color: var(--md-sys-color-on-surface-variant);
-        }
-        
-        .alert-other-risks {
-            border-left-color: var(--md-sys-color-primary);
-        }
-        
-        .alert-no-alerts {
-            border-left-color: var(--md-sys-color-primary);
-        }
-        
-        .no-alerts {
-            text-align: center;
-            padding: 16px;
-            color: var(--md-sys-color-primary);
-            font-weight: 500;
-            background-color: var(--md-sys-color-primary-container);
-            border-radius: var(--md-sys-shape-corner-small);
+            padding: 8px 12px;
             border: 1px solid var(--md-sys-color-outline-variant);
+            background: var(--md-sys-color-surface-container-low);
+            color: var(--md-sys-color-on-surface);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .focus-option.active {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            border-color: var(--md-sys-color-primary);
+        }
+
+        .action-button {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            border: none;
+            padding: 16px 24px;
+            border-radius: 24px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            margin-bottom: 12px;
+        }
+
+        .action-button:hover {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+            transform: translateY(-1px);
+        }
+
+        .action-button:disabled {
+            background: var(--md-sys-color-surface-container-high);
+            color: var(--md-sys-color-on-surface-variant);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .refresh-button {
+            background: none;
+            border: 1px solid var(--md-sys-color-outline-variant);
+            color: var(--md-sys-color-on-surface-variant);
+            padding: 8px 16px;
+            border-radius: 16px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin: 0 auto;
+        }
+
+        .refresh-button:hover {
+            background: var(--md-sys-color-surface-container-high);
+            color: var(--md-sys-color-on-surface);
+        }
+
+        /* Footer */
+        .footer {
+            padding: 16px;
+            text-align: center;
+            border-top: 1px solid var(--md-sys-color-outline-variant);
+            background: var(--md-sys-color-surface-container-low);
+        }
+
+        .footer a {
+            color: var(--md-sys-color-primary);
+            text-decoration: none;
+            font-size: 12px;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Summary Container */
+        .summary-container {
+            background: var(--md-sys-color-surface-container);
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid var(--md-sys-color-outline-variant);
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 16px;
+        }
+
+        .summary-content {
+            line-height: 1.6;
+            color: var(--md-sys-color-on-surface);
+        }
+
+        .summary-content h3 {
+            color: var(--md-sys-color-primary);
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .summary-content h4 {
+            color: var(--md-sys-color-secondary);
+            margin: 12px 0 6px 0;
+            font-size: 14px;
+        }
+
+        .summary-content ul {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+
+        .summary-content li {
+            margin: 4px 0;
+        }
+
+        .summary-content strong {
+            color: var(--md-sys-color-primary);
+        }
+
+        /* Progress Container */
+        .progress-container {
+            background: var(--md-sys-color-surface-container);
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid var(--md-sys-color-outline-variant);
+            margin: 16px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--md-sys-color-surface-container-high);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 12px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--md-sys-color-primary);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .progress-text {
+            text-align: center;
+            color: var(--md-sys-color-on-surface-variant);
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        /* Error Message */
+        .error-message {
+            background: var(--md-sys-color-error-container);
+            color: var(--md-sys-color-on-error-container);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--md-sys-color-error);
+            margin: 16px;
+        }
+
+        /* Loading Spinner */
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--md-sys-color-outline-variant);
+            border-top: 2px solid var(--md-sys-color-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">
-                <div class="logo-icon">
-                    <span class="material-symbols-outlined">summarize</span>
-                </div>
-                <div class="logo-text">ToS Summarizer</div>
+    <!-- Header -->
+    <div class="header">
+        <h1>ToS Summarizer</h1>
+        <div class="header-controls">
+            <button class="theme-toggle" id="themeToggle" title="Alternar tema">
+                <span class="material-symbols-outlined">dark_mode</span>
+            </button>
+            <button class="settings-btn" id="settingsBtn" title="Configurações">
+                <span class="material-symbols-outlined">settings</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Value Communication Zone -->
+    <div class="value-zone">
+        <div class="credits-status">
+            <div class="credits-info">
+                <span class="material-symbols-outlined">account_balance_wallet</span>
+                <span id="creditsText">5 Créditos Grátis Restantes</span>
             </div>
-            <div class="header-actions">
-                <div class="status-indicator" id="statusIndicator" title="Estado da extensão">
-                    <span class="material-symbols-outlined">check_circle</span>
+            <div class="credits-badge" id="creditsBadge">GRÁTIS</div>
+        </div>
+        
+        <div class="security-status">
+            <span class="material-symbols-outlined">lock</span>
+            <span>Análise Segura e Privada</span>
+        </div>
+        
+        <div class="rating-indicators">
+            <div class="rating-item">
+                <span>Velocidade:</span>
+                <div class="rating-bar">
+                    <div class="rating-fill" style="width: 90%"></div>
                 </div>
-                <button class="header-action-btn" id="openSettings" title="Configurações">
-                    <span class="material-symbols-outlined">settings</span>
-                </button>
-                <button class="header-action-btn" id="themeToggle" title="Alternar tema">
-                    <span class="material-symbols-outlined">dark_mode</span>
-                </button>
+                <span>Rápido</span>
+            </div>
+            <div class="rating-item">
+                <span>Precisão:</span>
+                <div class="rating-bar">
+                    <div class="rating-fill" style="width: 95%"></div>
+                </div>
+                <span>Alta</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Context Data Zone -->
+    <div class="context-zone">
+        <div class="context-item">
+            <span class="material-symbols-outlined context-icon">link</span>
+            <div class="context-content">
+                <div class="context-label">URL da Página</div>
+                <div class="context-value url-display" id="pageUrl">A carregar...</div>
             </div>
         </div>
         
-        <div class="main-card">
-            <div class="button-group">
-                <button class="md-button md-button--filled" id="summarizeButton">
-                    <span class="material-symbols-outlined">search</span>
-                    Extrair & Resumir
-                </button>
-            </div>
-            
-            <div class="loading" id="loadingIndicator">
-                <div class="progress-container">
-                    <div class="progress-text" id="progressText">A preparar análise...</div>
-                    <div class="md-progress-bar">
-                        <div class="md-progress-bar-fill" id="progressFill"></div>
-                    </div>
-                    <div class="progress-percentage" id="progressPercentage">0%</div>
-                </div>
-                
-                <div class="loading-steps" id="loadingSteps">
-                    <div class="loading-step" id="step1">
-                        <div class="loading-step-icon">1</div>
-                        <span>Extraindo texto da página</span>
-                    </div>
-                    <div class="loading-step" id="step2">
-                        <div class="loading-step-icon">2</div>
-                        <span>Enviando para análise IA</span>
-                    </div>
-                    <div class="loading-step" id="step3">
-                        <div class="loading-step-icon">3</div>
-                        <span>Processando com Gemini</span>
-                    </div>
-                    <div class="loading-step" id="step4">
-                        <div class="loading-step-icon">4</div>
-                        <span>Formatando resultado</span>
-                    </div>
-                </div>
-                
-                <div class="estimated-time" id="estimatedTime">
-                    Tempo estimado: 10-15 segundos
+        <div class="context-item">
+            <span class="material-symbols-outlined context-icon">description</span>
+            <div class="context-content">
+                <div class="context-label">Tipo de Conteúdo Detetado</div>
+                <div class="context-value">
+                    <span class="content-type-badge" id="contentType">A analisar...</span>
                 </div>
             </div>
-            
-            <div id="summaryResult"></div>
-            
-            <div id="statusMessage"></div>
+        </div>
+        
+        <div class="context-item">
+            <span class="material-symbols-outlined context-icon">trending_up</span>
+            <div class="context-content">
+                <div class="context-label">Complexidade Linguística Estimada</div>
+                <div class="context-value">
+                    <div class="complexity-bar">
+                        <div class="complexity-indicator" id="complexityIndicator">
+                            <div class="complexity-dot"></div>
+                            <div class="complexity-dot"></div>
+                            <div class="complexity-dot"></div>
+                            <div class="complexity-dot"></div>
+                            <div class="complexity-dot"></div>
+                        </div>
+                        <span id="complexityText">A calcular...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="context-item">
+            <span class="material-symbols-outlined context-icon">schedule</span>
+            <div class="context-content">
+                <div class="context-label">Tempo Poupança Estimada</div>
+                <div class="context-value time-saved" id="timeSaved">A calcular...</div>
+            </div>
         </div>
     </div>
-    
-    <!-- Container de Notificações -->
-    <div class="notification-container" id="notificationContainer"></div>
-    
+
+    <!-- Action Zone -->
+    <div class="action-zone">
+        <div class="customization-section">
+            <div class="customization-label">
+                <span class="material-symbols-outlined">tune</span>
+                <span>Foco do Resumo</span>
+            </div>
+            <div class="focus-selector">
+                <div class="focus-option active" data-focus="privacy">Privacidade</div>
+                <div class="focus-option" data-focus="terms">Direitos (ToS)</div>
+                <div class="focus-option" data-focus="general">Geral</div>
+            </div>
+        </div>
+        
+        <button class="action-button" id="actionButton">
+            <span class="material-symbols-outlined">summarize</span>
+            <span id="actionButtonText">Extrair & Resumir</span>
+            <span id="actionButtonCost">(1 Crédito)</span>
+        </button>
+        
+        <button class="refresh-button" id="refreshButton">
+            <span class="material-symbols-outlined">refresh</span>
+            <span>Ajustar Extração</span>
+        </button>
+    </div>
+
+    <!-- Summary Container (Hidden by default) -->
+    <div id="summaryContainer" class="summary-container hidden">
+        <div id="summaryContent" class="summary-content"></div>
+    </div>
+
+    <!-- Progress Container (Hidden by default) -->
+    <div id="progressContainer" class="progress-container hidden">
+        <div class="progress-text">Processando conteúdo...</div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-text" id="progressText">A analisar...</div>
+    </div>
+
+    <!-- Error Container (Hidden by default) -->
+    <div id="errorContainer" class="error-message hidden">
+        <div id="errorMessage"></div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <a href="#" id="privacyLink">Política de Privacidade</a> • 
+        <a href="#" id="termsLink">Termos de Serviço</a> • 
+        <a href="#" id="buyCreditsLink">Comprar Mais Créditos</a>
+    </div>
+
     <script src="popup.js"></script>
 </body>
 </html>
