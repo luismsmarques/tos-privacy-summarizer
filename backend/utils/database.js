@@ -153,7 +153,7 @@ class Database {
     async createSummary(summaryId, userId, success, duration, type = 'unknown', textLength = 0) {
         try {
             const result = await this.query(`
-                INSERT INTO summaries (summary_id, user_id, success, duration_ms, type, text_length)
+                INSERT INTO summaries (summary_id, user_id, success, duration, type, text_length)
                 VALUES ($1, $2, $3, $4, $5, $6)
                 RETURNING *
             `, [summaryId, userId, success, duration, type, textLength]);

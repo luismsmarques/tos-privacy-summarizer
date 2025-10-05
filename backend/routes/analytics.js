@@ -397,10 +397,14 @@ async function registerUser(userId, deviceId) {
 // Função para registrar novo resumo
 async function registerSummary(userId, success = true, duration = 0, type = 'unknown', textLength = 0) {
   try {
+    console.log(`📝 Criando resumo: userId=${userId}, success=${success}, duration=${duration}, type=${type}, textLength=${textLength}`);
     const summaryId = `summary_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    await db.createSummary(summaryId, userId, success, duration, type, textLength);
+    const result = await db.createSummary(summaryId, userId, success, duration, type, textLength);
+    console.log(`✅ Resumo criado com sucesso: ${summaryId}`);
+    return result;
   } catch (error) {
-    console.error('Error registering summary:', error);
+    console.error('❌ Error registering summary:', error);
+    throw error;
   }
 }
 

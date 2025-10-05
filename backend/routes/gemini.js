@@ -57,7 +57,14 @@ router.post('/proxy', [
         
         // Registrar resumo no analytics
         const duration = Date.now() - startTime;
-        await registerSummary(userId, true, duration, 'terms_of_service', text.length);
+        console.log(`📊 Registrando resumo: userId=${userId}, success=${success}, duration=${duration}ms, textLength=${text.length}`);
+        try {
+            await registerSummary(userId, true, duration, 'terms_of_service', text.length);
+            console.log('✅ Resumo registrado com sucesso no analytics');
+        } catch (error) {
+            console.error('❌ Erro ao registrar resumo no analytics:', error);
+            // Não falhar o request por causa do analytics
+        }
         
         // Decrementar créditos se for API compartilhada
         if (apiType === 'shared') {
