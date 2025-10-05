@@ -1,6 +1,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const router = express.Router();
+const { registerUser, registerSummary } = require('./analytics');
 
 // Middleware para verificar se a chave da API está configurada
 const checkGeminiKey = (req, res, next) => {
@@ -19,6 +20,9 @@ router.post('/proxy', [
     body('text').isString().isLength({ min: 50 }).withMessage('Texto deve ter pelo menos 50 caracteres'),
     body('apiType').optional().isIn(['shared', 'own']).withMessage('Tipo de API inválido')
 ], async (req, res) => {
+    const startTime = Date.now();
+    let success = false;
+    
     try {
         // Validar dados de entrada
         const errors = validationResult(req);
@@ -30,6 +34,9 @@ router.post('/proxy', [
         }
 
         const { userId, text, apiType = 'shared' } = req.body;
+
+        // Registrar utilizador no analytics
+        registerUser(userId, req.ip || 'unknown');
 
         // Verificar créditos do utilizador (apenas para API compartilhada)
         if (apiType === 'shared') {
@@ -45,6 +52,11 @@ router.post('/proxy', [
 
         // Chamar API Gemini
         const geminiResponse = await callGeminiAPI(text);
+        success = true;
+        
+        // Registrar resumo no analytics
+        const duration = Date.now() - startTime;
+        registerSummary(userId, true, duration);
         
         // Decrementar créditos se for API compartilhada
         if (apiType === 'shared') {
@@ -65,6 +77,10 @@ router.post('/proxy', [
 
     } catch (error) {
         console.error('Erro no proxy Gemini:', error);
+        
+        // Registrar falha no analytics
+        const duration = Date.now() - startTime;
+        registerSummary(req.body.userId || 'unknown', false, duration);
         
         // Determinar tipo de erro
         let errorMessage = 'Erro ao processar resumo';
