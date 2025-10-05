@@ -1,6 +1,124 @@
 // Content script para extrair texto da página
 console.log('Content script carregado');
 
+// Listener para mensagens do popup
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    console.log('Content script recebeu mensagem:', request.action);
+    
+    switch (request.action) {
+        case 'ping':
+            sendResponse({ success: true, message: 'Content script ativo' });
+            break;
+            
+        case 'analyzePage':
+            try {
+                const analysis = analyzePage();
+                sendResponse({ success: true, analysis: analysis });
+            } catch (error) {
+                console.error('Erro na análise da página:', error);
+                sendResponse({ success: false, error: error.message });
+            }
+            break;
+            
+        case 'summarizeText':
+            try {
+                const text = extractPageText();
+                if (text.length < 50) {
+                    sendResponse({ success: false, error: 'Texto insuficiente para análise' });
+                    return;
+                }
+                
+                // Enviar para background script
+                chrome.runtime.sendMessage({
+                    action: 'summarizeText',
+                    text: text,
+                    focus: request.focus || 'privacy'
+                });
+                
+                sendResponse({ success: true, message: 'Texto enviado para análise' });
+            } catch (error) {
+                console.error('Erro ao extrair texto:', error);
+                sendResponse({ success: false, error: error.message });
+            }
+            break;
+            
+        default:
+            sendResponse({ success: false, error: 'Ação não reconhecida' });
+    }
+    
+    return true; // Manter canal aberto para resposta assíncrona
+});
+
+// Função para analisar a página
+function analyzePage() {
+    try {
+        console.log('Analisando página...');
+        
+        const text = extractPageText();
+        const type = detectDocumentType(text);
+        
+        return {
+            textLength: text.length,
+            type: type,
+            url: window.location.href,
+            title: document.title
+        };
+    } catch (error) {
+        console.error('Erro ao analisar página:', error);
+        return {
+            textLength: 0,
+            type: 'unknown',
+            url: window.location.href,
+            title: document.title
+        };
+    }
+}
+
+// Função para detectar tipo de documento
+function detectDocumentType(text) {
+    const lowerText = text.toLowerCase();
+    
+    // Palavras-chave para Política de Privacidade
+    const privacyKeywords = [
+        'privacy policy', 'política de privacidade', 'privacidade',
+        'personal data', 'dados pessoais', 'data protection',
+        'cookie policy', 'política de cookies', 'gdpr',
+        'data collection', 'recolha de dados', 'data processing'
+    ];
+    
+    // Palavras-chave para Termos de Serviço
+    const termsKeywords = [
+        'terms of service', 'termos de serviço', 'terms and conditions',
+        'user agreement', 'contrato de utilizador', 'service agreement',
+        'terms of use', 'condições de uso', 'user terms'
+    ];
+    
+    // Contar ocorrências
+    const privacyCount = privacyKeywords.reduce((count, keyword) => {
+        return count + (lowerText.includes(keyword) ? 1 : 0);
+    }, 0);
+    
+    const termsCount = termsKeywords.reduce((count, keyword) => {
+        return count + (lowerText.includes(keyword) ? 1 : 0);
+    }, 0);
+    
+    // Determinar tipo baseado na contagem
+    if (privacyCount > termsCount) {
+        return 'privacy_policy';
+    } else if (termsCount > privacyCount) {
+        return 'terms_of_service';
+    } else {
+        // Se não conseguir determinar, usar padrão baseado no contexto
+        if (lowerText.includes('privacy') || lowerText.includes('privacidade')) {
+            return 'privacy_policy';
+        } else if (lowerText.includes('terms') || lowerText.includes('termos')) {
+            return 'terms_of_service';
+        } else {
+            return 'unknown';
+        }
+    }
+}
+
 // Função para extrair texto da página
 function extractPageText() {
   try {

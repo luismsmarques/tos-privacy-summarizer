@@ -115,13 +115,29 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!currentTab) return;
         
         try {
+            // Verificar se o content script já está injetado
+            try {
+                await chrome.tabs.sendMessage(currentTab.id, { action: 'ping' });
+                console.log('Content script já está ativo');
+                return;
+            } catch (e) {
+                console.log('Content script não encontrado, injetando...');
+            }
+            
+            // Injetar o content script
             await chrome.scripting.executeScript({
                 target: { tabId: currentTab.id },
                 files: ['content.js']
             });
+            
             console.log('Content script injetado com sucesso');
+            
+            // Aguardar o content script estar pronto
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
         } catch (error) {
             console.error('Erro ao injetar content script:', error);
+            throw error;
         }
     }
 
@@ -258,6 +274,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (isProcessing) return;
         
         try {
+            console.log('Iniciando processo de resumo...');
             isProcessing = true;
             actionButton.disabled = true;
             actionButtonText.textContent = 'Processando...';
@@ -265,15 +282,30 @@ document.addEventListener('DOMContentLoaded', function() {
             // Mostrar progresso
             showProgress();
             
+            // Garantir que o content script está injetado
+            await injectContentScript();
+            
+            // Aguardar um pouco para o content script estar pronto
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
             // Solicitar resumo
+            console.log('Enviando mensagem para content script...');
             chrome.tabs.sendMessage(currentTab.id, { 
                 action: 'summarizeText',
                 focus: currentFocus
+            }, (response) => {
+                if (chrome.runtime.lastError) {
+                    console.error('Erro ao comunicar com content script:', chrome.runtime.lastError);
+                    showError('Erro ao comunicar com a página. Tente recarregar a página.');
+                    resetButton();
+                } else {
+                    console.log('Resposta do content script:', response);
+                }
             });
             
         } catch (error) {
             console.error('Erro ao iniciar resumo:', error);
-            showError('Erro ao iniciar análise');
+            showError('Erro ao iniciar análise: ' + error.message);
             resetButton();
         }
     }
