@@ -8,6 +8,9 @@
     },
     "api/debug-supabase.js": {
       "maxDuration": 10
+    },
+    "api/test-supabase.js": {
+      "maxDuration": 10
     }
   },
   "rewrites": [
