@@ -1,6 +1,7 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import { registerUser, registerSummary } from './analytics.js';
+import { db } from '../utils/database.js';
 const router = express.Router();
 
 // Middleware para verificar se a chave da API está configurada
@@ -36,7 +37,7 @@ router.post('/proxy', [
         const { userId, text, apiType = 'shared' } = req.body;
 
         // Registrar utilizador no analytics
-        registerUser(userId, req.ip || 'unknown');
+        await registerUser(userId, req.ip || 'unknown');
 
         // Verificar créditos do utilizador (apenas para API compartilhada)
         if (apiType === 'shared') {
@@ -56,7 +57,7 @@ router.post('/proxy', [
         
         // Registrar resumo no analytics
         const duration = Date.now() - startTime;
-        registerSummary(userId, true, duration);
+        await registerSummary(userId, true, duration, 'terms_of_service', text.length);
         
         // Decrementar créditos se for API compartilhada
         if (apiType === 'shared') {
@@ -80,7 +81,7 @@ router.post('/proxy', [
         
         // Registrar falha no analytics
         const duration = Date.now() - startTime;
-        registerSummary(req.body.userId || 'unknown', false, duration);
+        await registerSummary(req.body.userId || 'unknown', false, duration, 'error', 0);
         
         // Determinar tipo de erro
         let errorMessage = 'Erro ao processar resumo';
@@ -219,19 +220,21 @@ function cleanMarkdownCodeBlocks(text) {
 
 // Funções auxiliares para gestão de utilizadores e créditos
 async function getUserCredits(userId) {
-    // Implementação simplificada - em produção usar base de dados real
-    const users = global.users || new Map();
-    const user = users.get(userId);
-    return user ? user.credits : parseInt(process.env.DEFAULT_FREE_CREDITS) || 5;
+    try {
+        return await db.getUserCredits(userId);
+    } catch (error) {
+        console.error('Error getting user credits:', error);
+        return 5; // Default credits
+    }
 }
 
 async function decrementUserCredits(userId) {
-    // Implementação simplificada - em produção usar base de dados real
-    const users = global.users || new Map();
-    const user = users.get(userId) || { credits: parseInt(process.env.DEFAULT_FREE_CREDITS) || 5 };
-    user.credits = Math.max(0, user.credits - 1);
-    users.set(userId, user);
-    global.users = users;
+    try {
+        return await db.decrementUserCredits(userId);
+    } catch (error) {
+        console.error('Error decrementing credits:', error);
+        return 0;
+    }
 }
 
 // Endpoint para verificar créditos

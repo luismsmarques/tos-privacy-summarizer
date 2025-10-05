@@ -52,6 +52,7 @@ import userRoutes from './routes/users.js';
 import creditsRoutes from './routes/credits.js';
 import stripeRoutes from './routes/stripe.js';
 import { router as analyticsRoutes } from './routes/analytics.js';
+import { db } from './utils/database.js';
 
 // Rotas da API
 app.use('/api/gemini', geminiRoutes);
@@ -108,6 +109,13 @@ app.use('*', (req, res) => {
         path: req.originalUrl,
         method: req.method
     });
+});
+
+// Inicializar base de dados
+db.connect().then(async (connected) => {
+    if (connected) {
+        await db.initialize();
+    }
 });
 
 // Inicializar servidor
