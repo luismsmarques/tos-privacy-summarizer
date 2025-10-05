@@ -90,7 +90,6 @@ import geminiRoutes from './routes/gemini.js';
 import userRoutes from './routes/users.js';
 import creditsRoutes from './routes/credits.js';
 import stripeRoutes from './routes/stripe.js';
-import pagesRoutes from './routes/pages.js';
 import { router as analyticsRoutes } from './routes/analytics.js';
 import authRoutes from './routes/auth.js';
 import db from './utils/database.js';
@@ -103,9 +102,6 @@ app.use('/api/users', userRoutes);
 app.use('/api/credits', creditsRoutes);
 app.use('/api/stripe', stripeRoutes);
 app.use('/api/analytics', auth.authenticateToken, analyticsRoutes);
-
-// Rotas de páginas estáticas
-app.use('/', pagesRoutes);
 
 // Middleware para proteger todas as rotas do dashboard
 app.use('/dashboard', auth.protectDashboard);

@@ -5,6 +5,9 @@ class Dashboard {
         this.charts = {};
         this.data = {};
         this.isLoading = false;
+        this.currentUsersPage = 1;
+        this.usersPerPage = 20;
+        this.usersData = null;
         
         this.init();
     }
@@ -74,6 +77,64 @@ class Dashboard {
                 sidebar.classList.remove('collapsed');
             }
         });
+
+        // Users section event listeners
+        this.setupUsersEventListeners();
+    }
+
+    setupUsersEventListeners() {
+        // Refresh users button
+        const refreshUsersBtn = document.getElementById('refreshUsersBtn');
+        if (refreshUsersBtn) {
+            refreshUsersBtn.addEventListener('click', () => {
+                this.loadUsersData();
+            });
+        }
+
+        // Export users button
+        const exportUsersBtn = document.getElementById('exportUsersBtn');
+        if (exportUsersBtn) {
+            exportUsersBtn.addEventListener('click', () => {
+                this.exportUsers();
+            });
+        }
+
+        // Users search
+        const usersSearch = document.getElementById('usersSearch');
+        if (usersSearch) {
+            usersSearch.addEventListener('input', (e) => {
+                clearTimeout(this.searchTimeout);
+                this.searchTimeout = setTimeout(() => {
+                    this.loadUsersData();
+                }, 500);
+            });
+        }
+
+        // Users filter
+        const usersFilter = document.getElementById('usersFilter');
+        if (usersFilter) {
+            usersFilter.addEventListener('change', () => {
+                this.loadUsersData();
+            });
+        }
+
+        // Pagination buttons
+        const prevPageBtn = document.getElementById('prevPageBtn');
+        const nextPageBtn = document.getElementById('nextPageBtn');
+        
+        if (prevPageBtn) {
+            prevPageBtn.addEventListener('click', () => {
+                this.currentUsersPage = Math.max(1, this.currentUsersPage - 1);
+                this.loadUsersData();
+            });
+        }
+
+        if (nextPageBtn) {
+            nextPageBtn.addEventListener('click', () => {
+                this.currentUsersPage += 1;
+                this.loadUsersData();
+            });
+        }
     }
     
     async loadInitialData() {
@@ -527,6 +588,11 @@ class Dashboard {
         pageTitle.textContent = titles[section] || 'Dashboard';
         
         this.currentSection = section;
+        
+        // Carregar dados específicos da secção
+        if (section === 'users') {
+            this.loadUsersData();
+        }
     }
     
     toggleTheme() {
@@ -728,6 +794,341 @@ document.addEventListener('DOMContentLoaded', () => {
             window.dashboard.refreshData();
         }
     }, 30000);
+});
+
+// ===== USERS MANAGEMENT METHODS =====
+
+// Adicionar métodos à classe Dashboard
+Dashboard.prototype.loadUsersData = async function() {
+        if (this.currentSection !== 'users') return;
+
+        console.log('👥 Carregando dados de utilizadores...');
+        
+        try {
+            const search = document.getElementById('usersSearch')?.value || '';
+            const filter = document.getElementById('usersFilter')?.value || 'all';
+            
+            const params = new URLSearchParams({
+                page: this.currentUsersPage,
+                limit: this.usersPerPage,
+                search: search,
+                filter: filter
+            });
+
+            // Carregar utilizadores e estatísticas em paralelo
+            const [usersResponse, statsResponse] = await Promise.all([
+                this.fetchData(`/api/users?${params}`),
+                this.fetchData('/api/users/stats')
+            ]);
+
+            if (usersResponse && statsResponse) {
+                this.usersData = usersResponse.data;
+                this.updateUsersStats(statsResponse.data);
+                this.updateUsersTable(this.usersData.users);
+                this.updateUsersPagination(this.usersData.pagination);
+            }
+
+        } catch (error) {
+            console.error('❌ Erro ao carregar utilizadores:', error);
+            this.showError('Erro ao carregar dados de utilizadores');
+        }
+    }
+
+Dashboard.prototype.updateUsersStats = function(stats) {
+        const elements = {
+            totalUsersCount: stats.totalUsers,
+            activeUsersCount: stats.activeUsers,
+            totalCreditsCount: stats.totalCredits,
+            newUsersToday: stats.newToday
+        };
+
+        Object.entries(elements).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value.toLocaleString();
+            }
+        });
+    }
+
+Dashboard.prototype.updateUsersTable = function(users) {
+        const tbody = document.getElementById('usersTableBody');
+        if (!tbody) return;
+
+        if (users.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center">
+                        <div style="padding: 40px; color: var(--text-secondary);">
+                            <span class="material-symbols-outlined" style="font-size: 48px; margin-bottom: 16px; display: block;">person_off</span>
+                            Nenhum utilizador encontrado
+                        </div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = users.map(user => `
+            <tr>
+                <td>
+                    <div class="user-info">
+                        <div class="user-avatar">
+                            ${user.email.charAt(0).toUpperCase()}
+                        </div>
+                        <div class="user-details">
+                            <h4>${user.email}</h4>
+                            <p>ID: ${user.id}</p>
+                        </div>
+                    </div>
+                </td>
+                <td>${user.email}</td>
+                <td>
+                    <div class="credits-info">
+                        <span class="material-symbols-outlined credits-icon">account_balance_wallet</span>
+                        <span class="credits-value">${user.credits}</span>
+                    </div>
+                </td>
+                <td>
+                    <span class="status-badge status-${user.status}">
+                        ${this.getStatusText(user.status)}
+                    </span>
+                </td>
+                <td>${this.formatDate(user.lastActivity)}</td>
+                <td>${this.formatDate(user.createdAt)}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn-action primary" onclick="dashboard.viewUserDetails('${user.id}')">
+                            <span class="material-symbols-outlined">visibility</span>
+                            Ver
+                        </button>
+                        <button class="btn-action" onclick="dashboard.editUserCredits('${user.id}', ${user.credits})">
+                            <span class="material-symbols-outlined">edit</span>
+                            Editar
+                        </button>
+                        <button class="btn-action danger" onclick="dashboard.deactivateUser('${user.id}')">
+                            <span class="material-symbols-outlined">block</span>
+                            Desativar
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+Dashboard.prototype.updateUsersPagination = function(pagination) {
+        const prevBtn = document.getElementById('prevPageBtn');
+        const nextBtn = document.getElementById('nextPageBtn');
+        const info = document.getElementById('paginationInfo');
+
+        if (prevBtn) {
+            prevBtn.disabled = !pagination.hasPrev;
+        }
+        if (nextBtn) {
+            nextBtn.disabled = !pagination.hasNext;
+        }
+        if (info) {
+            info.textContent = `Página ${pagination.page} de ${pagination.totalPages}`;
+        }
+    }
+
+Dashboard.prototype.getStatusText = function(status) {
+        const statusMap = {
+            'active': 'Ativo',
+            'inactive': 'Inativo',
+            'premium': 'Premium'
+        };
+        return statusMap[status] || 'Desconhecido';
+    }
+
+Dashboard.prototype.formatDate = function(dateString) {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('pt-PT', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+Dashboard.prototype.viewUserDetails = async function(userId) {
+        console.log('👤 Visualizando detalhes do utilizador:', userId);
+        
+        try {
+            const response = await this.fetchData(`/api/users/${userId}`);
+            if (response) {
+                this.showUserDetailsModal(response.data);
+            }
+        } catch (error) {
+            console.error('❌ Erro ao carregar detalhes:', error);
+            this.showError('Erro ao carregar detalhes do utilizador');
+        }
+    }
+
+Dashboard.prototype.showUserDetailsModal = function(userData) {
+        // Criar modal dinamicamente
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Detalhes do Utilizador</h3>
+                    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="user-detail-section">
+                        <h4>Informações Básicas</h4>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <label>ID:</label>
+                                <span>${userData.user.id}</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Email:</label>
+                                <span>${userData.user.email}</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Créditos:</label>
+                                <span>${userData.user.credits}</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Status:</label>
+                                <span class="status-badge status-${userData.user.status}">
+                                    ${this.getStatusText(userData.user.status)}
+                                </span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Registado:</label>
+                                <span>${this.formatDate(userData.user.createdAt)}</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Última Atividade:</label>
+                                <span>${this.formatDate(userData.user.lastActivity)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="user-detail-section">
+                        <h4>Estatísticas</h4>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <label>Total de Resumos:</label>
+                                <span>${userData.user.totalSummaries}</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Total de Pedidos:</label>
+                                <span>${userData.user.totalRequests}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">
+                        Fechar
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+    }
+
+Dashboard.prototype.editUserCredits = async function(userId, currentCredits) {
+        const newCredits = prompt(`Editar créditos para utilizador ${userId}:\n\nCréditos atuais: ${currentCredits}\n\nNovos créditos:`, currentCredits);
+        
+        if (newCredits === null) return; // Cancelado
+        
+        const credits = parseInt(newCredits);
+        if (isNaN(credits) || credits < 0) {
+            alert('Por favor, insira um número válido de créditos (0 ou superior)');
+            return;
+        }
+
+        const reason = prompt('Motivo da alteração (opcional):') || 'Alteração manual pelo administrador';
+
+        try {
+            const response = await fetch(`/api/users/${userId}/credits`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.getAuthToken()}`
+                },
+                body: JSON.stringify({ credits, reason })
+            });
+
+            if (response.ok) {
+                this.showSuccessMessage(`Créditos atualizados para ${credits}`);
+                this.loadUsersData(); // Recarregar dados
+            } else {
+                throw new Error('Erro ao atualizar créditos');
+            }
+        } catch (error) {
+            console.error('❌ Erro ao atualizar créditos:', error);
+            this.showError('Erro ao atualizar créditos do utilizador');
+        }
+    }
+
+Dashboard.prototype.deactivateUser = async function(userId) {
+        if (!confirm(`Tem certeza que deseja desativar o utilizador ${userId}?\n\nEsta ação irá zerar os créditos do utilizador.`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/users/${userId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${this.getAuthToken()}`
+                }
+            });
+
+            if (response.ok) {
+                this.showSuccessMessage('Utilizador desativado com sucesso');
+                this.loadUsersData(); // Recarregar dados
+            } else {
+                throw new Error('Erro ao desativar utilizador');
+            }
+        } catch (error) {
+            console.error('❌ Erro ao desativar utilizador:', error);
+            this.showError('Erro ao desativar utilizador');
+        }
+    }
+
+Dashboard.prototype.exportUsers = async function() {
+        try {
+            const response = await this.fetchData('/api/users?limit=1000');
+            if (response) {
+                this.downloadCSV(response.data.users, 'utilizadores.csv');
+                this.showSuccessMessage('Dados exportados com sucesso');
+            }
+        } catch (error) {
+            console.error('❌ Erro ao exportar utilizadores:', error);
+            this.showError('Erro ao exportar dados');
+        }
+    }
+
+Dashboard.prototype.downloadCSV = function(data, filename) {
+        const headers = ['ID', 'Email', 'Créditos', 'Status', 'Registado', 'Última Atividade'];
+        const csvContent = [
+            headers.join(','),
+            ...data.map(user => [
+                user.id,
+                user.email,
+                user.credits,
+                this.getStatusText(user.status),
+                this.formatDate(user.createdAt),
+                this.formatDate(user.lastActivity)
+            ].join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        link.click();
+    }
 });
 
 // Exportar para uso global
