@@ -119,9 +119,11 @@ app.use('*', (req, res) => {
 });
 
 // Inicializar base de dados
-db.connect().then(async (connected) => {
+db.connect().then((connected) => {
     if (connected) {
-        await db.initialize();
+        console.log('✅ Database initialized successfully');
+    } else {
+        console.log('⚠️ Database connection failed, using fallback');
     }
 });
 
