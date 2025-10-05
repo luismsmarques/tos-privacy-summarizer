@@ -1,7 +1,7 @@
-const express = require('express');
-const { body, validationResult } = require('express-validator');
+import express from 'express';
+import { body, validationResult } from 'express-validator';
+import { registerUser, registerSummary } from './analytics.js';
 const router = express.Router();
-const { registerUser, registerSummary } = require('./analytics');
 
 // Middleware para verificar se a chave da API está configurada
 const checkGeminiKey = (req, res, next) => {
@@ -253,4 +253,4 @@ router.get('/credits/:userId', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

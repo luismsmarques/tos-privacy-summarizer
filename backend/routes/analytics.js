@@ -1,4 +1,4 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
 
 // Simulação de base de dados em memória (em produção usar PostgreSQL/MongoDB)
@@ -472,8 +472,4 @@ async function getRealtimeData() {
 }
 
 // Exportar funções para uso em outras rotas
-module.exports = {
-  router,
-  registerUser,
-  registerSummary
-};
+export { router, registerUser, registerSummary };

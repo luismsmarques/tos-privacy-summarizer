@@ -1,5 +1,5 @@
-const express = require('express');
-const { body, validationResult } = require('express-validator');
+import express from 'express';
+import { body, validationResult } from 'express-validator';
 const router = express.Router();
 
 // Endpoint para verificar créditos
@@ -157,4 +157,4 @@ router.get('/pricing/info', (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

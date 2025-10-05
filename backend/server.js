@@ -1,10 +1,16 @@
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
-const morgan = require('morgan');
-const path = require('path');
-require('dotenv').config();
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import morgan from 'morgan';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -41,11 +47,11 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Importar rotas
-const geminiRoutes = require('./routes/gemini');
-const userRoutes = require('./routes/users');
-const creditsRoutes = require('./routes/credits');
-const stripeRoutes = require('./routes/stripe');
-const analyticsRoutes = require('./routes/analytics');
+import geminiRoutes from './routes/gemini.js';
+import userRoutes from './routes/users.js';
+import creditsRoutes from './routes/credits.js';
+import stripeRoutes from './routes/stripe.js';
+import { router as analyticsRoutes } from './routes/analytics.js';
 
 // Rotas da API
 app.use('/api/gemini', geminiRoutes);

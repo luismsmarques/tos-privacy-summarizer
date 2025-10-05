@@ -1,11 +1,12 @@
-const express = require('express');
-const { body, validationResult } = require('express-validator');
+import express from 'express';
+import { body, validationResult } from 'express-validator';
+import Stripe from 'stripe';
 const router = express.Router();
 
 // Configurar Stripe (apenas se as chaves estiverem configuradas)
 let stripe = null;
 if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY !== 'sk_test_your_stripe_secret_key') {
-    stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 }
 
 // Endpoint para criar sessão de pagamento
@@ -214,4 +215,4 @@ router.get('/config', (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;
