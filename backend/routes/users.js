@@ -157,8 +157,6 @@ router.get('/', async (req, res) => {
     }
 });
 
-});
-
 // ===== NOVAS FUNCIONALIDADES AVANÇADAS =====
 
 // Endpoint para obter detalhes completos de um utilizador (com histórico)
