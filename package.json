@@ -1,23 +1,17 @@
 {
   "name": "tos-privacy-summarizer",
-  "version": "2.0.0",
-  "description": "Chrome extension for summarizing Terms of Service and Privacy Policies",
+  "version": "1.0.0",
+  "description": "Chrome Extension for ToS and Privacy Policy Summarization",
   "main": "index.js",
   "scripts": {
     "dev": "vercel dev",
     "build": "echo 'No build step required'",
-    "deploy": "vercel --prod"
+    "start": "echo 'Static site'"
   },
-  "dependencies": {},
-  "devDependencies": {
-    "vercel": "^32.0.0"
-  },
-  "keywords": ["chrome-extension", "ai", "summarizer", "terms-of-service", "privacy-policy"],
+  "keywords": ["chrome-extension", "tos", "privacy", "ai", "summarization"],
   "author": "Luis Marques",
   "license": "MIT",
   "engines": {
     "node": ">=18.0.0"
-  },
-  "_deployTimestamp": "2025-10-05T13:15:00Z",
-  "_systemVersion": "2.0.0-simple-analytics"
+  }
 }
