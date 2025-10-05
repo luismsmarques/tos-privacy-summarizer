@@ -49,11 +49,42 @@ class Dashboard {
     }
 
     async fetchData(endpoint) {
-        const response = await fetch(`${this.apiBase}/${endpoint}`);
+        const token = this.getAuthToken();
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        const response = await fetch(`${this.apiBase}/${endpoint}`, { headers });
         if (!response.ok) {
+            if (response.status === 401) {
+                // Token expirado ou inválido
+                this.handleAuthError();
+                throw new Error('Sessão expirada');
+            }
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         return await response.json();
+    }
+
+    getAuthToken() {
+        // Tentar obter token do cookie
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            const [name, value] = cookie.trim().split('=');
+            if (name === 'adminToken') {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    handleAuthError() {
+        // Redirecionar para login
+        window.location.href = '/dashboard';
     }
 
     updateOverviewMetrics(data) {

@@ -58,20 +58,23 @@ import userRoutes from './routes/users.js';
 import creditsRoutes from './routes/credits.js';
 import stripeRoutes from './routes/stripe.js';
 import { router as analyticsRoutes } from './routes/analytics.js';
+import authRoutes from './routes/auth.js';
 import db from './utils/database.js';
+import auth from './utils/auth.js';
 
 // Rotas da API
+app.use('/api/auth', authRoutes);
 app.use('/api/gemini', geminiRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/credits', creditsRoutes);
 app.use('/api/stripe', stripeRoutes);
-app.use('/api/analytics', analyticsRoutes);
+app.use('/api/analytics', auth.authenticateToken, analyticsRoutes);
 
 // Servir arquivos estáticos do dashboard
 app.use('/dashboard', express.static(path.join(__dirname, '../dashboard')));
 
-// Rota para servir o dashboard
-app.get('/dashboard', (req, res) => {
+// Rota para servir o dashboard (protegida)
+app.get('/dashboard', auth.protectDashboard, (req, res) => {
     res.sendFile(path.join(__dirname, '../dashboard/index.html'));
 });
 
