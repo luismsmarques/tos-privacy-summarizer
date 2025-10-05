@@ -181,8 +181,9 @@ function getFocusInstructions(focus) {
 
 // Função para chamar a API Gemini
 async function callGeminiAPI(text, focus = 'privacy') {
-    const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
-    const apiKey = process.env.GEMINI_API_KEY;
+    try {
+        const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+        const apiKey = process.env.GEMINI_API_KEY;
     
     // Limitar o tamanho do texto
     const maxLength = 100000;
@@ -257,6 +258,10 @@ Texto Legal a ser Analisado:
 
 ${textToSummarize}`;
 
+    // Criar AbortController para timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 segundos timeout
+
     const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
         method: 'POST',
         headers: {
@@ -274,8 +279,12 @@ ${textToSummarize}`;
                 topP: 0.95,
                 maxOutputTokens: 2048,
             }
-        })
+        }),
+        signal: controller.signal
     });
+
+    // Limpar timeout se a requisição foi bem-sucedida
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
         const errorText = await response.text();
@@ -294,6 +303,19 @@ ${textToSummarize}`;
         return responseText;
     } else {
         throw new Error('Resposta inválida da API Gemini');
+    }
+    
+    } catch (error) {
+        // Limpar timeout se houver erro
+        if (timeoutId) clearTimeout(timeoutId);
+        
+        if (error.name === 'AbortError') {
+            console.error('Timeout da API Gemini após 25 segundos');
+            throw new Error('Timeout: A análise demorou muito para ser processada. Tente novamente.');
+        }
+        
+        console.error('Erro na chamada da API Gemini:', error);
+        throw error;
     }
 }
 

@@ -215,6 +215,18 @@ async function processSummaryAsync(text, focus = 'privacy') {
     
     console.log('Resumo gerado com sucesso');
     
+    // Enviar atualização de progresso - processando ratings
+    try {
+      chrome.runtime.sendMessage({
+        action: 'progressUpdate',
+        step: 3,
+        text: 'Calculando ratings de risco',
+        progress: 75
+      });
+    } catch (error) {
+      console.error('Erro ao enviar progresso:', error);
+    }
+    
     // Processar resumo e calcular ratings
     let processedSummary;
     try {

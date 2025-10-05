@@ -367,14 +367,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     console.log('Resposta do content script:', response);
                     
-                    // Fallback: se não receber resposta em 10 segundos, mostrar erro
+                    // Fallback: se não receber resposta em 30 segundos, mostrar erro
                     setTimeout(() => {
                         if (isProcessing) {
-                            console.log('Timeout - não recebeu resumo em 10 segundos');
-                            showError('Timeout: O resumo demorou muito para ser processado. Tente novamente.');
+                            console.log('Timeout - não recebeu resumo em 30 segundos');
+                            showError('Timeout: O resumo demorou muito para ser processado. O documento pode ser muito complexo. Tente novamente.');
                             resetButton();
                         }
-                    }, 10000);
+                    }, 30000);
                 }
             });
             
@@ -418,23 +418,27 @@ document.addEventListener('DOMContentLoaded', function() {
         // Simular progresso
         let progress = 0;
         const interval = setInterval(() => {
-            progress += Math.random() * 15;
-            if (progress > 90) progress = 90;
+            progress += Math.random() * 10; // Reduzir velocidade para dar mais tempo
+            if (progress > 85) progress = 85; // Parar em 85% para aguardar resposta real
             
             if (progressFill) {
                 progressFill.style.width = `${progress}%`;
             }
             
             if (progressText) {
-                if (progress < 30) {
+                if (progress < 20) {
                     progressText.textContent = 'Extraindo texto da página...';
-                } else if (progress < 60) {
+                } else if (progress < 40) {
                     progressText.textContent = 'Enviando para análise IA...';
-                } else if (progress < 90) {
-                    progressText.textContent = 'Processando com Gemini...';
+                } else if (progress < 60) {
+                    progressText.textContent = 'IA analisando complexidade e risco...';
+                } else if (progress < 80) {
+                    progressText.textContent = 'Calculando ratings de segurança...';
+                } else {
+                    progressText.textContent = 'Finalizando análise...';
                 }
             }
-        }, 500);
+        }, 800); // Aumentar intervalo para 800ms
         
         // Limpar intervalo quando receber resultado
         window.progressInterval = interval;
