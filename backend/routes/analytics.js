@@ -37,7 +37,12 @@ router.use(async (req, res, next) => {
 // Endpoint para obter analytics overview
 router.get('/overview', async (req, res) => {
   try {
-    const overview = await db.getOverviewData();
+    // Verificar se a base de dados está conectada
+    if (!db.isConnected) {
+      await db.connect();
+    }
+    
+    const overview = await db.getAnalyticsOverview();
     res.json({
       success: true,
       data: overview,
@@ -55,7 +60,7 @@ router.get('/overview', async (req, res) => {
 // Endpoint para obter dados de utilizadores
 router.get('/users', async (req, res) => {
   try {
-    const usersData = await db.getUsersData();
+    const usersData = await db.getAnalyticsUsers();
     res.json({
       success: true,
       data: usersData,
@@ -73,7 +78,7 @@ router.get('/users', async (req, res) => {
 // Endpoint para obter dados de resumos
 router.get('/summaries', async (req, res) => {
   try {
-    const summariesData = await db.getSummariesData();
+    const summariesData = await db.getAnalyticsSummaries();
     res.json({
       success: true,
       data: summariesData,
@@ -91,7 +96,7 @@ router.get('/summaries', async (req, res) => {
 // Endpoint para obter dados de performance
 router.get('/performance', async (req, res) => {
   try {
-    const performanceData = await db.getPerformanceData();
+    const performanceData = await db.getAnalyticsPerformance();
     res.json({
       success: true,
       data: performanceData,
@@ -109,7 +114,13 @@ router.get('/performance', async (req, res) => {
 // Endpoint para obter dados de créditos
 router.get('/credits', async (req, res) => {
   try {
-    const creditsData = await db.getCreditsData();
+    // Mock data para créditos (pode ser implementado depois)
+    const creditsData = {
+      total_credits_consumed: 0,
+      total_credits_purchased: 0,
+      active_users_with_credits: 0,
+      average_credits_per_user: 5
+    };
     res.json({
       success: true,
       data: creditsData,
@@ -127,7 +138,13 @@ router.get('/credits', async (req, res) => {
 // Endpoint para dados em tempo real
 router.get('/realtime', async (req, res) => {
   try {
-    const realtimeData = await db.getRealtimeData();
+    // Mock data para tempo real (pode ser implementado depois)
+    const realtimeData = {
+      active_users: 0,
+      requests_per_minute: 0,
+      current_response_time: 0,
+      uptime: 100
+    };
     res.json({
       success: true,
       data: realtimeData,
