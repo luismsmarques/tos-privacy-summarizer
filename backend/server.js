@@ -70,13 +70,11 @@ app.use('/api/credits', creditsRoutes);
 app.use('/api/stripe', stripeRoutes);
 app.use('/api/analytics', auth.authenticateToken, analyticsRoutes);
 
-// Servir arquivos estáticos do dashboard
-app.use('/dashboard', express.static(path.join(__dirname, '../dashboard')));
+// Middleware para proteger todas as rotas do dashboard
+app.use('/dashboard', auth.protectDashboard);
 
-// Rota para servir o dashboard (protegida)
-app.get('/dashboard', auth.protectDashboard, (req, res) => {
-    res.sendFile(path.join(__dirname, '../dashboard/index.html'));
-});
+// Servir arquivos estáticos do dashboard (após proteção)
+app.use('/dashboard', express.static(path.join(__dirname, '../dashboard')));
 
 // Rota de health check
 app.get('/health', (req, res) => {
