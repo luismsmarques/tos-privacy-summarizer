@@ -365,7 +365,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function showSummary(summary) {
         console.log('Mostrando resumo:', summary);
         hideProgress();
-        summaryContainer.classList.remove('hidden');
         
         // Parsear JSON se necessário
         let parsedSummary;
@@ -384,16 +383,45 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log('Resumo parseado:', parsedSummary);
         
-        // Renderizar resumo baseado na estrutura
-        if (parsedSummary.resumo_conciso || parsedSummary.summary) {
-            console.log('Renderizando resumo com estrutura:', Object.keys(parsedSummary));
-            summaryContent.innerHTML = formatStructuredSummary(parsedSummary);
-        } else {
-            console.log('Nenhum resumo encontrado no objeto');
-            summaryContent.innerHTML = '<p>Resumo não disponível</p>';
-        }
+        // Abrir página dedicada para o resumo
+        openSummaryPage(parsedSummary);
         
         resetButton();
+    }
+
+    // Abrir página dedicada para o resumo
+    function openSummaryPage(summaryData) {
+        try {
+            console.log('Abrindo página de resumo...');
+            
+            // Preparar dados da página
+            const pageData = {
+                title: currentTab?.title || 'Página Analisada',
+                type: pageAnalysis?.type || 'Documento',
+                url: currentTab?.url || 'URL não disponível'
+            };
+            
+            // Salvar dados no storage para a página de resumo
+            chrome.storage.local.set({
+                lastSummary: summaryData,
+                lastPageData: pageData
+            });
+            
+            // Criar URL para a página de resumo
+            const summaryUrl = chrome.runtime.getURL('summary-page.html');
+            
+            // Abrir nova aba
+            chrome.tabs.create({
+                url: summaryUrl,
+                active: true
+            });
+            
+            console.log('Página de resumo aberta');
+            
+        } catch (error) {
+            console.error('Erro ao abrir página de resumo:', error);
+            showError('Erro ao abrir página de resumo');
+        }
     }
 
     // Formatar resumo estruturado
