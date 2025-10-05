@@ -5,9 +5,7 @@ class Dashboard {
         this.charts = {};
         this.data = {};
         this.isLoading = false;
-        this.currentUsersPage = 1;
-        this.usersPerPage = 20;
-        this.usersData = null;
+        this.lastRefresh = null;
         
         this.init();
     }
@@ -64,6 +62,29 @@ class Dashboard {
         logoutBtn.addEventListener('click', () => {
             this.logout();
         });
+
+        // Users section specific
+        const refreshUsersBtn = document.getElementById('refreshUsersBtn');
+        if (refreshUsersBtn) {
+            refreshUsersBtn.addEventListener('click', () => {
+                this.loadUsersData();
+            });
+        }
+
+        // Users filters
+        const userSearch = document.getElementById('userSearch');
+        const userSort = document.getElementById('userSort');
+        const userFilter = document.getElementById('userFilter');
+
+        if (userSearch) {
+            userSearch.addEventListener('input', debounce(() => this.applyUsersFilters(), 300));
+        }
+        if (userSort) {
+            userSort.addEventListener('change', () => this.applyUsersFilters());
+        }
+        if (userFilter) {
+            userFilter.addEventListener('change', () => this.applyUsersFilters());
+        }
         
         // Refresh FAB
         const refreshFab = document.getElementById('refreshFab');
@@ -77,67 +98,15 @@ class Dashboard {
                 sidebar.classList.remove('collapsed');
             }
         });
-
-        // Users section event listeners
-        this.setupUsersEventListeners();
-    }
-
-    setupUsersEventListeners() {
-        // Refresh users button
-        const refreshUsersBtn = document.getElementById('refreshUsersBtn');
-        if (refreshUsersBtn) {
-            refreshUsersBtn.addEventListener('click', () => {
-                this.loadUsersData();
-            });
-        }
-
-        // Export users button
-        const exportUsersBtn = document.getElementById('exportUsersBtn');
-        if (exportUsersBtn) {
-            exportUsersBtn.addEventListener('click', () => {
-                this.exportUsers();
-            });
-        }
-
-        // Users search
-        const usersSearch = document.getElementById('usersSearch');
-        if (usersSearch) {
-            usersSearch.addEventListener('input', (e) => {
-                clearTimeout(this.searchTimeout);
-                this.searchTimeout = setTimeout(() => {
-                    this.loadUsersData();
-                }, 500);
-            });
-        }
-
-        // Users filter
-        const usersFilter = document.getElementById('usersFilter');
-        if (usersFilter) {
-            usersFilter.addEventListener('change', () => {
-                this.loadUsersData();
-            });
-        }
-
-        // Pagination buttons
-        const prevPageBtn = document.getElementById('prevPageBtn');
-        const nextPageBtn = document.getElementById('nextPageBtn');
-        
-        if (prevPageBtn) {
-            prevPageBtn.addEventListener('click', () => {
-                this.currentUsersPage = Math.max(1, this.currentUsersPage - 1);
-                this.loadUsersData();
-            });
-        }
-
-        if (nextPageBtn) {
-            nextPageBtn.addEventListener('click', () => {
-                this.currentUsersPage += 1;
-                this.loadUsersData();
-            });
-        }
     }
     
     async loadInitialData() {
+        if (this.isLoading) {
+            console.log('⏳ Já está carregando, ignorando...');
+            return;
+        }
+        
+        this.isLoading = true;
         console.log('📊 Carregando dados iniciais...');
         this.showLoading();
         
@@ -173,93 +142,208 @@ class Dashboard {
             this.updateMetrics();
             this.updateCharts();
         } finally {
+            this.isLoading = false;
             this.hideLoading();
         }
     }
 
     async fetchData(endpoint) {
         try {
-            const response = await fetch(endpoint, {
-                headers: {
-                    'Authorization': `Bearer ${this.getAuthToken()}`
-                }
-            });
-
-        if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            console.log(`📡 Fazendo request para: ${endpoint}`);
+            
+            const token = this.getAuthToken();
+            console.log('🔑 Token encontrado:', token ? 'Sim' : 'Não');
+            
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            
+            // Adicionar token se disponível
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
             }
-
+            
+            const response = await fetch(endpoint, {
+                method: 'GET',
+                headers: headers,
+                credentials: 'include'
+            });
+            
+        if (!response.ok) {
+                if (response.status === 401) {
+                    console.warn('🔒 Token inválido ou expirado, usando dados mock...');
+                    // Não redirecionar, apenas usar dados mock
+                    return null;
+                }
+            throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const data = await response.json();
-            console.log(`✅ Dados carregados de ${endpoint}:`, data);
+            console.log(`✅ Dados recebidos de ${endpoint}:`, data);
+            
             return data;
-
+            
         } catch (error) {
-            console.error(`❌ Erro ao carregar dados de ${endpoint}:`, error);
+            console.error(`❌ Erro ao buscar dados de ${endpoint}:`, error);
             throw error;
         }
     }
-
+    
     getAuthToken() {
-        return localStorage.getItem('admin-token');
+        // Tentar obter token do cookie
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            const [name, value] = cookie.trim().split('=');
+            if (name === 'adminToken' && value && value !== 'undefined') {
+                console.log('🍪 Token encontrado no cookie:', value.substring(0, 20) + '...');
+                return value;
+            }
+        }
+        
+        console.warn('⚠️ Token não encontrado nos cookies');
+        return null;
     }
-
+    
     isAuthenticated() {
         const token = this.getAuthToken();
         if (!token) return false;
         
         try {
-            // Verificar se o token não expirou (simplificado)
+            // Verificar se o token é válido (básico)
             const payload = JSON.parse(atob(token.split('.')[1]));
-            return payload.exp > Date.now() / 1000;
-        } catch {
+            const now = Date.now() / 1000;
+            
+            if (payload.exp && payload.exp < now) {
+                console.warn('⚠️ Token expirado');
+                return false;
+            }
+            
+            return true;
+        } catch (error) {
+            console.warn('⚠️ Token inválido:', error);
             return false;
         }
     }
-
+    
     updateMetrics() {
-        if (!this.data.overview) return;
-
-        const metrics = {
-            totalUsers: this.data.overview.totalUsers || 0,
-            totalSummaries: this.data.overview.totalSummaries || 0,
-            successRate: this.data.overview.successRate || 0
-        };
-
-        // Atualizar elementos do DOM
-        Object.entries(metrics).forEach(([key, value]) => {
-            const element = document.getElementById(key);
-            if (element) {
-                element.textContent = value.toLocaleString();
+        console.log('📈 Atualizando métricas...');
+        console.log('Dados overview:', this.data.overview);
+        
+        const overview = this.data.overview;
+        if (!overview) return;
+        
+        // Extrair os dados reais do objeto de resposta da API
+        const overviewData = overview.data || overview;
+        console.log('Dados extraídos:', overviewData);
+        
+        // Total de utilizadores
+        const totalUsersEl = document.getElementById('totalUsers');
+        if (totalUsersEl && overviewData.total_users !== undefined) {
+            totalUsersEl.textContent = parseInt(overviewData.total_users).toLocaleString();
+            console.log('✅ Total users atualizado:', overviewData.total_users);
+        }
+        
+        // Total de resumos (usar successful_summaries)
+        const totalSummariesEl = document.getElementById('totalSummaries');
+        if (totalSummariesEl && overviewData.successful_summaries !== undefined) {
+            totalSummariesEl.textContent = parseInt(overviewData.successful_summaries).toLocaleString();
+            console.log('✅ Total summaries atualizado:', overviewData.successful_summaries);
+        }
+        
+        // Total de requests (usar today_requests)
+        const totalRequestsEl = document.getElementById('totalRequests');
+        if (totalRequestsEl && overviewData.today_requests !== undefined) {
+            totalRequestsEl.textContent = parseInt(overviewData.today_requests).toLocaleString();
+            console.log('✅ Total requests atualizado:', overviewData.today_requests);
+        }
+        
+        // Taxa de sucesso (calcular baseado em successful e failed)
+        const successRateEl = document.getElementById('successRate');
+        if (successRateEl && overviewData.successful_summaries !== undefined && overviewData.failed_summaries !== undefined) {
+            const successful = parseInt(overviewData.successful_summaries);
+            const failed = parseInt(overviewData.failed_summaries);
+            const total = successful + failed;
+            
+            if (total > 0) {
+                const successRate = (successful / total) * 100;
+                successRateEl.textContent = `${successRate.toFixed(1)}%`;
+                console.log('✅ Success rate atualizado:', successRate.toFixed(1) + '%');
+            } else {
+                successRateEl.textContent = '0%';
+                console.log('✅ Success rate atualizado: 0%');
             }
-        });
+        }
+        
+        // Atualizar mudanças percentuais se disponíveis
+        this.updateMetricChanges(overviewData);
     }
-
-    updateCharts() {
-        if (!this.data.realtime || !this.data.summaries) return;
-
-        this.createActivityChart(this.data.realtime);
-        this.createDocumentTypesChart(this.data.summaries);
+    
+    updateMetricChanges(overview) {
+        // Atualizar mudanças percentuais baseadas nos dados
+        if (overview.usersChange !== undefined) {
+            const usersChangeEl = document.getElementById('usersChange');
+            if (usersChangeEl) {
+                const change = overview.usersChange;
+                const isPositive = change >= 0;
+                usersChangeEl.className = `metric-change ${isPositive ? 'positive' : 'negative'}`;
+                usersChangeEl.innerHTML = `
+                    <span class="material-symbols-outlined">${isPositive ? 'trending_up' : 'trending_down'}</span>
+                    <span>${isPositive ? '+' : ''}${change.toFixed(1)}% este mês</span>
+                `;
+            }
+        }
+        
+        if (overview.summariesChange !== undefined) {
+            const summariesChangeEl = document.getElementById('summariesChange');
+            if (summariesChangeEl) {
+                const change = overview.summariesChange;
+                const isPositive = change >= 0;
+                summariesChangeEl.className = `metric-change ${isPositive ? 'positive' : 'negative'}`;
+                summariesChangeEl.innerHTML = `
+                    <span class="material-symbols-outlined">${isPositive ? 'trending_up' : 'trending_down'}</span>
+                    <span>${isPositive ? '+' : ''}${change.toFixed(1)}% esta semana</span>
+                `;
+            }
+        }
     }
-
-    createActivityChart(data) {
+    
+    initializeCharts() {
+        console.log('📊 Inicializando gráficos...');
+        
+        // Gráfico de atividade recente
+        this.initActivityChart();
+        
+        // Gráfico de tipos de documentos
+        this.initDocumentTypesChart();
+    }
+    
+    initActivityChart() {
         const ctx = document.getElementById('activityChart');
-        if (!ctx || !data) return;
-
-        // Destruir gráfico existente
+        if (!ctx) return;
+        
+        // Destruir gráfico existente se houver
         if (this.charts.activity) {
             this.charts.activity.destroy();
         }
-
+        
         this.charts.activity = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: data.labels || ['Sem dados'],
+                labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
                 datasets: [{
-                    label: 'Atividade',
-                    data: data.values || [0],
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    tension: 0.4
+                    label: 'Resumos Processados',
+                    data: [12, 19, 3, 5, 2, 3, 8],
+                    borderColor: 'rgb(103, 80, 164)',
+                    backgroundColor: 'rgba(103, 80, 164, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }, {
+                    label: 'Utilizadores Ativos',
+                    data: [8, 15, 7, 12, 6, 4, 10],
+                    borderColor: 'rgb(125, 82, 96)',
+                    backgroundColor: 'rgba(125, 82, 96, 0.1)',
+                    tension: 0.4,
+                    fill: true
                 }]
             },
             options: {
@@ -267,7 +351,7 @@ class Dashboard {
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        display: false
+                        position: 'top',
                     }
                 },
                 scales: {
@@ -279,11 +363,11 @@ class Dashboard {
         });
     }
 
-    createDocumentTypesChart(data) {
+    initDocumentTypesChart() {
         const ctx = document.getElementById('documentTypesChart');
-        if (!ctx || !data) return;
+        if (!ctx) return;
         
-        // Destruir gráfico existente
+        // Destruir gráfico existente se houver
         if (this.charts.documentTypes) {
             this.charts.documentTypes.destroy();
         }
@@ -291,16 +375,15 @@ class Dashboard {
         this.charts.documentTypes = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: data.labels || ['Sem dados'],
+                labels: ['Termos de Serviço', 'Políticas de Privacidade', 'Outros'],
                 datasets: [{
-                    data: data.values || [0],
+                    data: [65, 30, 5],
                     backgroundColor: [
-                        '#3b82f6',
-                        '#10b981',
-                        '#f59e0b',
-                        '#ef4444',
-                        '#8b5cf6'
-                    ]
+                        'rgb(103, 80, 164)',
+                        'rgb(125, 82, 96)',
+                        'rgb(98, 91, 113)'
+                    ],
+                    borderWidth: 0
                 }]
             },
             options: {
@@ -308,23 +391,146 @@ class Dashboard {
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        position: 'bottom'
+                        position: 'bottom',
                     }
                 }
             }
         });
     }
 
-    initializeCharts() {
-        // Inicializar Chart.js se disponível
-        if (typeof Chart !== 'undefined') {
-            console.log('📊 Chart.js carregado, inicializando gráficos...');
-            this.updateCharts();
-        } else {
-            console.warn('⚠️ Chart.js não carregado');
+    updateCharts() {
+        console.log('📊 Atualizando gráficos com dados reais...');
+        
+        // Atualizar gráfico de atividade se tivermos dados
+        if (this.data.realtime && this.charts.activity) {
+            const activityData = this.data.realtime.activity || [];
+            console.log('📈 Dados de atividade recebidos:', activityData);
+            
+            if (activityData.length > 0) {
+                this.charts.activity.data.datasets[0].data = activityData.map(d => d.summaries || 0);
+                this.charts.activity.data.datasets[1].data = activityData.map(d => d.users || 0);
+                this.charts.activity.data.labels = activityData.map(d => d.date || '');
+                this.charts.activity.update();
+                console.log('✅ Gráfico de atividade atualizado com dados reais');
+                
+                // Esconder mensagem de "sem dados"
+                this.hideNoDataMessage('activity');
+            } else {
+                console.log('⚠️ Nenhum dado de atividade disponível');
+                // Mostrar gráfico vazio com mensagem
+                this.charts.activity.data.datasets[0].data = [];
+                this.charts.activity.data.datasets[1].data = [];
+                this.charts.activity.data.labels = [];
+                this.charts.activity.update();
+                
+                // Mostrar mensagem de "sem dados"
+                this.showNoDataMessage('activity', 'Nenhuma atividade registrada nos últimos 7 dias');
+            }
+        }
+        
+        // Atualizar gráfico de tipos de documentos se tivermos dados
+        if (this.data.summaries && this.charts.documentTypes) {
+            const documentTypes = this.data.summaries.documentTypes || {};
+            console.log('📊 Dados de tipos de documentos recebidos:', documentTypes);
+            
+            if (Object.keys(documentTypes).length > 0) {
+                const labels = Object.keys(documentTypes);
+                const values = Object.values(documentTypes);
+                
+                this.charts.documentTypes.data.labels = labels;
+                this.charts.documentTypes.data.datasets[0].data = values;
+                this.charts.documentTypes.update();
+                console.log('✅ Gráfico de tipos de documentos atualizado com dados reais');
+                
+                // Esconder mensagem de "sem dados"
+                this.hideNoDataMessage('documentTypes');
+            } else {
+                console.log('⚠️ Nenhum dado de tipos de documentos disponível');
+                // Mostrar gráfico vazio com mensagem
+                this.charts.documentTypes.data.labels = [];
+                this.charts.documentTypes.data.datasets[0].data = [];
+                this.charts.documentTypes.update();
+                
+                // Mostrar mensagem de "sem dados"
+                this.showNoDataMessage('documentTypes', 'Nenhum documento processado ainda');
+            }
         }
     }
-
+    
+    // Função para mostrar mensagem de "sem dados"
+    showNoDataMessage(chartType, message) {
+        const chartContainer = document.querySelector(`#${chartType}Chart`);
+        if (chartContainer) {
+            // Remover mensagem existente se houver
+            const existingMessage = chartContainer.querySelector('.no-data-message');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+            
+            // Criar nova mensagem
+            const noDataMessage = document.createElement('div');
+            noDataMessage.className = 'no-data-message';
+            noDataMessage.innerHTML = `
+                <div class="no-data-content">
+                    <span class="material-symbols-outlined">info</span>
+                    <p>${message}</p>
+                    <small>Os dados aparecerão aqui quando houver atividade</small>
+                </div>
+            `;
+            
+            // Adicionar estilos inline
+            noDataMessage.style.cssText = `
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                text-align: center;
+                color: var(--md-sys-color-on-surface-variant);
+                background: var(--md-sys-color-surface-container);
+                padding: 2rem;
+                border-radius: 1rem;
+                border: 1px solid var(--md-sys-color-outline-variant);
+                z-index: 10;
+            `;
+            
+            noDataMessage.querySelector('.no-data-content').style.cssText = `
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 0.5rem;
+            `;
+            
+            noDataMessage.querySelector('.material-symbols-outlined').style.cssText = `
+                font-size: 2rem;
+                opacity: 0.6;
+            `;
+            
+            noDataMessage.querySelector('p').style.cssText = `
+                margin: 0;
+                font-weight: 500;
+            `;
+            
+            noDataMessage.querySelector('small').style.cssText = `
+                margin: 0;
+                opacity: 0.7;
+            `;
+            
+            chartContainer.style.position = 'relative';
+            chartContainer.appendChild(noDataMessage);
+        }
+    }
+    
+    // Função para esconder mensagem de "sem dados"
+    hideNoDataMessage(chartType) {
+        const chartContainer = document.querySelector(`#${chartType}Chart`);
+        if (chartContainer) {
+            const existingMessage = chartContainer.querySelector('.no-data-message');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+        }
+    }
+    
     navigateToSection(section) {
         console.log(`🧭 Navegando para: ${section}`);
         
@@ -352,202 +558,140 @@ class Dashboard {
         pageTitle.textContent = titles[section] || 'Dashboard';
         
         this.currentSection = section;
-        
-        // Carregar dados específicos da secção
+
+        // Load section-specific data
         if (section === 'users') {
             this.loadUsersData();
         }
     }
-    
-    toggleTheme() {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-        
-        document.documentElement.setAttribute('data-theme', newTheme);
-        
-        // Atualizar ícone do botão
-        const themeIcon = document.querySelector('#themeToggle .material-symbols-outlined');
-        if (themeIcon) {
-            themeIcon.textContent = newTheme === 'light' ? 'dark_mode' : 'light_mode';
-        }
-        
-        // Guardar preferência
-        localStorage.setItem('dashboard-theme', newTheme);
-    }
 
-    logout() {
-        localStorage.removeItem('admin-token');
-        window.location.href = '/dashboard';
-    }
-
-    showLoading() {
-        this.isLoading = true;
-        // Implementar loading state se necessário
-    }
-
-    hideLoading() {
-        this.isLoading = false;
-        // Implementar hide loading state se necessário
-    }
-
-    showError(message) {
-        console.error('❌ Erro:', message);
-        // Implementar exibição de erro se necessário
-    }
-
-    showSuccessMessage(message) {
-        console.log('✅ Sucesso:', message);
-        // Implementar exibição de sucesso se necessário
-    }
-
-    // Método para atualizar dados em tempo real
-    async refreshData() {
-        console.log('🔄 Atualizando dados...');
-        
-        try {
-            await this.loadInitialData();
-            console.log('✅ Dados atualizados com sucesso');
-        } catch (error) {
-            console.error('❌ Erro ao atualizar dados:', error);
-            this.showError('Erro ao atualizar dados');
-        }
-    }
-
-    // ===== USERS MANAGEMENT METHODS =====
-
+    // Load users data
     async loadUsersData() {
-        if (this.currentSection !== 'users') return;
-
-        console.log('👥 Carregando dados de utilizadores...');
-        
         try {
-            const search = document.getElementById('usersSearch')?.value || '';
-            const filter = document.getElementById('usersFilter')?.value || 'all';
+            console.log('📊 Carregando dados de utilizadores...');
             
-            const params = new URLSearchParams({
-                page: this.currentUsersPage,
-                limit: this.usersPerPage,
-                search: search,
-                filter: filter
-            });
-
-            // Carregar utilizadores e estatísticas em paralelo
-            const [usersResponse, statsResponse] = await Promise.all([
-                this.fetchData(`/api/users?${params}`),
-                this.fetchData('/api/users/stats')
-            ]);
-
-            if (usersResponse && statsResponse) {
-                this.usersData = usersResponse.data;
-                this.updateUsersStats(statsResponse.data);
-                this.updateUsersTable(this.usersData.users);
-                this.updateUsersPagination(this.usersData.pagination);
+            const response = await this.fetchData('/api/analytics/users');
+            if (response && response.success) {
+                this.usersData = response.data;
+                this.updateUsersStats();
+                this.renderUsersTable();
+            } else {
+                console.log('Usando dados mock para utilizadores');
+                this.usersData = this.getMockUsersData();
+                this.updateUsersStats();
+                this.renderUsersTable();
             }
-
         } catch (error) {
-            console.error('❌ Erro ao carregar utilizadores:', error);
-            this.showError('Erro ao carregar dados de utilizadores');
+            console.error('❌ Erro ao carregar dados de utilizadores:', error);
+            this.usersData = this.getMockUsersData();
+            this.updateUsersStats();
+            this.renderUsersTable();
         }
     }
 
-    updateUsersStats(stats) {
-        const elements = {
-            totalUsersCount: stats.totalUsers,
-            activeUsersCount: stats.activeUsers,
-            totalCreditsCount: stats.totalCredits,
-            newUsersToday: stats.newToday
-        };
+    // Update users statistics
+    updateUsersStats() {
+        const totalUsersEl = document.getElementById('totalUsersCount');
+        const activeUsersEl = document.getElementById('activeUsersCount');
+        const newUsersEl = document.getElementById('newUsersCount');
 
-        Object.entries(elements).forEach(([id, value]) => {
-            const element = document.getElementById(id);
-            if (element) {
-                element.textContent = value.toLocaleString();
-            }
-        });
+        if (totalUsersEl) {
+            totalUsersEl.textContent = this.usersData.length;
+        }
+
+        if (activeUsersEl) {
+            const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+            const activeUsers = this.usersData.filter(user => 
+                new Date(user.last_used || user.created_at) > weekAgo
+            ).length;
+            activeUsersEl.textContent = activeUsers;
+        }
+
+        if (newUsersEl) {
+            const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+            const newUsers = this.usersData.filter(user => 
+                new Date(user.created_at) > monthAgo
+            ).length;
+            newUsersEl.textContent = newUsers;
+        }
     }
 
-    updateUsersTable(users) {
+    // Render users table
+    renderUsersTable() {
         const tbody = document.getElementById('usersTableBody');
         if (!tbody) return;
 
-        if (users.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="7" class="text-center">
-                        <div style="padding: 40px; color: var(--text-secondary);">
-                            <span class="material-symbols-outlined" style="font-size: 48px; margin-bottom: 16px; display: block;">person_off</span>
-                            Nenhum utilizador encontrado
-                        </div>
-                    </td>
-                </tr>
-            `;
-            return;
-        }
-
-        tbody.innerHTML = users.map(user => `
+        const filteredUsers = this.getFilteredUsers();
+        
+        tbody.innerHTML = filteredUsers.map(user => `
             <tr>
-                <td>
-                    <div class="user-info">
-                        <div class="user-avatar">
-                            ${user.email.charAt(0).toUpperCase()}
-                        </div>
-                        <div class="user-details">
-                            <h4>${user.email}</h4>
-                            <p>ID: ${user.id}</p>
-                        </div>
-                    </div>
-                </td>
-                <td>${user.email}</td>
-                <td>
-                    <div class="credits-info">
-                        <span class="material-symbols-outlined credits-icon">account_balance_wallet</span>
-                        <span class="credits-value">${user.credits}</span>
-                    </div>
-                </td>
-                <td>
-                    <span class="status-badge status-${user.status}">
-                        ${this.getStatusText(user.status)}
-                    </span>
-                </td>
-                <td>${this.formatDate(user.lastActivity)}</td>
-                <td>${this.formatDate(user.createdAt)}</td>
+                <td><span class="user-id">${user.user_id}</span></td>
+                <td>${this.formatDate(user.created_at)}</td>
+                <td>${user.last_used ? this.formatDate(user.last_used) : 'Nunca'}</td>
+                <td>${user.credits || 0}</td>
+                <td>${user.summaries_count || 0}</td>
+                <td><span class="status-badge ${this.getUserStatus(user)}">${this.getUserStatusText(user)}</span></td>
                 <td>
                     <div class="action-buttons">
-                        <button class="btn-action primary" onclick="dashboard.viewUserDetails('${user.id}')">
-                            <span class="material-symbols-outlined">visibility</span>
-                            Ver
-                        </button>
-                        <button class="btn-action" onclick="dashboard.editUserCredits('${user.id}', ${user.credits})">
-                            <span class="material-symbols-outlined">edit</span>
-                            Editar
-                        </button>
-                        <button class="btn-action danger" onclick="dashboard.deactivateUser('${user.id}')">
-                            <span class="material-symbols-outlined">block</span>
-                            Desativar
-                        </button>
+                        <button class="action-btn" onclick="dashboard.viewUserDetails('${user.user_id}')">Ver</button>
+                        <button class="action-btn" onclick="dashboard.editUserCredits('${user.user_id}')">Editar</button>
                     </div>
                 </td>
             </tr>
         `).join('');
     }
 
-    updateUsersPagination(pagination) {
-        const prevBtn = document.getElementById('prevPageBtn');
-        const nextBtn = document.getElementById('nextPageBtn');
-        const info = document.getElementById('paginationInfo');
+    // Get filtered users
+    getFilteredUsers() {
+        let filtered = [...this.usersData];
 
-        if (prevBtn) {
-            prevBtn.disabled = !pagination.hasPrev;
+        // Search filter
+        const searchTerm = document.getElementById('userSearch')?.value.toLowerCase();
+        if (searchTerm) {
+            filtered = filtered.filter(user => 
+                user.user_id.toLowerCase().includes(searchTerm)
+            );
         }
-        if (nextBtn) {
-            nextBtn.disabled = !pagination.hasNext;
+
+        // Status filter
+        const statusFilter = document.getElementById('userFilter')?.value;
+        if (statusFilter) {
+            filtered = filtered.filter(user => this.getUserStatus(user) === statusFilter);
         }
-        if (info) {
-            info.textContent = `Página ${pagination.page} de ${pagination.totalPages}`;
+
+        // Sort
+        const sortBy = document.getElementById('userSort')?.value;
+        if (sortBy) {
+            filtered.sort((a, b) => {
+                if (sortBy === 'created_at' || sortBy === 'last_used') {
+                    return new Date(b[sortBy] || 0) - new Date(a[sortBy] || 0);
+                }
+                return (b[sortBy] || 0) - (a[sortBy] || 0);
+            });
         }
+
+        return filtered;
     }
 
-    getStatusText(status) {
+    // Apply users filters
+    applyUsersFilters() {
+        this.renderUsersTable();
+    }
+
+    // Get user status
+    getUserStatus(user) {
+        if (user.credits > 100) return 'premium';
+        
+        const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const lastUsed = new Date(user.last_used || user.created_at);
+        
+        if (lastUsed > weekAgo) return 'active';
+        return 'inactive';
+    }
+
+    // Get user status text
+    getUserStatusText(user) {
+        const status = this.getUserStatus(user);
         const statusMap = {
             'active': 'Ativo',
             'inactive': 'Inativo',
@@ -556,8 +700,8 @@ class Dashboard {
         return statusMap[status] || 'Desconhecido';
     }
 
+    // Format date
     formatDate(dateString) {
-        if (!dateString) return 'N/A';
         const date = new Date(dateString);
         return date.toLocaleDateString('pt-PT', {
             year: 'numeric',
@@ -568,204 +712,225 @@ class Dashboard {
         });
     }
 
-    async viewUserDetails(userId) {
-        console.log('👤 Visualizando detalhes do utilizador:', userId);
-        
-        try {
-            const response = await this.fetchData(`/api/users/${userId}`);
-            if (response) {
-                this.showUserDetailsModal(response.data);
+    // Get mock users data
+    getMockUsersData() {
+        return [
+            {
+                user_id: 'user_12345',
+                created_at: '2024-01-15T10:30:00Z',
+                last_used: '2024-01-20T14:22:00Z',
+                credits: 15,
+                summaries_count: 8
+            },
+            {
+                user_id: 'user_67890',
+                created_at: '2024-01-10T09:15:00Z',
+                last_used: '2024-01-18T16:45:00Z',
+                credits: 250,
+                summaries_count: 45
+            },
+            {
+                user_id: 'user_11111',
+                created_at: '2024-01-05T11:20:00Z',
+                last_used: '2024-01-12T13:30:00Z',
+                credits: 3,
+                summaries_count: 2
             }
-        } catch (error) {
-            console.error('❌ Erro ao carregar detalhes:', error);
-            this.showError('Erro ao carregar detalhes do utilizador');
-        }
+        ];
     }
 
-    showUserDetailsModal(userData) {
-        // Criar modal dinamicamente
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>Detalhes do Utilizador</h3>
-                    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">
-                        <span class="material-symbols-outlined">close</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="user-detail-section">
-                        <h4>Informações Básicas</h4>
-                        <div class="detail-grid">
-                            <div class="detail-item">
-                                <label>ID:</label>
-                                <span>${userData.user.id}</span>
-                            </div>
-                            <div class="detail-item">
-                                <label>Email:</label>
-                                <span>${userData.user.email}</span>
-                            </div>
-                            <div class="detail-item">
-                                <label>Créditos:</label>
-                                <span>${userData.user.credits}</span>
-                            </div>
-                            <div class="detail-item">
-                                <label>Status:</label>
-                                <span class="status-badge status-${userData.user.status}">
-                                    ${this.getStatusText(userData.user.status)}
-                                </span>
-                            </div>
-                            <div class="detail-item">
-                                <label>Registado:</label>
-                                <span>${this.formatDate(userData.user.createdAt)}</span>
-                            </div>
-                            <div class="detail-item">
-                                <label>Última Atividade:</label>
-                                <span>${this.formatDate(userData.user.lastActivity)}</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="user-detail-section">
-                        <h4>Estatísticas</h4>
-                        <div class="detail-grid">
-                            <div class="detail-item">
-                                <label>Total de Resumos:</label>
-                                <span>${userData.user.totalSummaries}</span>
-                            </div>
-                            <div class="detail-item">
-                                <label>Total de Pedidos:</label>
-                                <span>${userData.user.totalRequests}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">
-                        Fechar
-                    </button>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
+    // View user details
+    viewUserDetails(userId) {
+        console.log('Ver detalhes do utilizador:', userId);
+        // Implementar modal de detalhes
     }
 
-    async editUserCredits(userId, currentCredits) {
-        const newCredits = prompt(`Editar créditos para utilizador ${userId}:\n\nCréditos atuais: ${currentCredits}\n\nNovos créditos:`, currentCredits);
+    // Edit user credits
+    editUserCredits(userId) {
+        console.log('Editar créditos do utilizador:', userId);
+        // Implementar modal de edição
+    }
+    
+    toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
         
-        if (newCredits === null) return; // Cancelado
+        document.documentElement.setAttribute('data-theme', newTheme);
         
-        const credits = parseInt(newCredits);
-        if (isNaN(credits) || credits < 0) {
-            alert('Por favor, insira um número válido de créditos (0 ou superior)');
-            return;
-        }
-
-        const reason = prompt('Motivo da alteração (opcional):') || 'Alteração manual pelo administrador';
-
+        // Atualizar ícone do botão
+        const themeIcon = document.querySelector('#themeToggle .material-symbols-outlined');
+        themeIcon.textContent = newTheme === 'light' ? 'dark_mode' : 'light_mode';
+        
+        // Guardar preferência
+        localStorage.setItem('dashboard-theme', newTheme);
+        
+        console.log(`🎨 Tema alterado para: ${newTheme}`);
+    }
+    
+    async logout() {
+        console.log('🚪 Fazendo logout...');
+        
         try {
-            const response = await fetch(`/api/users/${userId}/credits`, {
-                method: 'PUT',
+            // Fazer request de logout
+            const response = await fetch('/api/auth/logout', {
+                method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.getAuthToken()}`
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ credits, reason })
+                credentials: 'include'
             });
-
+            
             if (response.ok) {
-                this.showSuccessMessage(`Créditos atualizados para ${credits}`);
-                this.loadUsersData(); // Recarregar dados
+                // Limpar cookie localmente
+                document.cookie = 'adminToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+                
+                // Redirecionar para login
+                window.location.href = '/dashboard';
             } else {
-                throw new Error('Erro ao atualizar créditos');
+                throw new Error('Erro ao fazer logout');
             }
+            
         } catch (error) {
-            console.error('❌ Erro ao atualizar créditos:', error);
-            this.showError('Erro ao atualizar créditos do utilizador');
+            console.error('❌ Erro no logout:', error);
+            
+            // Mesmo com erro, limpar cookie e redirecionar
+            document.cookie = 'adminToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+            window.location.href = '/dashboard';
         }
     }
 
-    async deactivateUser(userId) {
-        if (!confirm(`Tem certeza que deseja desativar o utilizador ${userId}?\n\nEsta ação irá zerar os créditos do utilizador.`)) {
+    showLoading() {
+        this.isLoading = true;
+        const contentArea = document.getElementById('contentArea');
+        
+        // Adicionar overlay de loading se não existir
+        if (!document.getElementById('loadingOverlay')) {
+            const loadingOverlay = document.createElement('div');
+            loadingOverlay.id = 'loadingOverlay';
+            loadingOverlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+            `;
+            loadingOverlay.innerHTML = `
+                <div style="
+                    background-color: var(--md-sys-color-surface-container);
+                    padding: 24px;
+                    border-radius: var(--md-sys-shape-corner-large);
+                    display: flex;
+                    align-items: center;
+                    gap: 16px;
+                ">
+                    <div class="loading-spinner"></div>
+                    <span>Carregando dados...</span>
+                </div>
+            `;
+            document.body.appendChild(loadingOverlay);
+        }
+    }
+    
+    hideLoading() {
+        this.isLoading = false;
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.remove();
+        }
+    }
+    
+    showError(message) {
+        const contentArea = document.getElementById('contentArea');
+        
+        // Remover erros existentes
+        const existingError = contentArea.querySelector('.error');
+        if (existingError) {
+            existingError.remove();
+        }
+        
+        // Criar novo erro
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error';
+        errorDiv.innerHTML = `
+            <span class="material-symbols-outlined">error</span>
+            <span>${message}</span>
+        `;
+        
+        // Inserir no topo do conteúdo
+        contentArea.insertBefore(errorDiv, contentArea.firstChild);
+        
+        // Auto-remover após 5 segundos
+        setTimeout(() => {
+            if (errorDiv.parentNode) {
+                errorDiv.remove();
+            }
+        }, 5000);
+    }
+    
+    // Método para atualizar dados em tempo real
+    async refreshData() {
+        // Proteção contra refresh muito frequente
+        const now = Date.now();
+        if (this.lastRefresh && (now - this.lastRefresh) < 5000) {
+            console.log('⏳ Refresh muito frequente, ignorando...');
             return;
         }
-
+        
+        this.lastRefresh = now;
+        console.log('🔄 Atualizando dados...');
+        
         try {
-            const response = await fetch(`/api/users/${userId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${this.getAuthToken()}`
-                }
-            });
-
-            if (response.ok) {
-                this.showSuccessMessage('Utilizador desativado com sucesso');
-                this.loadUsersData(); // Recarregar dados
-            } else {
-                throw new Error('Erro ao desativar utilizador');
-            }
+            await this.loadInitialData();
+            console.log('✅ Dados atualizados com sucesso');
         } catch (error) {
-            console.error('❌ Erro ao desativar utilizador:', error);
-            this.showError('Erro ao desativar utilizador');
+            console.error('❌ Erro ao atualizar dados:', error);
+            this.showError('Erro ao atualizar dados');
         }
     }
-
-    async exportUsers() {
-        try {
-            const response = await this.fetchData('/api/users?limit=1000');
-            if (response) {
-                this.downloadCSV(response.data.users, 'utilizadores.csv');
-                this.showSuccessMessage('Dados exportados com sucesso');
-            }
-        } catch (error) {
-            console.error('❌ Erro ao exportar utilizadores:', error);
-            this.showError('Erro ao exportar dados');
-        }
-    }
-
-    downloadCSV(data, filename) {
-        const headers = ['ID', 'Email', 'Créditos', 'Status', 'Registado', 'Última Atividade'];
-        const csvContent = [
-            headers.join(','),
-            ...data.map(user => [
-                user.id,
-                user.email,
-                user.credits,
-                this.getStatusText(user.status),
-                this.formatDate(user.createdAt),
-                this.formatDate(user.lastActivity)
-            ].join(','))
-        ].join('\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = filename;
-        link.click();
-    }
-
-    // Mock data methods
+    
+    // Dados mock para demonstração
     getMockOverviewData() {
+        console.log('📊 Usando dados mock para overview');
         return {
-            totalUsers: 156,
-            totalSummaries: 1247,
-            successRate: 94.2
+            totalUsers: 1247,
+            totalSummaries: 3892,
+            totalRequests: 15678,
+            successRate: 94.2,
+            usersChange: 12.5,
+            summariesChange: 8.3,
+            requestsChange: 15.7,
+            successChange: 2.1
         };
     }
-
+    
     getMockRealtimeData() {
+        console.log('📊 Usando dados mock para realtime');
         return {
-            labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
-            values: [12, 19, 8, 15, 22, 18, 25]
+            activity: [
+                { date: 'Seg', summaries: 12, users: 8 },
+                { date: 'Ter', summaries: 19, users: 15 },
+                { date: 'Qua', summaries: 3, users: 7 },
+                { date: 'Qui', summaries: 5, users: 12 },
+                { date: 'Sex', summaries: 2, users: 6 },
+                { date: 'Sáb', summaries: 3, users: 4 },
+                { date: 'Dom', summaries: 8, users: 10 }
+            ]
         };
     }
-
+    
     getMockSummariesData() {
+        console.log('📊 Usando dados mock para summaries');
         return {
-            labels: ['Termos de Serviço', 'Política de Privacidade', 'Cookies', 'Outros'],
-            values: [45, 35, 15, 5]
+            documentTypes: {
+                'Termos de Serviço': 65,
+                'Políticas de Privacidade': 30,
+                'Outros': 5
+            }
         };
     }
 }
@@ -786,14 +951,30 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Inicializar dashboard
     window.dashboard = new Dashboard();
+    
+    // Debounce function for global use
+    window.debounce = function(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    };
+    
+    // Atualizar dados a cada 30 segundos (DESABILITADO para evitar loops)
+    // setInterval(() => {
+    //     if (window.dashboard && !window.dashboard.isLoading) {
+    //         window.dashboard.refreshData();
+    //     }
+    // }, 30000);
+    
+    // Refresh manual apenas quando necessário
+    console.log('📊 Dashboard inicializado - Refresh automático desabilitado');
 });
-
-// Atualizar dados a cada 30 segundos
-setInterval(() => {
-    if (window.dashboard && !window.dashboard.isLoading) {
-        window.dashboard.refreshData();
-    }
-}, 30000);
 
 // Exportar para uso global
 window.Dashboard = Dashboard;
