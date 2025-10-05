@@ -26,12 +26,31 @@ app.use(morgan('combined'));
 
 // CORS configurado para a extensão e dashboard
 app.use(cors({
-    origin: [
-        process.env.CORS_ORIGIN || 'chrome-extension://*',
-        'https://tos-privacy-summarizer.vercel.app',
-        'http://localhost:3000'
-    ],
-    credentials: true
+    origin: function (origin, callback) {
+        // Permitir requests sem origin (extensões Chrome, Postman, etc.)
+        if (!origin) return callback(null, true);
+        
+        // Permitir extensões Chrome
+        if (origin.startsWith('chrome-extension://')) {
+            return callback(null, true);
+        }
+        
+        // Permitir URLs específicas
+        const allowedOrigins = [
+            'https://tos-privacy-summarizer.vercel.app',
+            'http://localhost:3000',
+            'http://localhost:5173'
+        ];
+        
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        
+        callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Admin-Token']
 }));
 
 // Rate limiting
