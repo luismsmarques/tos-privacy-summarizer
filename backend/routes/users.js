@@ -391,7 +391,7 @@ router.post('/bulk-action', authService.authenticateToken, [
         }
         
         const results = [];
-        const errors = [];
+        const bulkErrors = [];
         
         for (const userId of userIds) {
             try {
@@ -458,7 +458,7 @@ router.post('/bulk-action', authService.authenticateToken, [
                 results.push(result);
                 
             } catch (error) {
-                errors.push({
+                bulkErrors.push({
                     userId,
                     error: error.message
                 });
@@ -471,11 +471,11 @@ router.post('/bulk-action', authService.authenticateToken, [
                 action: action,
                 total_processed: userIds.length,
                 successful: results.length,
-                failed: errors.length,
+                failed: bulkErrors.length,
                 results: results,
-                errors: errors
+                errors: bulkErrors
             },
-            message: `Ação em massa executada: ${results.length} sucessos, ${errors.length} falhas`
+            message: `Ação em massa executada: ${results.length} sucessos, ${bulkErrors.length} falhas`
         });
         
     } catch (error) {
