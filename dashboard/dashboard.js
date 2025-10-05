@@ -858,6 +858,7 @@ class Dashboard {
         
         tbody.innerHTML = filteredUsers.map(user => `
             <tr>
+                <td><input type="checkbox" class="user-checkbox" data-user-id="${user.user_id}" onchange="window.dashboard.updateBulkActionsState()"></td>
                 <td><span class="user-id">${user.user_id}</span></td>
                 <td>${this.formatDate(user.created_at)}</td>
                 <td>${user.last_used ? this.formatDate(user.last_used) : 'Nunca'}</td>
@@ -982,13 +983,13 @@ class Dashboard {
     // View user details
     viewUserDetails(userId) {
         console.log('Ver detalhes do utilizador:', userId);
-        // Implementar modal de detalhes
+        this.showUserDetailsModal(userId);
     }
 
     // Edit user credits
     editUserCredits(userId) {
         console.log('Editar créditos do utilizador:', userId);
-        // Implementar modal de edição
+        this.showEditCreditsModal(userId);
     }
     
     toggleTheme() {
@@ -1110,6 +1111,581 @@ class Dashboard {
                 errorDiv.remove();
             }
         }, 5000);
+    }
+    
+    // ===== FUNCIONALIDADES AVANÇADAS DE GESTÃO DE UTILIZADORES =====
+    
+    // Mostrar modal de detalhes do utilizador
+    async showUserDetailsModal(userId) {
+        try {
+            console.log('📊 Carregando detalhes do utilizador:', userId);
+            
+            const response = await this.fetchData(`/api/users/${userId}/details`);
+            if (!response || !response.success) {
+                throw new Error(response?.error || 'Erro ao carregar detalhes');
+            }
+            
+            const userData = response.data;
+            this.createUserDetailsModal(userData);
+            
+        } catch (error) {
+            console.error('❌ Erro ao carregar detalhes do utilizador:', error);
+            this.showError(`Erro ao carregar detalhes: ${error.message}`);
+        }
+    }
+    
+    // Criar modal de detalhes do utilizador
+    createUserDetailsModal(userData) {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content large">
+                <div class="modal-header">
+                    <h2>Detalhes do Utilizador</h2>
+                    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="user-details-grid">
+                        <div class="user-info-card">
+                            <h3>Informações Básicas</h3>
+                            <div class="info-item">
+                                <label>ID do Utilizador:</label>
+                                <span>${userData.user.user_id}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Device ID:</label>
+                                <span>${userData.user.device_id || 'N/A'}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Créditos Atuais:</label>
+                                <span class="credits-value">${userData.user.credits}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Data de Registo:</label>
+                                <span>${new Date(userData.user.created_at).toLocaleString('pt-PT')}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Última Atividade:</label>
+                                <span>${new Date(userData.user.last_seen).toLocaleString('pt-PT')}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="user-stats-card">
+                            <h3>Estatísticas</h3>
+                            <div class="stats-grid">
+                                <div class="stat-item">
+                                    <label>Total de Resumos:</label>
+                                    <span>${userData.statistics.total_summaries}</span>
+                                </div>
+                                <div class="stat-item">
+                                    <label>Resumos Bem-sucedidos:</label>
+                                    <span class="success">${userData.statistics.successful_summaries}</span>
+                                </div>
+                                <div class="stat-item">
+                                    <label>Resumos Falhados:</label>
+                                    <span class="error">${userData.statistics.failed_summaries}</span>
+                                </div>
+                                <div class="stat-item">
+                                    <label>Taxa de Sucesso:</label>
+                                    <span>${userData.statistics.success_rate}%</span>
+                                </div>
+                                <div class="stat-item">
+                                    <label>Tempo Médio:</label>
+                                    <span>${(userData.statistics.avg_duration / 1000).toFixed(1)}s</span>
+                                </div>
+                                <div class="stat-item">
+                                    <label>Texto Processado:</label>
+                                    <span>${userData.statistics.total_text_processed.toLocaleString()} chars</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="user-history-tabs">
+                        <div class="tab-buttons">
+                            <button class="tab-button active" data-tab="summaries">Resumos Recentes</button>
+                            <button class="tab-button" data-tab="requests">Requests Recentes</button>
+                            <button class="tab-button" data-tab="credits">Histórico de Créditos</button>
+                        </div>
+                        
+                        <div class="tab-content">
+                            <div class="tab-panel active" id="summaries-tab">
+                                <div class="history-table-container">
+                                    <table class="history-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Data</th>
+                                                <th>Tipo</th>
+                                                <th>Status</th>
+                                                <th>Duração</th>
+                                                <th>Tamanho</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${userData.summaries.map(summary => `
+                                                <tr>
+                                                    <td>${new Date(summary.created_at).toLocaleString('pt-PT')}</td>
+                                                    <td>${this.getDocumentTypeName(summary.type)}</td>
+                                                    <td>
+                                                        <span class="status-badge ${summary.success ? 'success' : 'error'}">
+                                                            ${summary.success ? 'Sucesso' : 'Falha'}
+                                                        </span>
+                                                    </td>
+                                                    <td>${(summary.duration / 1000).toFixed(1)}s</td>
+                                                    <td>${summary.text_length?.toLocaleString() || 'N/A'}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <div class="tab-panel" id="requests-tab">
+                                <div class="history-table-container">
+                                    <table class="history-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Data</th>
+                                                <th>Método</th>
+                                                <th>Path</th>
+                                                <th>Status</th>
+                                                <th>Duração</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${userData.requests.map(request => `
+                                                <tr>
+                                                    <td>${new Date(request.timestamp).toLocaleString('pt-PT')}</td>
+                                                    <td>${request.method}</td>
+                                                    <td>${request.path}</td>
+                                                    <td>
+                                                        <span class="status-badge ${request.status_code < 400 ? 'success' : 'error'}">
+                                                            ${request.status_code}
+                                                        </span>
+                                                    </td>
+                                                    <td>${request.duration}ms</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <div class="tab-panel" id="credits-tab">
+                                <div class="history-table-container">
+                                    <table class="history-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Data</th>
+                                                <th>Ação</th>
+                                                <th>Valor</th>
+                                                <th>Saldo Após</th>
+                                                <th>Descrição</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="credits-history-body">
+                                            <tr><td colspan="5" class="text-center">Carregando histórico de créditos...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" onclick="window.dashboard.editUserCredits('${userData.user.user_id}'); this.closest('.modal-overlay').remove();">
+                        <span class="material-symbols-outlined">edit</span>
+                        Editar Créditos
+                    </button>
+                    <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">
+                        Fechar
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Configurar tabs
+        this.setupModalTabs(modal);
+        
+        // Carregar histórico de créditos
+        this.loadCreditsHistory(userData.user.user_id);
+    }
+    
+    // Mostrar modal de edição de créditos
+    async showEditCreditsModal(userId) {
+        try {
+            // Obter dados atuais do utilizador
+            const user = this.usersData.find(u => u.user_id === userId);
+            if (!user) {
+                throw new Error('Utilizador não encontrado');
+            }
+            
+            this.createEditCreditsModal(user);
+            
+        } catch (error) {
+            console.error('❌ Erro ao carregar dados do utilizador:', error);
+            this.showError(`Erro ao carregar dados: ${error.message}`);
+        }
+    }
+    
+    // Criar modal de edição de créditos
+    createEditCreditsModal(user) {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Editar Créditos</h2>
+                    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="user-info">
+                        <h3>Utilizador: ${user.user_id}</h3>
+                        <p>Créditos atuais: <strong>${user.credits}</strong></p>
+                    </div>
+                    
+                    <form id="editCreditsForm">
+                        <div class="form-group">
+                            <label for="creditAction">Ação:</label>
+                            <select id="creditAction" required>
+                                <option value="set">Definir valor específico</option>
+                                <option value="add">Adicionar créditos</option>
+                                <option value="subtract">Subtrair créditos</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="creditAmount">Valor:</label>
+                            <input type="number" id="creditAmount" min="0" required placeholder="Digite o valor">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="creditReason">Motivo (opcional):</label>
+                            <textarea id="creditReason" placeholder="Ex: Bónus por atividade, penalização por spam, etc."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" onclick="window.dashboard.saveCreditsEdit('${user.user_id}')">
+                        <span class="material-symbols-outlined">save</span>
+                        Salvar Alterações
+                    </button>
+                    <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+    }
+    
+    // Salvar edição de créditos
+    async saveCreditsEdit(userId) {
+        try {
+            const action = document.getElementById('creditAction').value;
+            const amount = parseInt(document.getElementById('creditAmount').value);
+            const reason = document.getElementById('creditReason').value;
+            
+            if (!amount || amount < 0) {
+                throw new Error('Valor inválido');
+            }
+            
+            console.log('💳 Atualizando créditos:', { userId, action, amount, reason });
+            
+            const response = await this.fetchData(`/api/users/${userId}/credits`, {
+                method: 'PUT',
+                body: JSON.stringify({ credits: amount, action, reason })
+            });
+            
+            if (!response || !response.success) {
+                throw new Error(response?.error || 'Erro ao atualizar créditos');
+            }
+            
+            console.log('✅ Créditos atualizados:', response.data);
+            
+            // Fechar modal
+            document.querySelector('.modal-overlay').remove();
+            
+            // Atualizar dados e mostrar sucesso
+            await this.loadUsersData();
+            this.showSuccess(`Créditos ${action} com sucesso! Novo saldo: ${response.data.new_credits}`);
+            
+        } catch (error) {
+            console.error('❌ Erro ao salvar créditos:', error);
+            this.showError(`Erro ao salvar: ${error.message}`);
+        }
+    }
+    
+    // Carregar histórico de créditos
+    async loadCreditsHistory(userId) {
+        try {
+            const response = await this.fetchData(`/api/users/${userId}/credits-history`);
+            if (!response || !response.success) {
+                throw new Error(response?.error || 'Erro ao carregar histórico');
+            }
+            
+            const tbody = document.getElementById('credits-history-body');
+            if (tbody) {
+                tbody.innerHTML = response.data.map(entry => `
+                    <tr>
+                        <td>${new Date(entry.created_at).toLocaleString('pt-PT')}</td>
+                        <td>
+                            <span class="action-badge ${entry.action}">
+                                ${this.getActionName(entry.action)}
+                            </span>
+                        </td>
+                        <td class="${entry.action === 'subtract' ? 'negative' : 'positive'}">
+                            ${entry.action === 'subtract' ? '-' : '+'}${entry.amount}
+                        </td>
+                        <td>${entry.balance_after}</td>
+                        <td>${entry.description || 'N/A'}</td>
+                    </tr>
+                `).join('') || '<tr><td colspan="5" class="text-center">Nenhum histórico encontrado</td></tr>';
+            }
+            
+        } catch (error) {
+            console.error('❌ Erro ao carregar histórico de créditos:', error);
+            const tbody = document.getElementById('credits-history-body');
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center error">Erro ao carregar histórico</td></tr>';
+            }
+        }
+    }
+    
+    // Configurar tabs do modal
+    setupModalTabs(modal) {
+        const tabButtons = modal.querySelectorAll('.tab-button');
+        const tabPanels = modal.querySelectorAll('.tab-panel');
+        
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const tabId = button.dataset.tab;
+                
+                // Remover classe active de todos
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                tabPanels.forEach(panel => panel.classList.remove('active'));
+                
+                // Adicionar classe active ao selecionado
+                button.classList.add('active');
+                modal.querySelector(`#${tabId}-tab`).classList.add('active');
+            });
+        });
+    }
+    
+    // Obter nome da ação
+    getActionName(action) {
+        const actionNames = {
+            'set': 'Definir',
+            'add': 'Adicionar',
+            'subtract': 'Subtrair',
+            'consumed': 'Consumido',
+            'purchased': 'Comprado',
+            'refunded': 'Reembolsado'
+        };
+        return actionNames[action] || action;
+    }
+    
+    // Obter nome do tipo de documento
+    getDocumentTypeName(type) {
+        const typeNames = {
+            'terms_of_service': 'Termos de Serviço',
+            'privacy_policy': 'Política de Privacidade',
+            'unknown': 'Outros'
+        };
+        return typeNames[type] || type;
+    }
+    
+    // Mostrar ações em massa
+    showBulkActions() {
+        const selectedUsers = this.getSelectedUsers();
+        if (selectedUsers.length === 0) {
+            this.showError('Selecione pelo menos um utilizador');
+            return;
+        }
+        
+        this.createBulkActionsModal(selectedUsers);
+    }
+    
+    // Obter utilizadores selecionados
+    getSelectedUsers() {
+        const checkboxes = document.querySelectorAll('#usersTableBody input[type="checkbox"]:checked');
+        return Array.from(checkboxes).map(cb => cb.dataset.userId);
+    }
+    
+    // Criar modal de ações em massa
+    createBulkActionsModal(selectedUsers) {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Ações em Massa</h2>
+                    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="bulk-info">
+                        <p><strong>${selectedUsers.length}</strong> utilizador(es) selecionado(s)</p>
+                    </div>
+                    
+                    <form id="bulkActionForm">
+                        <div class="form-group">
+                            <label for="bulkAction">Ação:</label>
+                            <select id="bulkAction" required>
+                                <option value="">Selecione uma ação</option>
+                                <option value="add_credits">Adicionar Créditos</option>
+                                <option value="subtract_credits">Subtrair Créditos</option>
+                                <option value="ban">Banir Utilizadores</option>
+                                <option value="unban">Desbanir Utilizadores</option>
+                                <option value="delete">Eliminar Utilizadores</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group" id="valueGroup" style="display: none;">
+                            <label for="bulkValue">Valor:</label>
+                            <input type="number" id="bulkValue" min="0" placeholder="Digite o valor">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="bulkReason">Motivo (opcional):</label>
+                            <textarea id="bulkReason" placeholder="Ex: Ação administrativa, bónus em massa, etc."></textarea>
+                        </div>
+                        
+                        <div class="warning-box" id="warningBox" style="display: none;">
+                            <span class="material-symbols-outlined">warning</span>
+                            <p>Esta ação é irreversível e afetará todos os utilizadores selecionados.</p>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-danger" onclick="window.dashboard.executeBulkAction()">
+                        <span class="material-symbols-outlined">execute</span>
+                        Executar Ação
+                    </button>
+                    <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Configurar eventos
+        const actionSelect = modal.querySelector('#bulkAction');
+        const valueGroup = modal.querySelector('#valueGroup');
+        const warningBox = modal.querySelector('#warningBox');
+        
+        actionSelect.addEventListener('change', () => {
+            const action = actionSelect.value;
+            const needsValue = ['add_credits', 'subtract_credits'].includes(action);
+            const isDangerous = ['ban', 'delete'].includes(action);
+            
+            valueGroup.style.display = needsValue ? 'block' : 'none';
+            warningBox.style.display = isDangerous ? 'block' : 'none';
+        });
+    }
+    
+    // Executar ação em massa
+    async executeBulkAction() {
+        try {
+            const selectedUsers = this.getSelectedUsers();
+            const action = document.getElementById('bulkAction').value;
+            const value = document.getElementById('bulkValue').value;
+            const reason = document.getElementById('bulkReason').value;
+            
+            if (!action) {
+                throw new Error('Selecione uma ação');
+            }
+            
+            if (['add_credits', 'subtract_credits'].includes(action) && !value) {
+                throw new Error('Valor é obrigatório para esta ação');
+            }
+            
+            console.log('🔄 Executando ação em massa:', { action, value, reason, users: selectedUsers.length });
+            
+            const response = await this.fetchData('/api/users/bulk-action', {
+                method: 'POST',
+                body: JSON.stringify({
+                    userIds: selectedUsers,
+                    action,
+                    value: value ? parseInt(value) : undefined,
+                    reason
+                })
+            });
+            
+            if (!response || !response.success) {
+                throw new Error(response?.error || 'Erro na ação em massa');
+            }
+            
+            console.log('✅ Ação em massa executada:', response.data);
+            
+            // Fechar modal
+            document.querySelector('.modal-overlay').remove();
+            
+            // Atualizar dados e mostrar resultado
+            await this.loadUsersData();
+            
+            const { successful, failed } = response.data;
+            this.showSuccess(`Ação executada: ${successful} sucessos, ${failed} falhas`);
+            
+        } catch (error) {
+            console.error('❌ Erro na ação em massa:', error);
+            this.showError(`Erro na ação: ${error.message}`);
+        }
+    }
+    
+    // Funções auxiliares para gestão de seleção
+    updateBulkActionsState() {
+        const selectedUsers = this.getSelectedUsers();
+        const bulkActionsBtn = document.getElementById('bulkActionsBtn');
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        
+        if (bulkActionsBtn) {
+            bulkActionsBtn.disabled = selectedUsers.length === 0;
+        }
+        
+        if (selectAllCheckbox) {
+            const allCheckboxes = document.querySelectorAll('.user-checkbox');
+            const checkedCheckboxes = document.querySelectorAll('.user-checkbox:checked');
+            
+            if (checkedCheckboxes.length === 0) {
+                selectAllCheckbox.indeterminate = false;
+                selectAllCheckbox.checked = false;
+            } else if (checkedCheckboxes.length === allCheckboxes.length) {
+                selectAllCheckbox.indeterminate = false;
+                selectAllCheckbox.checked = true;
+            } else {
+                selectAllCheckbox.indeterminate = true;
+            }
+        }
+    }
+    
+    toggleSelectAll() {
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        const userCheckboxes = document.querySelectorAll('.user-checkbox');
+        
+        userCheckboxes.forEach(checkbox => {
+            checkbox.checked = selectAllCheckbox.checked;
+        });
+        
+        this.updateBulkActionsState();
+    }
+    
+    selectAllUsers() {
+        const userCheckboxes = document.querySelectorAll('.user-checkbox');
+        userCheckboxes.forEach(checkbox => {
+            checkbox.checked = true;
+        });
+        this.updateBulkActionsState();
     }
     
     // Método para atualizar dados em tempo real

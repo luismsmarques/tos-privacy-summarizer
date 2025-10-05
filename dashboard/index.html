@@ -14,6 +14,7 @@
     
     <!-- Additional Dashboard Styles -->
     <link rel="stylesheet" href="dashboard-styles.css">
+    <link rel="stylesheet" href="css/advanced-features.css">
     
     <!-- Material Design 3 CSS Variables -->
     <style>
@@ -1047,10 +1048,24 @@
                         </div>
                     </div>
 
+                    <div class="users-actions">
+                        <div class="bulk-actions">
+                            <button class="btn btn-secondary" onclick="window.dashboard.showBulkActions()" disabled id="bulkActionsBtn">
+                                <span class="material-symbols-outlined">group_work</span>
+                                Ações em Massa
+                            </button>
+                            <button class="btn btn-outline" onclick="window.dashboard.selectAllUsers()" id="selectAllBtn">
+                                <span class="material-symbols-outlined">select_all</span>
+                                Selecionar Todos
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="users-table-container">
                         <table class="users-table" id="usersTable">
                             <thead>
                                 <tr>
+                                    <th><input type="checkbox" id="selectAllCheckbox" onchange="window.dashboard.toggleSelectAll()"></th>
                                     <th>ID do Utilizador</th>
                                     <th>Data de Registo</th>
                                     <th>Última Atividade</th>
