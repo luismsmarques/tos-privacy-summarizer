@@ -381,22 +381,19 @@ class Dashboard {
                 this.charts.activity.data.labels = activityData.map(d => d.date || '');
                 this.charts.activity.update();
                 console.log('✅ Gráfico de atividade atualizado com dados reais');
+                
+                // Esconder mensagem de "sem dados"
+                this.hideNoDataMessage('activity');
             } else {
-                console.log('⚠️ Nenhum dado de atividade disponível, usando dados mock');
-                // Usar dados mock para demonstração
-                const mockActivityData = [
-                    { date: 'Seg', summaries: 2, users: 1 },
-                    { date: 'Ter', summaries: 1, users: 1 },
-                    { date: 'Qua', summaries: 0, users: 0 },
-                    { date: 'Qui', summaries: 3, users: 2 },
-                    { date: 'Sex', summaries: 1, users: 1 },
-                    { date: 'Sáb', summaries: 0, users: 0 },
-                    { date: 'Dom', summaries: 1, users: 1 }
-                ];
-                this.charts.activity.data.datasets[0].data = mockActivityData.map(d => d.summaries);
-                this.charts.activity.data.datasets[1].data = mockActivityData.map(d => d.users);
-                this.charts.activity.data.labels = mockActivityData.map(d => d.date);
+                console.log('⚠️ Nenhum dado de atividade disponível');
+                // Mostrar gráfico vazio com mensagem
+                this.charts.activity.data.datasets[0].data = [];
+                this.charts.activity.data.datasets[1].data = [];
+                this.charts.activity.data.labels = [];
                 this.charts.activity.update();
+                
+                // Mostrar mensagem de "sem dados"
+                this.showNoDataMessage('activity', 'Nenhuma atividade registrada nos últimos 7 dias');
             }
         }
         
@@ -413,17 +410,92 @@ class Dashboard {
                 this.charts.documentTypes.data.datasets[0].data = values;
                 this.charts.documentTypes.update();
                 console.log('✅ Gráfico de tipos de documentos atualizado com dados reais');
+                
+                // Esconder mensagem de "sem dados"
+                this.hideNoDataMessage('documentTypes');
             } else {
-                console.log('⚠️ Nenhum dado de tipos de documentos disponível, usando dados mock');
-                // Usar dados mock para demonstração
-                const mockDocumentTypes = {
-                    'Termos de Serviço': 3,
-                    'Políticas de Privacidade': 2,
-                    'Outros': 0
-                };
-                this.charts.documentTypes.data.labels = Object.keys(mockDocumentTypes);
-                this.charts.documentTypes.data.datasets[0].data = Object.values(mockDocumentTypes);
+                console.log('⚠️ Nenhum dado de tipos de documentos disponível');
+                // Mostrar gráfico vazio com mensagem
+                this.charts.documentTypes.data.labels = [];
+                this.charts.documentTypes.data.datasets[0].data = [];
                 this.charts.documentTypes.update();
+                
+                // Mostrar mensagem de "sem dados"
+                this.showNoDataMessage('documentTypes', 'Nenhum documento processado ainda');
+            }
+        }
+    }
+    
+    // Função para mostrar mensagem de "sem dados"
+    showNoDataMessage(chartType, message) {
+        const chartContainer = document.querySelector(`#${chartType}Chart`);
+        if (chartContainer) {
+            // Remover mensagem existente se houver
+            const existingMessage = chartContainer.querySelector('.no-data-message');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+            
+            // Criar nova mensagem
+            const noDataMessage = document.createElement('div');
+            noDataMessage.className = 'no-data-message';
+            noDataMessage.innerHTML = `
+                <div class="no-data-content">
+                    <span class="material-symbols-outlined">info</span>
+                    <p>${message}</p>
+                    <small>Os dados aparecerão aqui quando houver atividade</small>
+                </div>
+            `;
+            
+            // Adicionar estilos inline
+            noDataMessage.style.cssText = `
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                text-align: center;
+                color: var(--md-sys-color-on-surface-variant);
+                background: var(--md-sys-color-surface-container);
+                padding: 2rem;
+                border-radius: 1rem;
+                border: 1px solid var(--md-sys-color-outline-variant);
+                z-index: 10;
+            `;
+            
+            noDataMessage.querySelector('.no-data-content').style.cssText = `
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 0.5rem;
+            `;
+            
+            noDataMessage.querySelector('.material-symbols-outlined').style.cssText = `
+                font-size: 2rem;
+                opacity: 0.6;
+            `;
+            
+            noDataMessage.querySelector('p').style.cssText = `
+                margin: 0;
+                font-weight: 500;
+            `;
+            
+            noDataMessage.querySelector('small').style.cssText = `
+                margin: 0;
+                opacity: 0.7;
+            `;
+            
+            chartContainer.style.position = 'relative';
+            chartContainer.appendChild(noDataMessage);
+        }
+    }
+    
+    // Função para esconder mensagem de "sem dados"
+    hideNoDataMessage(chartType) {
+        const chartContainer = document.querySelector(`#${chartType}Chart`);
+        if (chartContainer) {
+            const existingMessage = chartContainer.querySelector('.no-data-message');
+            if (existingMessage) {
+                existingMessage.remove();
             }
         }
     }
