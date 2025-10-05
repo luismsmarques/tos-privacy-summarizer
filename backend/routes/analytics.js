@@ -246,6 +246,160 @@ router.post('/seed', async (req, res) => {
   }
 });
 
+// Função para calcular mudanças percentuais baseadas em dados históricos
+async function calculatePercentageChanges() {
+  try {
+    console.log('📊 Calculando mudanças percentuais...');
+    
+    // Calcular mudança de utilizadores (mês passado vs. atual)
+    const usersChange = await calculateUsersChange();
+    
+    // Calcular mudança de resumos (semana passada vs. atual)
+    const summariesChange = await calculateSummariesChange();
+    
+    // Calcular mudança de requests (ontem vs. hoje)
+    const requestsChange = await calculateRequestsChange();
+    
+    // Calcular mudança de taxa de sucesso (semana passada vs. atual)
+    const successChange = await calculateSuccessChange();
+    
+    return {
+      usersChange: usersChange,
+      summariesChange: summariesChange,
+      requestsChange: requestsChange,
+      successChange: successChange
+    };
+  } catch (error) {
+    console.error('❌ Erro ao calcular mudanças percentuais:', error);
+    return {
+      usersChange: 0,
+      summariesChange: 0,
+      requestsChange: 0,
+      successChange: 0
+    };
+  }
+}
+
+// Calcular mudança de utilizadores (mês passado vs. atual)
+async function calculateUsersChange() {
+  try {
+    const currentMonth = await db.query(`
+      SELECT COUNT(*) as count 
+      FROM users 
+      WHERE created_at >= DATE_TRUNC('month', CURRENT_DATE)
+    `);
+    
+    const lastMonth = await db.query(`
+      SELECT COUNT(*) as count 
+      FROM users 
+      WHERE created_at >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+      AND created_at < DATE_TRUNC('month', CURRENT_DATE)
+    `);
+    
+    const current = parseInt(currentMonth.rows[0].count);
+    const previous = parseInt(lastMonth.rows[0].count);
+    
+    if (previous === 0) return current > 0 ? 100 : 0;
+    
+    return Math.round(((current - previous) / previous) * 100 * 10) / 10;
+  } catch (error) {
+    console.error('Erro ao calcular mudança de utilizadores:', error);
+    return 0;
+  }
+}
+
+// Calcular mudança de resumos (semana passada vs. atual)
+async function calculateSummariesChange() {
+  try {
+    const currentWeek = await db.query(`
+      SELECT COUNT(*) as count 
+      FROM summaries 
+      WHERE created_at >= DATE_TRUNC('week', CURRENT_DATE)
+    `);
+    
+    const lastWeek = await db.query(`
+      SELECT COUNT(*) as count 
+      FROM summaries 
+      WHERE created_at >= DATE_TRUNC('week', CURRENT_DATE - INTERVAL '1 week')
+      AND created_at < DATE_TRUNC('week', CURRENT_DATE)
+    `);
+    
+    const current = parseInt(currentWeek.rows[0].count);
+    const previous = parseInt(lastWeek.rows[0].count);
+    
+    if (previous === 0) return current > 0 ? 100 : 0;
+    
+    return Math.round(((current - previous) / previous) * 100 * 10) / 10;
+  } catch (error) {
+    console.error('Erro ao calcular mudança de resumos:', error);
+    return 0;
+  }
+}
+
+// Calcular mudança de requests (ontem vs. hoje)
+async function calculateRequestsChange() {
+  try {
+    const today = await db.query(`
+      SELECT COUNT(*) as count 
+      FROM requests 
+      WHERE DATE(timestamp) = CURRENT_DATE
+    `);
+    
+    const yesterday = await db.query(`
+      SELECT COUNT(*) as count 
+      FROM requests 
+      WHERE DATE(timestamp) = CURRENT_DATE - INTERVAL '1 day'
+    `);
+    
+    const current = parseInt(today.rows[0].count);
+    const previous = parseInt(yesterday.rows[0].count);
+    
+    if (previous === 0) return current > 0 ? 100 : 0;
+    
+    return Math.round(((current - previous) / previous) * 100 * 10) / 10;
+  } catch (error) {
+    console.error('Erro ao calcular mudança de requests:', error);
+    return 0;
+  }
+}
+
+// Calcular mudança de taxa de sucesso (semana passada vs. atual)
+async function calculateSuccessChange() {
+  try {
+    const currentWeek = await db.query(`
+      SELECT 
+        COUNT(*) as total,
+        COUNT(CASE WHEN success = true THEN 1 END) as successful
+      FROM summaries 
+      WHERE created_at >= DATE_TRUNC('week', CURRENT_DATE)
+    `);
+    
+    const lastWeek = await db.query(`
+      SELECT 
+        COUNT(*) as total,
+        COUNT(CASE WHEN success = true THEN 1 END) as successful
+      FROM summaries 
+      WHERE created_at >= DATE_TRUNC('week', CURRENT_DATE - INTERVAL '1 week')
+      AND created_at < DATE_TRUNC('week', CURRENT_DATE)
+    `);
+    
+    const currentTotal = parseInt(currentWeek.rows[0].total);
+    const currentSuccessful = parseInt(currentWeek.rows[0].successful);
+    const previousTotal = parseInt(lastWeek.rows[0].total);
+    const previousSuccessful = parseInt(lastWeek.rows[0].successful);
+    
+    if (currentTotal === 0 || previousTotal === 0) return 0;
+    
+    const currentRate = (currentSuccessful / currentTotal) * 100;
+    const previousRate = (previousSuccessful / previousTotal) * 100;
+    
+    return Math.round((currentRate - previousRate) * 10) / 10;
+  } catch (error) {
+    console.error('Erro ao calcular mudança de taxa de sucesso:', error);
+    return 0;
+  }
+}
+
 // Endpoint para obter analytics overview
 router.get('/overview', async (req, res) => {
   try {
@@ -268,6 +422,19 @@ router.get('/overview', async (req, res) => {
     
     console.log('✅ Overview obtido:', overview);
     
+    // Calcular mudanças percentuais
+    console.log('📊 Calculando mudanças percentuais...');
+    const percentageChanges = await calculatePercentageChanges();
+    console.log('📈 Mudanças percentuais calculadas:', percentageChanges);
+    
+    // Combinar dados atuais com mudanças percentuais
+    const enhancedOverview = {
+      ...overview,
+      ...percentageChanges
+    };
+    
+    console.log('🎯 Overview final:', enhancedOverview);
+    
     // Se overview está vazio, tentar usar a view
     if (!overview || Object.keys(overview).length === 0) {
       console.log('⚠️ Overview vazio, tentando usar view...');
@@ -276,9 +443,15 @@ router.get('/overview', async (req, res) => {
         const viewData = viewResult.rows[0] || {};
         console.log('📊 Dados da view:', viewData);
         
+        // Combinar dados da view com mudanças percentuais
+        const enhancedViewData = {
+          ...viewData,
+          ...percentageChanges
+        };
+        
         res.json({
           success: true,
-          data: viewData,
+          data: enhancedViewData,
           timestamp: new Date().toISOString(),
           source: 'view'
         });
@@ -290,7 +463,7 @@ router.get('/overview', async (req, res) => {
     
     res.json({
       success: true,
-      data: overview,
+      data: enhancedOverview,
       timestamp: new Date().toISOString(),
       source: 'query'
     });
