@@ -2,35 +2,9 @@ import express from 'express';
 import db from '../utils/database.js';
 const router = express.Router();
 
-// Middleware para logging de requests
+// Middleware para logging de requests (desabilitado temporariamente)
 router.use(async (req, res, next) => {
-  const startTime = Date.now();
-  
-  res.on('finish', async () => {
-    const duration = Date.now() - startTime;
-    
-    // Log request to database
-    await db.logRequest(
-      req.method,
-      req.path,
-      res.statusCode,
-      duration,
-      req.get('User-Agent') || 'unknown',
-      req.ip || req.connection.remoteAddress,
-      req.userId || null
-    );
-    
-    // Update performance metrics
-    const hour = new Date().getHours();
-    await db.updatePerformanceMetrics(
-      hour,
-      1, // 1 request
-      duration,
-      res.statusCode >= 400 ? 1 : 0, // 1 error if status >= 400
-      duration
-    );
-  });
-  
+  // Skip logging for now to avoid connection issues
   next();
 });
 

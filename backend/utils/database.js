@@ -22,7 +22,12 @@ class Database {
                 connectionString: databaseUrl,
                 ssl: {
                     rejectUnauthorized: false
-                }
+                },
+                // Configurações para ambientes serverless
+                max: 1, // Máximo 1 conexão por função
+                idleTimeoutMillis: 30000, // 30 segundos
+                connectionTimeoutMillis: 10000, // 10 segundos
+                allowExitOnIdle: true // Permitir sair quando idle
             });
             
             // Test connection
@@ -41,10 +46,34 @@ class Database {
     }
 
     async query(text, params) {
-        if (!this.pool) {
-            throw new Error('Database not connected');
+        try {
+            // Verificar se temos uma conexão válida
+            if (!this.pool || !this.isConnected) {
+                console.log('🔄 Reconectando à base de dados...');
+                await this.connect();
+            }
+            
+            return await this.pool.query(text, params);
+        } catch (error) {
+            // Se a conexão foi perdida, tentar reconectar uma vez
+            if (error.message.includes('Connection terminated') || 
+                error.message.includes('connection') ||
+                error.message.includes('ECONNRESET')) {
+                
+                console.log('⚠️ Conexão perdida, tentando reconectar...');
+                this.isConnected = false;
+                
+                try {
+                    await this.connect();
+                    return await this.pool.query(text, params);
+                } catch (retryError) {
+                    console.error('❌ Falha na reconexão:', retryError);
+                    throw retryError;
+                }
+            }
+            
+            throw error;
         }
-        return await this.pool.query(text, params);
     }
 
     // User operations
