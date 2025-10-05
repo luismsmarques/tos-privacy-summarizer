@@ -609,162 +609,153 @@
             margin-top: 24px;
         }
 
-        /* Users Management Styles */
+        /* Users Section Styles */
         .section-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 24px;
             padding-bottom: 16px;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 2px solid var(--md-sys-color-outline-variant);
         }
 
-        .section-title {
+        .section-header h2 {
             font-size: 24px;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin: 0;
+            font-weight: 500;
+            color: var(--md-sys-color-on-surface);
         }
 
-        .section-actions {
+        .section-controls {
             display: flex;
             gap: 12px;
         }
 
-        .table-container {
-            background: var(--surface);
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            margin-top: 24px;
-        }
-
-        .table-header {
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            gap: 8px;
         }
 
-        .table-header h3 {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin: 0;
+        .btn-primary {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
         }
 
-        .table-controls {
+        .btn-primary:hover {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+        }
+
+        .users-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--md-sys-color-surface-container-low);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid var(--md-sys-color-outline-variant);
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--md-sys-color-primary);
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--md-sys-color-on-surface-variant);
+        }
+
+        .users-filters {
             display: flex;
             gap: 16px;
-            align-items: center;
+            margin-bottom: 24px;
+            padding: 16px;
+            background: var(--md-sys-color-surface-container-low);
+            border-radius: 12px;
+            flex-wrap: wrap;
         }
 
-        .search-box {
-            position: relative;
+        .filter-group {
             display: flex;
-            align-items: center;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 200px;
         }
 
-        .search-box .material-symbols-outlined {
-            position: absolute;
-            left: 12px;
-            color: var(--text-secondary);
-            font-size: 20px;
-        }
-
-        .search-box input {
-            padding: 8px 12px 8px 40px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            background: var(--surface);
-            color: var(--text-primary);
+        .filter-group label {
             font-size: 14px;
-            width: 250px;
+            font-weight: 500;
+            color: var(--md-sys-color-on-surface-variant);
         }
 
-        .search-box input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
-        }
-
-        .filter-select {
+        .filter-group input,
+        .filter-group select {
             padding: 8px 12px;
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--md-sys-color-outline);
             border-radius: 8px;
-            background: var(--surface);
-            color: var(--text-primary);
+            background: var(--md-sys-color-surface);
+            color: var(--md-sys-color-on-surface);
             font-size: 14px;
-            cursor: pointer;
         }
 
-        .table-wrapper {
-            overflow-x: auto;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
+        .filter-group input:focus,
+        .filter-group select:focus {
+            outline: none;
+            border-color: var(--md-sys-color-primary);
         }
 
-        .data-table {
+        .users-table-container {
+            background: var(--md-sys-color-surface-container-low);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--md-sys-color-outline-variant);
+        }
+
+        .users-table {
             width: 100%;
             border-collapse: collapse;
-            background: var(--surface);
         }
 
-        .data-table th {
-            background: var(--surface-secondary);
-            padding: 16px 12px;
+        .users-table th {
+            background: var(--md-sys-color-surface-container);
+            padding: 16px;
             text-align: left;
-            font-weight: 600;
-            color: var(--text-primary);
-            border-bottom: 1px solid var(--border-color);
-            font-size: 14px;
+            font-weight: 500;
+            color: var(--md-sys-color-on-surface);
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
         }
 
-        .data-table td {
-            padding: 16px 12px;
-            border-bottom: 1px solid var(--border-color);
-            color: var(--text-primary);
-            font-size: 14px;
+        .users-table td {
+            padding: 16px;
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+            color: var(--md-sys-color-on-surface);
         }
 
-        .data-table tr:hover {
-            background: var(--surface-secondary);
+        .users-table tr:hover {
+            background: var(--md-sys-color-surface-container);
         }
 
-        .data-table tr:last-child td {
-            border-bottom: none;
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: var(--primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 600;
-            font-size: 16px;
-        }
-
-        .user-details h4 {
-            margin: 0;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .user-details p {
-            margin: 0;
+        .user-id {
+            font-family: monospace;
             font-size: 12px;
-            color: var(--text-secondary);
+            background: var(--md-sys-color-surface-container);
+            padding: 4px 8px;
+            border-radius: 4px;
         }
 
         .status-badge {
@@ -772,38 +763,21 @@
             border-radius: 12px;
             font-size: 12px;
             font-weight: 500;
-            text-transform: uppercase;
         }
 
         .status-active {
-            background: #dcfce7;
-            color: #166534;
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
         }
 
         .status-inactive {
-            background: #fef3c7;
-            color: #92400e;
+            background: var(--md-sys-color-error-container);
+            color: var(--md-sys-color-on-error-container);
         }
 
         .status-premium {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-
-        .credits-info {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .credits-value {
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .credits-icon {
-            color: var(--success);
-            font-size: 16px;
+            background: var(--md-sys-color-tertiary-container);
+            color: var(--md-sys-color-on-tertiary-container);
         }
 
         .action-buttons {
@@ -811,173 +785,53 @@
             gap: 8px;
         }
 
-        .btn-action {
-            padding: 6px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            background: var(--surface);
-            color: var(--text-primary);
+        .action-btn {
+            padding: 4px 8px;
+            border: 1px solid var(--md-sys-color-outline);
+            border-radius: 4px;
+            background: var(--md-sys-color-surface);
+            color: var(--md-sys-color-on-surface);
             font-size: 12px;
             cursor: pointer;
             transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 4px;
         }
 
-        .btn-action:hover {
-            background: var(--surface-secondary);
-            border-color: var(--primary);
+        .action-btn:hover {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
         }
 
-        .btn-action.primary {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-
-        .btn-action.danger {
-            background: var(--error);
-            color: white;
-            border-color: var(--error);
-        }
-
-        .table-pagination {
+        .pagination {
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 16px;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid var(--border-color);
-        }
-
-        .pagination-info {
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-
-        .loading-spinner {
-            display: flex;
-            align-items: center;
-            justify-content: center;
             gap: 8px;
-            padding: 20px;
-            color: var(--text-secondary);
+            margin-top: 24px;
         }
 
-        .loading-spinner .material-symbols-outlined {
-            animation: spin 1s linear infinite;
-        }
-
-        .text-center {
-            text-align: center;
-        }
-
-        .loading-row td {
-            text-align: center;
-            padding: 40px;
-        }
-
-        /* Modal Styles */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        .modal-content {
-            background: var(--surface);
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-            max-width: 600px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 24px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .modal-header h3 {
-            margin: 0;
-            font-size: 20px;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
+        .pagination button {
+            padding: 8px 12px;
+            border: 1px solid var(--md-sys-color-outline);
+            border-radius: 4px;
+            background: var(--md-sys-color-surface);
+            color: var(--md-sys-color-on-surface);
             cursor: pointer;
-            padding: 8px;
-            border-radius: 6px;
-            transition: background-color 0.2s;
+            transition: all 0.2s;
         }
 
-        .modal-close:hover {
-            background: var(--surface-secondary);
+        .pagination button:hover {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
         }
 
-        .modal-body {
-            padding: 24px;
+        .pagination button.active {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
         }
 
-        .user-detail-section {
-            margin-bottom: 24px;
-        }
-
-        .user-detail-section h4 {
-            margin: 0 0 16px 0;
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .detail-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-        }
-
-        .detail-item {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .detail-item label {
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .detail-item span {
-            font-size: 14px;
-            color: var(--text-primary);
-        }
-
-        .modal-footer {
-            padding: 20px 24px;
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
     </style>
 </head>
@@ -1142,122 +996,78 @@
             </section>
 
                 <!-- Other sections will be added dynamically -->
-                <!-- Users Section -->
                 <section id="users-section" class="content-section hidden">
                     <div class="section-header">
-                        <h2 class="section-title">Gestão de Utilizadores</h2>
-                        <div class="section-actions">
+                        <h2>Gestão de Utilizadores</h2>
+                        <div class="section-controls">
                             <button class="btn btn-primary" id="refreshUsersBtn">
                                 <span class="material-symbols-outlined">refresh</span>
                                 Atualizar
                             </button>
-                            <button class="btn btn-secondary" id="exportUsersBtn">
-                                <span class="material-symbols-outlined">download</span>
-                                Exportar
-                            </button>
                         </div>
                     </div>
 
-                    <!-- Users Stats Cards -->
-                    <div class="cards-grid">
-                        <div class="card">
-                            <div class="card-header">
-                                <h3 class="card-title">Total de Utilizadores</h3>
-                                <span class="material-symbols-outlined card-icon">people</span>
-                            </div>
-                            <div class="card-content">
-                                <div class="metric-value" id="totalUsersCount">-</div>
-                                <div class="metric-label">Utilizadores registados</div>
-                            </div>
+                    <div class="users-stats">
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalUsersCount">-</div>
+                            <div class="stat-label">Total de Utilizadores</div>
                         </div>
-
-                        <div class="card">
-                            <div class="card-header">
-                                <h3 class="card-title">Utilizadores Ativos</h3>
-                                <span class="material-symbols-outlined card-icon">person_check</span>
-                            </div>
-                            <div class="card-content">
-                                <div class="metric-value" id="activeUsersCount">-</div>
-                                <div class="metric-label">Últimos 30 dias</div>
-                            </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="activeUsersCount">-</div>
+                            <div class="stat-label">Utilizadores Ativos (7 dias)</div>
                         </div>
-
-                        <div class="card">
-                            <div class="card-header">
-                                <h3 class="card-title">Créditos Totais</h3>
-                                <span class="material-symbols-outlined card-icon">account_balance_wallet</span>
-                            </div>
-                            <div class="card-content">
-                                <div class="metric-value" id="totalCreditsCount">-</div>
-                                <div class="metric-label">Créditos em circulação</div>
-                            </div>
-                        </div>
-
-                        <div class="card">
-                            <div class="card-header">
-                                <h3 class="card-title">Novos Hoje</h3>
-                                <span class="material-symbols-outlined card-icon">person_add</span>
-                            </div>
-                            <div class="card-content">
-                                <div class="metric-value" id="newUsersToday">-</div>
-                                <div class="metric-label">Registados hoje</div>
-                            </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="newUsersCount">-</div>
+                            <div class="stat-label">Novos Utilizadores (30 dias)</div>
                         </div>
                     </div>
 
-                    <!-- Users Table -->
-                    <div class="table-container">
-                        <div class="table-header">
-                            <h3>Lista de Utilizadores</h3>
-                            <div class="table-controls">
-                                <div class="search-box">
-                                    <span class="material-symbols-outlined">search</span>
-                                    <input type="text" id="usersSearch" placeholder="Pesquisar utilizadores...">
-                                </div>
-                                <select id="usersFilter" class="filter-select">
-                                    <option value="all">Todos</option>
-                                    <option value="active">Ativos</option>
-                                    <option value="inactive">Inativos</option>
-                                    <option value="premium">Premium</option>
-                                </select>
-                            </div>
+                    <div class="users-filters">
+                        <div class="filter-group">
+                            <label for="userSearch">Pesquisar</label>
+                            <input type="text" id="userSearch" placeholder="Pesquisar por ID ou email...">
                         </div>
+                        <div class="filter-group">
+                            <label for="userSort">Ordenar por</label>
+                            <select id="userSort">
+                                <option value="created_at">Data de Registo</option>
+                                <option value="last_used">Última Atividade</option>
+                                <option value="credits">Créditos</option>
+                                <option value="summaries_count">Número de Resumos</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="userFilter">Filtrar</label>
+                            <select id="userFilter">
+                                <option value="">Todos</option>
+                                <option value="active">Ativos</option>
+                                <option value="inactive">Inativos</option>
+                                <option value="premium">Premium</option>
+                            </select>
+                        </div>
+                    </div>
 
-                        <div class="table-wrapper">
-                            <table class="data-table" id="usersTable">
-                                <thead>
-                                    <tr>
-                                        <th>Utilizador</th>
-                                        <th>Email</th>
-                                        <th>Créditos</th>
-                                        <th>Status</th>
-                                        <th>Última Atividade</th>
-                                        <th>Registado</th>
-                                        <th>Ações</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="usersTableBody">
-                                    <tr class="loading-row">
-                                        <td colspan="7" class="text-center">
-                                            <div class="loading-spinner">
-                                                <span class="material-symbols-outlined">refresh</span>
-                                                Carregando utilizadores...
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                    <div class="users-table-container">
+                        <table class="users-table" id="usersTable">
+                            <thead>
+                                <tr>
+                                    <th>ID do Utilizador</th>
+                                    <th>Data de Registo</th>
+                                    <th>Última Atividade</th>
+                                    <th>Créditos</th>
+                                    <th>Resumos</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <!-- Utilizadores serão carregados aqui -->
+                            </tbody>
+                        </table>
+                    </div>
 
-                        <div class="table-pagination" id="usersPagination">
-                            <button class="btn btn-sm" id="prevPageBtn" disabled>
-                                <span class="material-symbols-outlined">chevron_left</span>
-                            </button>
-                            <span class="pagination-info" id="paginationInfo">Página 1 de 1</span>
-                            <button class="btn btn-sm" id="nextPageBtn" disabled>
-                                <span class="material-symbols-outlined">chevron_right</span>
-                            </button>
-                        </div>
+                    <div class="pagination" id="usersPagination">
+                        <!-- Paginação será gerada aqui -->
                     </div>
                 </section>
                 

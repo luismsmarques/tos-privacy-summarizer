@@ -30,7 +30,7 @@
   "options_page": "options.html",
         "web_accessible_resources": [
             {
-                "resources": ["privacy-policy.html", "terms-of-service.html", "onboarding.html", "summary-page.html", "summary-page.js", "checkout.html", "checkout.js"],
+                "resources": ["privacy-policy.html", "terms-of-service.html", "onboarding.html", "summary-page.html", "summary-page.js", "checkout.html", "checkout.js", "history.html", "history.js"],
                 "matches": ["<all_urls>"]
             }
         ]

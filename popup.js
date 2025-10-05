@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const themeToggle = document.getElementById('themeToggle');
     const settingsBtn = document.getElementById('settingsBtn');
     const backBtn = document.getElementById('backBtn');
+    const historyBtn = document.getElementById('historyBtn');
 
     // Context elements
     const pageUrl = document.getElementById('pageUrl');
@@ -296,6 +297,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Botão de configurações
         if (settingsBtn) {
             settingsBtn.addEventListener('click', openSettings);
+        }
+        
+        // Botão de histórico
+        if (historyBtn) {
+            historyBtn.addEventListener('click', openHistory);
         }
         
         // Focus selector
@@ -671,6 +677,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Abrir configurações
     function openSettings() {
         chrome.runtime.openOptionsPage();
+    }
+
+    // Abrir histórico
+    function openHistory() {
+        chrome.tabs.create({ url: chrome.runtime.getURL('history.html') });
     }
 
     // Listener para mensagens do background script

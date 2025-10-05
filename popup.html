@@ -168,6 +168,23 @@
             color: var(--md-sys-color-on-primary);
         }
 
+        .history-btn {
+            background: none;
+            border: none;
+            color: var(--md-sys-color-on-surface);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .history-btn:hover {
+            background: var(--md-sys-color-surface-container-high);
+        }
+
         /* Main Container */
         .main-container {
             display: flex;
@@ -714,6 +731,9 @@
         <div class="header-controls">
             <button class="back-btn hidden" id="backBtn" title="Voltar">
                 <span class="material-icons">arrow_back</span>
+            </button>
+            <button class="history-btn" id="historyBtn" title="Histórico de Resumos">
+                <span class="material-icons">history</span>
             </button>
             <button class="theme-toggle" id="themeToggle" title="Alternar tema">
                 <span class="material-icons">dark_mode</span>
