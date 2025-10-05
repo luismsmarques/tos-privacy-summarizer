@@ -135,7 +135,7 @@ async function processSummaryAsync(text, focus = 'privacy', url = '', title = ''
     if (apiType === 'shared') {
       // Usar backend seguro com retry
       summary = await RetryManager.executeWithRetry(
-        () => summarizeWithBackend(text, userId, focus),
+        () => summarizeWithBackend(text, userId, focus, url, title),
         'summarizeWithBackend'
       );
     } else {
@@ -274,13 +274,15 @@ function generateDeviceId() {
 }
 
 // Função para usar backend seguro
-async function summarizeWithBackend(text, userId, focus = 'privacy') {
+async function summarizeWithBackend(text, userId, focus = 'privacy', url = '', title = '') {
   try {
     Logger.log('Usando backend seguro para resumir texto...', {
       url: API_ENDPOINTS.PROXY,
       userId: userId,
       focus: focus,
-      textLength: text.length
+      textLength: text.length,
+      pageUrl: url,
+      pageTitle: title
     });
     
     const response = await fetch(API_ENDPOINTS.PROXY, {
@@ -292,7 +294,9 @@ async function summarizeWithBackend(text, userId, focus = 'privacy') {
         userId: userId,
         text: text,
         focus: focus,
-        apiType: 'shared'
+        apiType: 'shared',
+        url: url,
+        title: title
       })
     });
     

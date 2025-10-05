@@ -10,6 +10,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const typeFilter = document.getElementById('typeFilter');
     const dateFilter = document.getElementById('dateFilter');
     const searchInput = document.getElementById('searchInput');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const userStats = document.getElementById('userStats');
 
     // Estado da aplicação
     let summaries = [];
@@ -59,11 +61,10 @@ document.addEventListener('DOMContentLoaded', function() {
             showLoading(true);
             hideMessages();
 
-            const response = await fetch('https://tos-privacy-summarizer.vercel.app/api/analytics/summaries', {
+            const response = await fetch(`https://tos-privacy-summarizer.vercel.app/api/analytics/user-history/${userId}?limit=100`, {
                 method: 'GET',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${await getAuthToken()}`
+                    'Content-Type': 'application/json'
                 }
             });
 
@@ -75,9 +76,10 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Histórico carregado:', data);
 
             if (data.success && data.data) {
-                summaries = data.data.filter(summary => summary.user_id === userId);
+                summaries = data.data;
                 filteredSummaries = [...summaries];
                 renderSummaries();
+                renderUserStats(data.stats);
             } else {
                 summaries = [];
                 filteredSummaries = [];
@@ -110,6 +112,13 @@ document.addEventListener('DOMContentLoaded', function() {
         typeFilter.addEventListener('change', applyFilters);
         dateFilter.addEventListener('change', applyFilters);
         searchInput.addEventListener('input', debounce(applyFilters, 300));
+        
+        // Botão de refresh
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                loadHistory();
+            });
+        }
     }
 
     // Aplicar filtros
@@ -176,8 +185,8 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="summary-item" data-id="${summary.id}">
                 <div class="summary-header">
                     <div>
-                        <div class="summary-title">${getDocumentTypeName(summary.document_type)}</div>
-                        <a href="${summary.url}" target="_blank" class="summary-url">${summary.url}</a>
+                        <div class="summary-title">${summary.title || getDocumentTypeName(summary.document_type)}</div>
+                        <a href="${summary.url}" target="_blank" class="summary-url">${summary.url || 'URL não disponível'}</a>
                     </div>
                 </div>
                 
@@ -193,6 +202,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="meta-item">
                         <span class="material-icons">timer</span>
                         <span>${summary.processing_time || 0}s</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="material-icons">tune</span>
+                        <span>${getFocusName(summary.focus)}</span>
                     </div>
                 </div>
                 
@@ -229,6 +242,28 @@ document.addEventListener('DOMContentLoaded', function() {
             'unknown': 'Documento Legal'
         };
         return typeMap[type] || 'Documento';
+    }
+
+    // Obter nome do foco
+    function getFocusName(focus) {
+        const focusMap = {
+            'privacy': 'Privacidade',
+            'terms': 'Direitos (ToS)',
+            'general': 'Geral'
+        };
+        return focusMap[focus] || 'Geral';
+    }
+
+    // Renderizar estatísticas do utilizador
+    function renderUserStats(stats) {
+        if (!stats || !userStats) return;
+        
+        document.getElementById('totalSummaries').textContent = stats.total_summaries || 0;
+        document.getElementById('privacyPolicies').textContent = stats.privacy_policies || 0;
+        document.getElementById('termsOfService').textContent = stats.terms_of_service || 0;
+        document.getElementById('avgProcessingTime').textContent = `${stats.avg_processing_time || 0}s`;
+        
+        userStats.style.display = 'block';
     }
 
     // Formatar data

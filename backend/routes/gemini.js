@@ -109,7 +109,7 @@ router.post('/proxy', [
             });
         }
 
-        const { userId, text, focus = 'privacy', apiType = 'shared' } = req.body;
+        const { userId, text, focus = 'privacy', apiType = 'shared', url, title } = req.body;
 
         // Registrar utilizador no analytics
         await registerUser(userId, req.ip || 'unknown');
@@ -135,9 +135,9 @@ router.post('/proxy', [
         
         // Registrar resumo no analytics
         const duration = Date.now() - startTime;
-        console.log(`📊 Registrando resumo: userId=${userId}, success=${success}, duration=${duration}ms, type=${documentType}, textLength=${text.length}`);
+        console.log(`📊 Registrando resumo: userId=${userId}, success=${success}, duration=${duration}ms, type=${documentType}, textLength=${text.length}, url=${url}, title=${title}`);
         try {
-            await registerSummary(userId, true, duration, documentType, text.length);
+            await registerSummary(userId, true, duration, documentType, text.length, url, geminiResponse, title, focus);
             console.log('✅ Resumo registrado com sucesso no analytics');
         } catch (error) {
             console.error('❌ Erro ao registrar resumo no analytics:', error);

@@ -21,11 +21,15 @@ CREATE TABLE IF NOT EXISTS summaries (
     summary_id VARCHAR(255) UNIQUE NOT NULL,
     user_id VARCHAR(255) NOT NULL,
     url TEXT,
+    title TEXT,
+    document_type VARCHAR(50) DEFAULT 'unknown',
     success BOOLEAN NOT NULL,
     duration INTEGER NOT NULL, -- em milissegundos
-    type VARCHAR(100) DEFAULT 'unknown',
     text_length INTEGER,
+    word_count INTEGER,
     summary TEXT,
+    processing_time DECIMAL(10,2),
+    focus VARCHAR(50) DEFAULT 'privacy',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE

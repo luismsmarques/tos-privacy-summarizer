@@ -737,4 +737,38 @@ document.addEventListener('DOMContentLoaded', function() {
         
         return true; // Manter canal aberto
     });
+
+    // Carregar estatísticas do histórico
+    async function loadHistoryStats(userId) {
+        try {
+            const response = await fetch(`https://tos-privacy-summarizer.vercel.app/api/analytics/user-history/${userId}?limit=1`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.stats) {
+                    updateHistoryIndicator(data.stats);
+                }
+            }
+        } catch (error) {
+            Logger.warn('Erro ao carregar estatísticas do histórico:', error);
+        }
+    }
+
+    // Atualizar indicador de histórico
+    function updateHistoryIndicator(stats) {
+        if (!historyBtn) return;
+        
+        const totalSummaries = stats.total_summaries || 0;
+        
+        // Adicionar badge com número de resumos se houver
+        if (totalSummaries > 0) {
+            let badge = historyBtn.querySelector('.history-badge');
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'history-badge';
+                historyBtn.appendChild(badge);
+            }
+            badge.textContent = totalSummaries;
+            badge.style.display = totalSummaries > 0 ? 'block' : 'none';
+        }
+    }
 });

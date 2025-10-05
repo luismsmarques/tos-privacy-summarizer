@@ -113,6 +113,65 @@
             border-color: var(--md-sys-color-primary);
         }
 
+        .refresh-btn {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            border: none;
+            border-radius: 8px;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .refresh-btn:hover {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+        }
+
+        .refresh-btn .material-icons {
+            font-size: 20px;
+        }
+
+        /* Estatísticas do utilizador */
+        .user-stats {
+            background: var(--md-sys-color-surface-container-low);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+            border: 1px solid var(--md-sys-color-outline-variant);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 16px;
+            background: var(--md-sys-color-surface-container);
+            border-radius: 8px;
+            border: 1px solid var(--md-sys-color-outline-variant);
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--md-sys-color-primary);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--md-sys-color-on-surface-variant);
+            font-weight: 500;
+        }
+
         .summary-list {
             display: flex;
             flex-direction: column;
@@ -347,6 +406,28 @@
 
         <div class="error-message" id="errorMessage"></div>
 
+        <!-- Estatísticas do utilizador -->
+        <div class="user-stats" id="userStats" style="display: none;">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalSummaries">0</div>
+                    <div class="stat-label">Total de Resumos</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="privacyPolicies">0</div>
+                    <div class="stat-label">Políticas de Privacidade</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="termsOfService">0</div>
+                    <div class="stat-label">Termos de Serviço</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="avgProcessingTime">0s</div>
+                    <div class="stat-label">Tempo Médio</div>
+                </div>
+            </div>
+        </div>
+
         <div class="filter-controls">
             <div class="filter-group">
                 <label for="typeFilter">Tipo de Documento</label>
@@ -369,6 +450,11 @@
             <div class="filter-group">
                 <label for="searchInput">Pesquisar</label>
                 <input type="text" id="searchInput" placeholder="Pesquisar por URL ou conteúdo...">
+            </div>
+            <div class="filter-group">
+                <button class="refresh-btn" id="refreshBtn" title="Atualizar histórico">
+                    <span class="material-icons">refresh</span>
+                </button>
             </div>
         </div>
 

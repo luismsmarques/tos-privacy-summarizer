@@ -150,13 +150,17 @@ class Database {
     }
 
     // Summary operations
-    async createSummary(summaryId, userId, success, duration, type = 'unknown', textLength = 0, url = null, summary = null) {
+    async createSummary(summaryId, userId, success, duration, documentType = 'unknown', textLength = 0, url = null, summary = null, title = null, focus = 'privacy') {
         try {
+            // Calcular word_count baseado no summary
+            const wordCount = summary ? summary.split(/\s+/).length : 0;
+            const processingTime = Math.round(duration / 1000.0 * 100) / 100; // Arredondar para 2 casas decimais
+            
             const result = await this.query(`
-                INSERT INTO summaries (summary_id, user_id, success, duration, type, text_length, url, summary)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                INSERT INTO summaries (summary_id, user_id, success, duration, document_type, text_length, url, summary, title, word_count, processing_time, focus)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
                 RETURNING *
-            `, [summaryId, userId, success, duration, type, textLength, url, summary]);
+            `, [summaryId, userId, success, duration, documentType, textLength, url, summary, title, wordCount, processingTime, focus]);
             
             // Update user summary count
             if (success) {
@@ -183,6 +187,63 @@ class Database {
             return result.rows[0] || null;
         } catch (error) {
             console.error('Error getting summary:', error);
+            throw error;
+        }
+    }
+
+    // Obter histórico de resumos de um utilizador
+    async getUserSummaries(userId, limit = 50, offset = 0) {
+        try {
+            const result = await this.query(`
+                SELECT 
+                    id,
+                    summary_id,
+                    user_id,
+                    url,
+                    title,
+                    document_type,
+                    success,
+                    duration,
+                    text_length,
+                    word_count,
+                    summary,
+                    processing_time,
+                    focus,
+                    created_at,
+                    updated_at
+                FROM summaries 
+                WHERE user_id = $1 
+                ORDER BY created_at DESC 
+                LIMIT $2 OFFSET $3
+            `, [userId, limit, offset]);
+            
+            return result.rows;
+        } catch (error) {
+            console.error('Error getting user summaries:', error);
+            throw error;
+        }
+    }
+
+    // Obter estatísticas de resumos de um utilizador
+    async getUserSummaryStats(userId) {
+        try {
+            const result = await this.query(`
+                SELECT 
+                    COUNT(*) as total_summaries,
+                    COUNT(CASE WHEN success = true THEN 1 END) as successful_summaries,
+                    COUNT(CASE WHEN document_type = 'privacy_policy' THEN 1 END) as privacy_policies,
+                    COUNT(CASE WHEN document_type = 'terms_of_service' THEN 1 END) as terms_of_service,
+                    COUNT(CASE WHEN document_type = 'unknown' THEN 1 END) as unknown_docs,
+                    ROUND(AVG(duration) / 1000.0, 2) as avg_processing_time,
+                    ROUND(AVG(word_count), 0) as avg_word_count,
+                    MAX(created_at) as last_summary_date
+                FROM summaries 
+                WHERE user_id = $1
+            `, [userId]);
+            
+            return result.rows[0];
+        } catch (error) {
+            console.error('Error getting user summary stats:', error);
             throw error;
         }
     }

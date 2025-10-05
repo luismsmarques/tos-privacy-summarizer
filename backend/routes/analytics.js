@@ -877,11 +877,11 @@ async function registerUser(userId, deviceId) {
 }
 
 // Função para registrar novo resumo
-async function registerSummary(userId, success = true, duration = 0, type = 'unknown', textLength = 0, url = null, summary = null) {
+async function registerSummary(userId, success = true, duration = 0, documentType = 'unknown', textLength = 0, url = null, summary = null, title = null, focus = 'privacy') {
   try {
-    console.log(`📝 Criando resumo: userId=${userId}, success=${success}, duration=${duration}, type=${type}, textLength=${textLength}, url=${url}`);
+    console.log(`📝 Criando resumo: userId=${userId}, success=${success}, duration=${duration}, documentType=${documentType}, textLength=${textLength}, url=${url}, title=${title}, focus=${focus}`);
     const summaryId = `summary_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const result = await db.createSummary(summaryId, userId, success, duration, type, textLength, url, summary);
+    const result = await db.createSummary(summaryId, userId, success, duration, documentType, textLength, url, summary, title, focus);
     console.log(`✅ Resumo criado com sucesso: ${summaryId}`);
     return result;
   } catch (error) {
@@ -889,6 +889,38 @@ async function registerSummary(userId, success = true, duration = 0, type = 'unk
     throw error;
   }
 }
+
+// Endpoint para obter histórico de resumos de um utilizador
+router.get('/user-history/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { limit = 50, offset = 0 } = req.query;
+    
+    console.log(`📊 Obtendo histórico para utilizador: ${userId}, limit: ${limit}, offset: ${offset}`);
+    
+    const summaries = await db.getUserSummaries(userId, parseInt(limit), parseInt(offset));
+    const stats = await db.getUserSummaryStats(userId);
+    
+    res.json({
+      success: true,
+      data: summaries,
+      stats: stats,
+      pagination: {
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        total: stats.total_summaries
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro ao obter histórico:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao obter histórico de resumos',
+      details: error.message
+    });
+  }
+});
 
 // Endpoint para migrar base de dados (adicionar colunas em falta)
 router.post('/migrate', async (req, res) => {
