@@ -11,7 +11,8 @@ const API_ENDPOINTS = {
     PROXY: `${BACKEND_BASE_URL}/api/gemini/proxy`,
     CREDITS: `${BACKEND_BASE_URL}/api/credits`,
     USERS: `${BACKEND_BASE_URL}/api/users`,
-    STRIPE: `${BACKEND_BASE_URL}/api/stripe`
+    STRIPE: `${BACKEND_BASE_URL}/api/stripe`,
+    LOG_ANALYTICS: `${BACKEND_BASE_URL}/api/log-analytics`
 };
 
 // Listener para mensagens do content.js
@@ -29,6 +30,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Função assíncrona para processar o resumo
 async function processSummaryAsync(text) {
+  const startTime = Date.now();
+  let success = false;
+  let error = null;
+  let summary = null;
+  let userId = null;
+  
   try {
     // Enviar atualização de progresso inicial
     chrome.runtime.sendMessage({
@@ -45,7 +52,7 @@ async function processSummaryAsync(text) {
 
     // Forçar uso da API compartilhada (backend seguro)
     let apiType = 'shared';
-    let userId = result.userId;
+    userId = result.userId;
     
     console.log('🔧 Configuração forçada para API compartilhada');
 
@@ -62,8 +69,6 @@ async function processSummaryAsync(text) {
       progress: 50
     });
 
-    let summary;
-    
     if (apiType === 'shared') {
       // Usar backend seguro
       summary = await summarizeWithBackend(text, userId);
@@ -83,6 +88,7 @@ async function processSummaryAsync(text) {
     }
     
     console.log('Resumo gerado com sucesso');
+    success = true;
     
     // Enviar atualização de progresso final
     chrome.runtime.sendMessage({
@@ -100,34 +106,40 @@ async function processSummaryAsync(text) {
       });
     }, 1000);
 
-  } catch (error) {
-    console.error('Erro ao gerar resumo:', error);
+  } catch (err) {
+    console.error('Erro ao gerar resumo:', err);
+    error = err;
+    success = false;
     
     // Determinar tipo de erro e enviar mensagem apropriada
     let errorMessage = 'Erro ao gerar resumo: ';
     
-    if (error.message.includes('API Gemini')) {
-      if (error.message.includes('401') || error.message.includes('403')) {
+    if (err.message.includes('API Gemini')) {
+      if (err.message.includes('401') || err.message.includes('403')) {
         errorMessage += 'Chave da API inválida ou sem permissões';
-      } else if (error.message.includes('429')) {
+      } else if (err.message.includes('429')) {
         errorMessage += 'Limite de uso da API atingido';
       } else {
         errorMessage += 'Erro na API Gemini';
       }
-    } else if (error.message.includes('fetch') || error.message.includes('network')) {
+    } else if (err.message.includes('fetch') || err.message.includes('network')) {
       errorMessage += 'Erro de ligação à internet';
-    } else if (error.message.includes('JSON')) {
+    } else if (err.message.includes('JSON')) {
       errorMessage += 'Erro ao processar resposta da API';
-    } else if (error.message.includes('Créditos insuficientes')) {
+    } else if (err.message.includes('Créditos insuficientes')) {
       errorMessage += 'Créditos insuficientes. Compre mais créditos ou configure a sua própria chave da API.';
     } else {
-      errorMessage += error.message;
+      errorMessage += err.message;
     }
     
     chrome.runtime.sendMessage({
       action: 'displaySummary',
       summary: errorMessage
     });
+  } finally {
+    // Log analytics sempre, independentemente do sucesso ou erro
+    const responseTime = (Date.now() - startTime) / 1000;
+    await logAnalytics(userId, text, responseTime, success, error);
   }
 }
 
@@ -428,6 +440,65 @@ async function listAvailableModels(apiKey) {
   } catch (error) {
     console.error('Erro ao listar modelos:', error);
     return null;
+  }
+}
+
+// Função para fazer log de analytics
+async function logAnalytics(userId, text, responseTime, success, error) {
+  try {
+    if (!userId) {
+      console.warn('Não é possível fazer log de analytics sem userId');
+      return;
+    }
+
+    // Detectar tipo de documento baseado no texto
+    let documentType = 'other';
+    const textLower = text.toLowerCase();
+    if (textLower.includes('terms of service') || textLower.includes('termos de serviço')) {
+      documentType = 'terms_of_service';
+    } else if (textLower.includes('privacy policy') || textLower.includes('política de privacidade')) {
+      documentType = 'privacy_policy';
+    }
+
+    // Obter URL atual se disponível
+    let url = null;
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      url = tab?.url || null;
+    } catch (e) {
+      // Ignorar erro se não conseguir obter URL
+    }
+
+    const logData = {
+      userId: userId,
+      url: url,
+      documentType: documentType,
+      textLength: text.length,
+      responseTime: responseTime,
+      success: success,
+      errorMessage: error ? error.message : null
+    };
+
+    console.log('📊 Fazendo log de analytics:', logData);
+
+    const response = await fetch(API_ENDPOINTS.LOG_ANALYTICS, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(logData)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('✅ Analytics logged successfully:', result);
+
+  } catch (error) {
+    console.error('❌ Erro ao fazer log de analytics:', error);
+    // Não bloquear o fluxo principal se o logging falhar
   }
 }
 
