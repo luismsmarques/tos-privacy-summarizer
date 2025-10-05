@@ -28,10 +28,10 @@
     "128": "icon128.png"
   },
   "options_page": "options.html",
-      "web_accessible_resources": [
-        {
-          "resources": ["privacy-policy.html", "terms-of-service.html", "onboarding.html", "summary-page.html", "summary-page.js"],
-          "matches": ["<all_urls>"]
-        }
-      ]
+        "web_accessible_resources": [
+            {
+                "resources": ["privacy-policy.html", "terms-of-service.html", "onboarding.html", "summary-page.html", "summary-page.js", "checkout.html", "checkout.js"],
+                "matches": ["<all_urls>"]
+            }
+        ]
 }

@@ -348,6 +348,62 @@ class Database {
         }
     }
 
+    // Atualizar créditos do utilizador
+    async updateUserCredits(userId, creditsToAdd) {
+        try {
+            if (!this.isConnected) {
+                await this.connect();
+            }
+
+            const query = `
+                INSERT INTO users (user_id, credits, created_at, updated_at)
+                VALUES ($1, $2, NOW(), NOW())
+                ON CONFLICT (user_id) 
+                DO UPDATE SET 
+                    credits = users.credits + $2,
+                    updated_at = NOW()
+                RETURNING credits
+            `;
+
+            const result = await this.query(query, [userId, creditsToAdd]);
+            
+            if (result.rows.length > 0) {
+                const newBalance = result.rows[0].credits;
+                console.log(`✅ Créditos atualizados: ${creditsToAdd} adicionados ao utilizador ${userId}. Novo saldo: ${newBalance}`);
+                return newBalance;
+            } else {
+                throw new Error('Falha ao atualizar créditos');
+            }
+
+        } catch (error) {
+            console.error('❌ Erro ao atualizar créditos:', error);
+            throw error;
+        }
+    }
+
+    // Obter créditos do utilizador
+    async getUserCredits(userId) {
+        try {
+            if (!this.isConnected) {
+                await this.connect();
+            }
+
+            const query = 'SELECT credits FROM users WHERE user_id = $1';
+            const result = await this.query(query, [userId]);
+            
+            if (result.rows.length > 0) {
+                return result.rows[0].credits;
+            } else {
+                // Utilizador não existe, retornar créditos padrão
+                return 5;
+            }
+
+        } catch (error) {
+            console.error('❌ Erro ao obter créditos:', error);
+            return 5; // Fallback para créditos padrão
+        }
+    }
+
     async close() {
         if (this.pool) {
             await this.pool.end();

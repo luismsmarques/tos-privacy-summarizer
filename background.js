@@ -14,134 +14,18 @@ const API_ENDPOINTS = {
     STRIPE: `${BACKEND_BASE_URL}/api/stripe`
 };
 
-// Sistema de Rating e Cálculo de Risco
-const RISK_WEIGHTS = {
-    'partilha_dados': 3,        // Alto Risco
-    'jurisdicao': 3,            // Alto Risco
-    'propriedade_conteudo': 2,  // Risco Médio
-    'alteracoes_termos': 2,     // Risco Médio
-    'outros_riscos': 1,         // Risco Baixo
-    'sem_alertas': 0            // Sem Risco
-};
-
-// Função para calcular score de risco
-function calculateRiskScore(alertasPrivacidade) {
-    if (!alertasPrivacidade || !Array.isArray(alertasPrivacidade)) {
-        return { score: 0, level: 'low', description: 'Sem alertas identificados' };
-    }
-    
-    let totalWeight = 0;
-    let alertCount = 0;
-    
-    alertasPrivacidade.forEach(alerta => {
-        if (alerta.tipo && RISK_WEIGHTS[alerta.tipo] !== undefined) {
-            totalWeight += RISK_WEIGHTS[alerta.tipo];
-            alertCount++;
-        }
-    });
-    
-    // Normalizar para escala 0-100
-    const maxPossibleWeight = Object.values(RISK_WEIGHTS).reduce((sum, weight) => sum + weight, 0);
-    const normalizedScore = Math.round((totalWeight / maxPossibleWeight) * 100);
-    
-    // Determinar nível de risco
-    let level, description;
-    if (normalizedScore >= 70) {
-        level = 'high';
-        description = 'Alto Risco';
-    } else if (normalizedScore >= 40) {
-        level = 'medium';
-        description = 'Risco Médio';
-    } else if (normalizedScore >= 20) {
-        level = 'low';
-        description = 'Risco Baixo';
-    } else {
-        level = 'minimal';
-        description = 'Risco Mínimo';
-    }
-    
-    return {
-        score: normalizedScore,
-        level: level,
-        description: description,
-        alertCount: alertCount,
-        totalWeight: totalWeight
-    };
-}
-
-// Função para calcular rating de complexidade
-function calculateComplexityRating(ratingComplexidade) {
-    if (!ratingComplexidade || isNaN(ratingComplexidade)) {
-        return { rating: 5, level: 'medium', description: 'Complexidade Média' };
-    }
-    
-    const rating = parseInt(ratingComplexidade);
-    let level, description;
-    
-    if (rating >= 8) {
-        level = 'very-high';
-        description = 'Muito Complexo';
-    } else if (rating >= 6) {
-        level = 'high';
-        description = 'Complexo';
-    } else if (rating >= 4) {
-        level = 'medium';
-        description = 'Complexidade Média';
-    } else if (rating >= 2) {
-        level = 'low';
-        description = 'Simples';
-    } else {
-        level = 'very-low';
-        description = 'Muito Simples';
-    }
-    
-    return {
-        rating: rating,
-        level: level,
-        description: description
-    };
-}
-
-// Função para processar boas práticas
-function processGoodPractices(boasPraticas) {
-    if (!boasPraticas || !Array.isArray(boasPraticas)) {
-        return { count: 0, practices: [] };
-    }
-    
-    const validPractices = boasPraticas.filter(practice => 
-        practice && typeof practice === 'string' && practice.trim().length > 0
-    );
-    
-    return {
-        count: validPractices.length,
-        practices: validPractices
-    };
-}
-
 // Listener para mensagens do content.js
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'summarizeText') {
     console.log('Recebido texto para resumir:', request.text.substring(0, 100) + '...');
     console.log('Foco solicitado:', request.focus);
 
-    // Processar de forma assíncrona
-    processSummaryAsync(request.text, request.focus)
-      .then(() => {
-        // Sucesso - não precisamos de enviar resposta aqui pois usamos chrome.runtime.sendMessage
-        console.log('Processamento assíncrono concluído');
-      })
-      .catch((error) => {
-        console.error('Erro no processamento assíncrono:', error);
-        // Não enviar erro aqui pois já foi enviado na função processSummaryAsync
-        console.log('Erro já tratado na função processSummaryAsync');
-      });
+    // Processar de forma assíncrona mas sem usar sendResponse
+    processSummaryAsync(request.text, request.focus);
     
-    // Retornar true para indicar que vamos responder assincronamente
-    return true;
+    // Responder imediatamente para evitar erro de canal fechado
+    sendResponse({ status: 'processing' });
   }
-  
-  // Para outras ações, não manter canal aberto
-  return false;
 });
 
 // Função assíncrona para processar o resumo
@@ -150,16 +34,12 @@ async function processSummaryAsync(text, focus = 'privacy') {
     console.log('Processando resumo com foco:', focus);
     
     // Enviar atualização de progresso inicial
-    try {
-      chrome.runtime.sendMessage({
-        action: 'progressUpdate',
-        step: 1,
-        text: 'Texto extraído com sucesso',
-        progress: 25
-      });
-    } catch (error) {
-      console.error('Erro ao enviar progresso inicial:', error);
-    }
+    chrome.runtime.sendMessage({
+      action: 'progressUpdate',
+      step: 1,
+      text: 'Texto extraído com sucesso',
+      progress: 25
+    });
 
     // Obter configuração da API do storage
     const result = await new Promise((resolve) => {
@@ -178,16 +58,12 @@ async function processSummaryAsync(text, focus = 'privacy') {
     }
 
     // Enviar atualização de progresso
-    try {
-      chrome.runtime.sendMessage({
-        action: 'progressUpdate',
-        step: 2,
-        text: 'Enviando para análise IA',
-        progress: 50
-      });
-    } catch (error) {
-      console.error('Erro ao enviar progresso:', error);
-    }
+    chrome.runtime.sendMessage({
+      action: 'progressUpdate',
+      step: 2,
+      text: 'Enviando para análise IA',
+      progress: 50
+    });
 
     let summary;
     
@@ -199,14 +75,10 @@ async function processSummaryAsync(text, focus = 'privacy') {
       const apiKey = result.geminiApiKey;
       
       if (!apiKey || apiKey === 'SHARED_API') {
-        try {
-          chrome.runtime.sendMessage({
-            action: 'displaySummary',
-            summary: 'Erro: Chave da API não configurada. Por favor, configure a sua chave da API Gemini nas configurações da extensão.'
-          });
-        } catch (error) {
-          console.error('Erro ao enviar mensagem de erro:', error);
-        }
+        chrome.runtime.sendMessage({
+          action: 'displaySummary',
+          summary: 'Erro: Chave da API não configurada. Por favor, configure a sua chave da API Gemini nas configurações da extensão.'
+        });
         return;
       }
       
@@ -215,79 +87,21 @@ async function processSummaryAsync(text, focus = 'privacy') {
     
     console.log('Resumo gerado com sucesso');
     
-    // Enviar atualização de progresso - processando ratings
-    try {
-      chrome.runtime.sendMessage({
-        action: 'progressUpdate',
-        step: 3,
-        text: 'Calculando ratings de risco',
-        progress: 75
-      });
-    } catch (error) {
-      console.error('Erro ao enviar progresso:', error);
-    }
-    
-    // Processar resumo e calcular ratings
-    let processedSummary;
-    try {
-      // Tentar parsear o JSON se for string
-      let parsedSummary;
-      if (typeof summary === 'string') {
-        parsedSummary = JSON.parse(summary);
-      } else {
-        parsedSummary = summary;
-      }
-      
-      console.log('Resumo parseado:', parsedSummary);
-      
-      // Calcular ratings
-      const riskScore = calculateRiskScore(parsedSummary.alertas_privacidade);
-      const complexityRating = calculateComplexityRating(parsedSummary.rating_complexidade);
-      const goodPractices = processGoodPractices(parsedSummary.boas_praticas);
-      
-      // Adicionar ratings ao resumo
-      processedSummary = {
-        ...parsedSummary,
-        riskScore: riskScore,
-        complexityRating: complexityRating,
-        goodPractices: goodPractices
-      };
-      
-      console.log('Ratings calculados:', {
-        riskScore: riskScore,
-        complexityRating: complexityRating,
-        goodPractices: goodPractices
-      });
-      
-    } catch (parseError) {
-      console.error('Erro ao processar resumo:', parseError);
-      // Se não conseguir parsear, usar o resumo original
-      processedSummary = summary;
-    }
-    
     // Enviar atualização de progresso final
-    try {
-      chrome.runtime.sendMessage({
-        action: 'progressUpdate',
-        step: 4,
-        text: 'Processamento concluído',
-        progress: 100
-      });
-    } catch (error) {
-      console.error('Erro ao enviar progresso final:', error);
-    }
+    chrome.runtime.sendMessage({
+      action: 'progressUpdate',
+      step: 4,
+      text: 'Processamento concluído',
+      progress: 100
+    });
     
     // Aguardar um pouco antes de mostrar o resultado
     setTimeout(() => {
-      console.log('Enviando resumo processado para popup:', processedSummary);
-      try {
-        chrome.runtime.sendMessage({
-          action: 'displaySummary',
-          summary: processedSummary
-        });
-      } catch (error) {
-        console.error('Erro ao enviar mensagem para popup:', error);
-      }
+      console.log('Enviando resumo para popup:', summary);
+      chrome.runtime.sendMessage({
+        action: 'displaySummary',
+        summary: summary
+      });
     }, 500);
 
   } catch (error) {
@@ -319,18 +133,10 @@ async function processSummaryAsync(text, focus = 'privacy') {
     
     console.log('Enviando erro para popup:', errorMessage);
     
-    // Enviar erro para o popup
-    try {
-      chrome.runtime.sendMessage({
-        action: 'displaySummary',
-        summary: errorMessage
-      });
-    } catch (error) {
-      console.error('Erro ao enviar mensagem de erro para popup:', error);
-    }
-    
-    // Re-throw o erro para ser capturado pelo .catch() do listener
-    throw error;
+    chrome.runtime.sendMessage({
+      action: 'displaySummary',
+      summary: errorMessage
+    });
   }
 }
 

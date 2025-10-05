@@ -329,8 +329,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (buyCreditsLink) {
             buyCreditsLink.addEventListener('click', (e) => {
                 e.preventDefault();
-                // TODO: Implementar compra de créditos
-                console.log('Comprar créditos');
+                chrome.tabs.create({ url: chrome.runtime.getURL('checkout.html') });
             });
         }
     }
@@ -367,14 +366,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     console.log('Resposta do content script:', response);
                     
-                    // Fallback: se não receber resposta em 30 segundos, mostrar erro
+                    // Fallback: se não receber resposta em 10 segundos, mostrar erro
                     setTimeout(() => {
                         if (isProcessing) {
-                            console.log('Timeout - não recebeu resumo em 30 segundos');
-                            showError('Timeout: O resumo demorou muito para ser processado. O documento pode ser muito complexo. Tente novamente.');
+                            console.log('Timeout - não recebeu resumo em 10 segundos');
+                            showError('Timeout: O resumo demorou muito para ser processado. Tente novamente.');
                             resetButton();
                         }
-                    }, 30000);
+                    }, 10000);
                 }
             });
             
@@ -418,27 +417,23 @@ document.addEventListener('DOMContentLoaded', function() {
         // Simular progresso
         let progress = 0;
         const interval = setInterval(() => {
-            progress += Math.random() * 10; // Reduzir velocidade para dar mais tempo
-            if (progress > 85) progress = 85; // Parar em 85% para aguardar resposta real
+            progress += Math.random() * 15;
+            if (progress > 90) progress = 90;
             
             if (progressFill) {
                 progressFill.style.width = `${progress}%`;
             }
             
             if (progressText) {
-                if (progress < 20) {
+                if (progress < 30) {
                     progressText.textContent = 'Extraindo texto da página...';
-                } else if (progress < 40) {
-                    progressText.textContent = 'Enviando para análise IA...';
                 } else if (progress < 60) {
-                    progressText.textContent = 'IA analisando complexidade e risco...';
-                } else if (progress < 80) {
-                    progressText.textContent = 'Calculando ratings de segurança...';
-                } else {
-                    progressText.textContent = 'Finalizando análise...';
+                    progressText.textContent = 'Enviando para análise IA...';
+                } else if (progress < 90) {
+                    progressText.textContent = 'Processando com Gemini...';
                 }
             }
-        }, 800); // Aumentar intervalo para 800ms
+        }, 500);
         
         // Limpar intervalo quando receber resultado
         window.progressInterval = interval;
@@ -551,41 +546,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         let html = '';
         
-        // Rating de Risco e Complexidade (se disponível)
-        if (data.riskScore || data.complexityRating) {
-            html += `
-                <div class="summary-section rating-section">
-                    <h3>📊 Análise de Risco e Complexidade</h3>
-                    <div class="rating-container">
-                        ${data.riskScore ? `
-                            <div class="rating-item">
-                                <div class="rating-label">Nível de Risco</div>
-                                <div class="rating-score risk-${data.riskScore.level}">
-                                    <div class="score-circle">
-                                        <span class="score-number">${data.riskScore.score}</span>
-                                        <span class="score-max">/100</span>
-                                    </div>
-                                    <div class="score-description">${data.riskScore.description}</div>
-                                </div>
-                            </div>
-                        ` : ''}
-                        ${data.complexityRating ? `
-                            <div class="rating-item">
-                                <div class="rating-label">Complexidade</div>
-                                <div class="rating-score complexity-${data.complexityRating.level}">
-                                    <div class="score-circle">
-                                        <span class="score-number">${data.complexityRating.rating}</span>
-                                        <span class="score-max">/10</span>
-                                    </div>
-                                    <div class="score-description">${data.complexityRating.description}</div>
-                                </div>
-                            </div>
-                        ` : ''}
-                    </div>
-                </div>
-            `;
-        }
-        
         // Resumo conciso
         if (data.resumo_conciso) {
             html += `
@@ -611,23 +571,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     <ul class="key-points">
                         ${data.pontos_chave.map(point => `<li>${point}</li>`).join('')}
                     </ul>
-                </div>
-            `;
-        }
-        
-        // Boas Práticas (se disponível)
-        if (data.goodPractices && data.goodPractices.practices && data.goodPractices.practices.length > 0) {
-            html += `
-                <div class="summary-section">
-                    <h3>✅ Boas Práticas Identificadas</h3>
-                    <div class="good-practices">
-                        ${data.goodPractices.practices.map(practice => `
-                            <div class="practice-item">
-                                <span class="material-icons practice-icon">check_circle</span>
-                                <div class="practice-text">${practice}</div>
-                            </div>
-                        `).join('')}
-                    </div>
                 </div>
             `;
         }
