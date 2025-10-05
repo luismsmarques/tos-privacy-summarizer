@@ -143,6 +143,16 @@ class Dashboard {
             this.charts.documentTypes.destroy();
         }
 
+        // Verificar se types existe e não é null/undefined
+        if (!types || typeof types !== 'object') {
+            console.log('No document types data available, using mock data');
+            types = {
+                'Termos de Serviço': 0,
+                'Política de Privacidade': 0,
+                'Outros': 0
+            };
+        }
+
         this.charts.documentTypes = new Chart(ctx, {
             type: 'doughnut',
             data: {
