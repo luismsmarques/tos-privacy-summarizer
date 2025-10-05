@@ -384,10 +384,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log('Resumo parseado:', parsedSummary);
         
-        // Renderizar resumo
-        if (parsedSummary.summary) {
-            console.log('Renderizando resumo:', parsedSummary.summary);
-            summaryContent.innerHTML = formatSummary(parsedSummary.summary);
+        // Renderizar resumo baseado na estrutura
+        if (parsedSummary.resumo_conciso || parsedSummary.summary) {
+            console.log('Renderizando resumo com estrutura:', Object.keys(parsedSummary));
+            summaryContent.innerHTML = formatStructuredSummary(parsedSummary);
         } else {
             console.log('Nenhum resumo encontrado no objeto');
             summaryContent.innerHTML = '<p>Resumo não disponível</p>';
@@ -396,9 +396,65 @@ document.addEventListener('DOMContentLoaded', function() {
         resetButton();
     }
 
-    // Formatar resumo
+    // Formatar resumo estruturado
+    function formatStructuredSummary(data) {
+        console.log('Formatando resumo estruturado:', data);
+        
+        let html = '';
+        
+        // Resumo conciso
+        if (data.resumo_conciso) {
+            html += `
+                <div class="summary-section">
+                    <h3>📋 Resumo Conciso</h3>
+                    <p>${data.resumo_conciso}</p>
+                </div>
+            `;
+        } else if (data.summary) {
+            html += `
+                <div class="summary-section">
+                    <h3>📋 Resumo</h3>
+                    <p>${data.summary}</p>
+                </div>
+            `;
+        }
+        
+        // Pontos chave
+        if (data.pontos_chave && data.pontos_chave.length > 0) {
+            html += `
+                <div class="summary-section">
+                    <h3>🔑 Pontos Chave</h3>
+                    <ul class="key-points">
+                        ${data.pontos_chave.map(point => `<li>${point}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+        
+        // Alertas de privacidade
+        if (data.alertas_privacidade && data.alertas_privacidade.length > 0) {
+            html += `
+                <div class="summary-section">
+                    <h3>⚠️ Alertas de Privacidade</h3>
+                    <div class="privacy-alerts">
+                        ${data.alertas_privacidade.map(alert => `
+                            <div class="alert-item alert-${alert.tipo}">
+                                <span class="material-symbols-outlined alert-icon">warning</span>
+                                <div class="alert-text">${alert.texto}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        console.log('HTML estruturado gerado:', html);
+        return html || '<p>Resumo não disponível</p>';
+    }
+
+    // Formatar resumo simples (fallback)
     function formatSummary(summary) {
-        console.log('Formatando resumo:', summary);
+        console.log('Formatando resumo simples:', summary);
         
         if (!summary || summary.trim() === '') {
             return '<p>Resumo não disponível</p>';

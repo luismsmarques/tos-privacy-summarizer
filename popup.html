@@ -553,6 +553,83 @@
         .material-symbols-outlined:not([class*="loaded"]) {
             font-family: 'Material Icons', sans-serif;
         }
+
+        /* Estilos para resumo estruturado */
+        .summary-section {
+            margin-bottom: 20px;
+            padding: 16px;
+            background: var(--md-sys-color-surface-container-high);
+            border-radius: 12px;
+            border-left: 4px solid var(--md-sys-color-primary);
+        }
+
+        .summary-section h3 {
+            margin: 0 0 12px 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--md-sys-color-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .summary-section p {
+            margin: 0;
+            line-height: 1.6;
+            color: var(--md-sys-color-on-surface);
+        }
+
+        .key-points {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .key-points li {
+            margin: 8px 0;
+            line-height: 1.5;
+            color: var(--md-sys-color-on-surface);
+        }
+
+        .privacy-alerts {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .alert-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid;
+            background: var(--md-sys-color-surface-container-highest);
+        }
+
+        .alert-icon {
+            font-size: 20px;
+            margin-right: 12px;
+            flex-shrink: 0;
+            color: var(--md-sys-color-warning);
+        }
+
+        .alert-text {
+            flex: 1;
+            font-size: 14px;
+            line-height: 1.4;
+            color: var(--md-sys-color-on-surface);
+        }
+
+        .alert-partilha_dados {
+            border-left-color: var(--md-sys-color-error);
+        }
+
+        .alert-alteracoes_termos {
+            border-left-color: var(--md-sys-color-tertiary);
+        }
+
+        .alert-outros_riscos {
+            border-left-color: var(--md-sys-color-primary);
+        }
     </style>
 </head>
 <body>
