@@ -1,75 +1,131 @@
-// Dashboard JavaScript
+// Dashboard JavaScript - ToS Privacy Summarizer
 class Dashboard {
     constructor() {
-        this.apiBase = '/api/analytics';
-        this.refreshInterval = 30000; // 30 seconds
-        this.realtimeInterval = 5000; // 5 seconds
+        this.currentSection = 'overview';
         this.charts = {};
+        this.data = {};
+        this.isLoading = false;
         
         this.init();
     }
-
+    
     async init() {
+        console.log('🚀 Inicializando Dashboard...');
+        
+        // Configurar event listeners
         this.setupEventListeners();
-        await this.loadData();
-        this.startAutoRefresh();
+        
+        // Carregar dados iniciais
+        await this.loadInitialData();
+        
+        // Inicializar gráficos
+        this.initializeCharts();
+        
+        console.log('✅ Dashboard inicializado com sucesso');
     }
-
+    
     setupEventListeners() {
-        document.getElementById('refreshBtn').addEventListener('click', () => {
-            this.loadData();
+        // Toggle sidebar
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.getElementById('sidebar');
+        
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
         });
-
-        document.getElementById('retryBtn').addEventListener('click', () => {
-            this.loadData();
+        
+        // Navigation
+        const navItems = document.querySelectorAll('.nav-item');
+        navItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const section = item.dataset.section;
+                this.navigateToSection(section);
+            });
+        });
+        
+        // Theme toggle
+        const themeToggle = document.getElementById('themeToggle');
+        themeToggle.addEventListener('click', () => {
+            this.toggleTheme();
+        });
+        
+        // Logout
+        const logoutBtn = document.getElementById('logoutBtn');
+        logoutBtn.addEventListener('click', () => {
+            this.logout();
+        });
+        
+        // Refresh FAB
+        const refreshFab = document.getElementById('refreshFab');
+        refreshFab.addEventListener('click', () => {
+            this.refreshData();
+        });
+        
+        // Responsive sidebar
+        window.addEventListener('resize', () => {
+            if (window.innerWidth <= 768) {
+                sidebar.classList.remove('collapsed');
+            }
         });
     }
-
-    async loadData() {
+    
+    async loadInitialData() {
+        console.log('📊 Carregando dados iniciais...');
+        this.showLoading();
+        
         try {
-            this.showLoading();
-            
-            const [overview, summaries, realtime] = await Promise.all([
-                this.fetchData('overview'),
-                this.fetchData('summaries'),
-                this.fetchData('realtime')
+            // Carregar dados de todas as APIs em paralelo
+            const [overviewData, realtimeData, summariesData] = await Promise.all([
+                this.fetchData('/api/analytics/overview'),
+                this.fetchData('/api/analytics/realtime'),
+                this.fetchData('/api/analytics/summaries')
             ]);
-
-            this.updateOverviewMetrics(overview.data);
-            this.updateRealtimeData(realtime.data);
-            this.createCharts(summaries.data);
             
-            this.showContent();
-            this.updateTimestamp();
+            this.data = {
+                overview: overviewData,
+                realtime: realtimeData,
+                summaries: summariesData
+            };
+            
+            this.updateMetrics();
+            this.updateCharts();
             
         } catch (error) {
-            console.error('Error loading data:', error);
-            this.showError();
+            console.error('❌ Erro ao carregar dados:', error);
+            this.showError('Erro ao carregar dados do dashboard');
+        } finally {
+            this.hideLoading();
         }
     }
-
+    
     async fetchData(endpoint) {
-        const token = this.getAuthToken();
-        const headers = {
-            'Content-Type': 'application/json'
-        };
-        
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-        }
-        
-        const response = await fetch(`${this.apiBase}/${endpoint}`, { headers });
-        if (!response.ok) {
-            if (response.status === 401) {
-                // Token expirado ou inválido
-                this.handleAuthError();
-                throw new Error('Sessão expirada');
+        try {
+            console.log(`📡 Fazendo request para: ${endpoint}`);
+            
+            const response = await fetch(endpoint, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Admin-Token': this.getAuthToken()
+                },
+                credentials: 'include'
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-            throw new Error(`HTTP error! status: ${response.status}`);
+            
+            const data = await response.json();
+            console.log(`✅ Dados recebidos de ${endpoint}:`, data);
+            
+            return data;
+            
+        } catch (error) {
+            console.error(`❌ Erro ao buscar dados de ${endpoint}:`, error);
+            throw error;
         }
-        return await response.json();
     }
-
+    
     getAuthToken() {
         // Tentar obter token do cookie
         const cookies = document.cookie.split(';');
@@ -81,63 +137,105 @@ class Dashboard {
         }
         return null;
     }
-
-    handleAuthError() {
-        // Redirecionar para login
-        window.location.href = '/dashboard';
-    }
-
-    updateOverviewMetrics(data) {
-        console.log('Overview data received:', data);
+    
+    updateMetrics() {
+        console.log('📈 Atualizando métricas...');
         
-        // Mapear dados da API para os campos esperados
-        const totalUsers = data.total_users || 0;
-        const totalSummaries = data.successful_summaries || 0;
-        const avgResponseTime = data.avg_duration ? (data.avg_duration / 1000).toFixed(2) : '--';
-        const uptime = 100; // Mock data for now
+        const overview = this.data.overview;
+        if (!overview) return;
         
-        document.getElementById('totalUsers').textContent = totalUsers.toLocaleString();
-        document.getElementById('totalSummaries').textContent = totalSummaries.toLocaleString();
-        document.getElementById('avgResponseTime').textContent = `${avgResponseTime}s`;
-        document.getElementById('uptime').textContent = `${uptime}%`;
-    }
-
-    updateRealtimeData(data) {
-        console.log('Realtime data received:', data);
-        
-        // Mapear dados da API para os campos esperados
-        const activeUsers = data.active_users || 0;
-        const requestsPerMinute = data.requests_per_minute || 0;
-        const avgResponseTime = data.current_response_time || 0;
-        const errorRate = data.error_rate || 0;
-        
-        document.getElementById('activeUsers').textContent = activeUsers;
-        document.getElementById('requestsPerMinute').textContent = requestsPerMinute;
-        document.getElementById('realtimeResponseTime').textContent = `${avgResponseTime}s`;
-        document.getElementById('errorRate').textContent = `${errorRate}%`;
-    }
-
-    createCharts(data) {
-        this.createRequestsChart();
-        this.createDocumentTypesChart(data.types);
-    }
-
-    createRequestsChart() {
-        const ctx = document.getElementById('requestsChart').getContext('2d');
-        
-        if (this.charts.requests) {
-            this.charts.requests.destroy();
+        // Total de utilizadores
+        const totalUsersEl = document.getElementById('totalUsers');
+        if (totalUsersEl && overview.totalUsers !== undefined) {
+            totalUsersEl.textContent = overview.totalUsers.toLocaleString();
         }
-
-        this.charts.requests = new Chart(ctx, {
+        
+        // Total de resumos
+        const totalSummariesEl = document.getElementById('totalSummaries');
+        if (totalSummariesEl && overview.totalSummaries !== undefined) {
+            totalSummariesEl.textContent = overview.totalSummaries.toLocaleString();
+        }
+        
+        // Total de requests
+        const totalRequestsEl = document.getElementById('totalRequests');
+        if (totalRequestsEl && overview.totalRequests !== undefined) {
+            totalRequestsEl.textContent = overview.totalRequests.toLocaleString();
+        }
+        
+        // Taxa de sucesso
+        const successRateEl = document.getElementById('successRate');
+        if (successRateEl && overview.successRate !== undefined) {
+            successRateEl.textContent = `${overview.successRate.toFixed(1)}%`;
+        }
+        
+        // Atualizar mudanças percentuais se disponíveis
+        this.updateMetricChanges(overview);
+    }
+    
+    updateMetricChanges(overview) {
+        // Atualizar mudanças percentuais baseadas nos dados
+        if (overview.usersChange !== undefined) {
+            const usersChangeEl = document.getElementById('usersChange');
+            if (usersChangeEl) {
+                const change = overview.usersChange;
+                const isPositive = change >= 0;
+                usersChangeEl.className = `metric-change ${isPositive ? 'positive' : 'negative'}`;
+                usersChangeEl.innerHTML = `
+                    <span class="material-symbols-outlined">${isPositive ? 'trending_up' : 'trending_down'}</span>
+                    <span>${isPositive ? '+' : ''}${change.toFixed(1)}% este mês</span>
+                `;
+            }
+        }
+        
+        if (overview.summariesChange !== undefined) {
+            const summariesChangeEl = document.getElementById('summariesChange');
+            if (summariesChangeEl) {
+                const change = overview.summariesChange;
+                const isPositive = change >= 0;
+                summariesChangeEl.className = `metric-change ${isPositive ? 'positive' : 'negative'}`;
+                summariesChangeEl.innerHTML = `
+                    <span class="material-symbols-outlined">${isPositive ? 'trending_up' : 'trending_down'}</span>
+                    <span>${isPositive ? '+' : ''}${change.toFixed(1)}% esta semana</span>
+                `;
+            }
+        }
+    }
+    
+    initializeCharts() {
+        console.log('📊 Inicializando gráficos...');
+        
+        // Gráfico de atividade recente
+        this.initActivityChart();
+        
+        // Gráfico de tipos de documentos
+        this.initDocumentTypesChart();
+    }
+    
+    initActivityChart() {
+        const ctx = document.getElementById('activityChart');
+        if (!ctx) return;
+        
+        // Destruir gráfico existente se houver
+        if (this.charts.activity) {
+            this.charts.activity.destroy();
+        }
+        
+        this.charts.activity = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+                labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
                 datasets: [{
-                    label: 'Requests/min',
-                    data: [12, 8, 25, 35, 28, 18],
+                    label: 'Resumos Processados',
+                    data: [12, 19, 3, 5, 2, 3, 8],
                     borderColor: 'rgb(103, 80, 164)',
                     backgroundColor: 'rgba(103, 80, 164, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }, {
+                    label: 'Utilizadores Ativos',
+                    data: [8, 15, 7, 12, 6, 4, 10],
+                    borderColor: 'rgb(125, 82, 96)',
+                    backgroundColor: 'rgba(125, 82, 96, 0.1)',
                     tension: 0.4,
                     fill: true
                 }]
@@ -147,53 +245,37 @@ class Dashboard {
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        display: false
+                        position: 'top',
                     }
                 },
                 scales: {
                     y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.1)'
-                        }
-                    },
-                    x: {
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.1)'
-                        }
+                        beginAtZero: true
                     }
                 }
             }
         });
     }
-
-    createDocumentTypesChart(types) {
-        const ctx = document.getElementById('documentTypesChart').getContext('2d');
+    
+    initDocumentTypesChart() {
+        const ctx = document.getElementById('documentTypesChart');
+        if (!ctx) return;
         
+        // Destruir gráfico existente se houver
         if (this.charts.documentTypes) {
             this.charts.documentTypes.destroy();
         }
-
-        // Verificar se types existe e não é null/undefined
-        if (!types || typeof types !== 'object') {
-            console.log('No document types data available, using mock data');
-            types = {
-                'Termos de Serviço': 0,
-                'Política de Privacidade': 0,
-                'Outros': 0
-            };
-        }
-
+        
         this.charts.documentTypes = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: Object.keys(types),
+                labels: ['Termos de Serviço', 'Políticas de Privacidade', 'Outros'],
                 datasets: [{
-                    data: Object.values(types),
+                    data: [65, 30, 5],
                     backgroundColor: [
                         'rgb(103, 80, 164)',
-                        'rgb(156, 39, 176)',
-                        'rgb(233, 30, 99)'
+                        'rgb(125, 82, 96)',
+                        'rgb(98, 91, 113)'
                     ],
                     borderWidth: 0
                 }]
@@ -204,56 +286,228 @@ class Dashboard {
                 plugins: {
                     legend: {
                         position: 'bottom',
-                        labels: {
-                            padding: 20,
-                            usePointStyle: true
-                        }
                     }
                 }
             }
         });
     }
-
-    startAutoRefresh() {
-        setInterval(() => {
-            this.loadRealtimeData();
-        }, this.realtimeInterval);
-    }
-
-    async loadRealtimeData() {
-        try {
-            const response = await this.fetchData('realtime');
-            this.updateRealtimeData(response.data);
-        } catch (error) {
-            console.error('Error loading realtime data:', error);
+    
+    updateCharts() {
+        console.log('📊 Atualizando gráficos com dados reais...');
+        
+        // Atualizar gráfico de atividade se tivermos dados
+        if (this.data.realtime && this.charts.activity) {
+            const activityData = this.data.realtime.activity || [];
+            if (activityData.length > 0) {
+                this.charts.activity.data.datasets[0].data = activityData.map(d => d.summaries || 0);
+                this.charts.activity.data.datasets[1].data = activityData.map(d => d.users || 0);
+                this.charts.activity.data.labels = activityData.map(d => d.date || '');
+                this.charts.activity.update();
+            }
+        }
+        
+        // Atualizar gráfico de tipos de documentos se tivermos dados
+        if (this.data.summaries && this.charts.documentTypes) {
+            const documentTypes = this.data.summaries.documentTypes || {};
+            if (Object.keys(documentTypes).length > 0) {
+                const labels = Object.keys(documentTypes);
+                const values = Object.values(documentTypes);
+                
+                this.charts.documentTypes.data.labels = labels;
+                this.charts.documentTypes.data.datasets[0].data = values;
+                this.charts.documentTypes.update();
+            }
         }
     }
-
+    
+    navigateToSection(section) {
+        console.log(`🧭 Navegando para: ${section}`);
+        
+        // Atualizar navegação ativa
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        document.querySelector(`[data-section="${section}"]`).classList.add('active');
+        
+        // Mostrar secção correta
+        document.querySelectorAll('.content-section').forEach(sec => {
+            sec.classList.add('hidden');
+        });
+        document.getElementById(`${section}-section`).classList.remove('hidden');
+        
+        // Atualizar título da página
+        const pageTitle = document.getElementById('pageTitle');
+        const titles = {
+            'overview': 'Visão Geral',
+            'users': 'Utilizadores',
+            'summaries': 'Resumos',
+            'analytics': 'Analytics',
+            'settings': 'Configurações'
+        };
+        pageTitle.textContent = titles[section] || 'Dashboard';
+        
+        this.currentSection = section;
+    }
+    
+    toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        
+        document.documentElement.setAttribute('data-theme', newTheme);
+        
+        // Atualizar ícone do botão
+        const themeIcon = document.querySelector('#themeToggle .material-symbols-outlined');
+        themeIcon.textContent = newTheme === 'light' ? 'dark_mode' : 'light_mode';
+        
+        // Guardar preferência
+        localStorage.setItem('dashboard-theme', newTheme);
+        
+        console.log(`🎨 Tema alterado para: ${newTheme}`);
+    }
+    
+    async logout() {
+        console.log('🚪 Fazendo logout...');
+        
+        try {
+            // Fazer request de logout
+            const response = await fetch('/api/auth/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            });
+            
+            if (response.ok) {
+                // Limpar cookie localmente
+                document.cookie = 'adminToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+                
+                // Redirecionar para login
+                window.location.href = '/dashboard';
+            } else {
+                throw new Error('Erro ao fazer logout');
+            }
+            
+        } catch (error) {
+            console.error('❌ Erro no logout:', error);
+            
+            // Mesmo com erro, limpar cookie e redirecionar
+            document.cookie = 'adminToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+            window.location.href = '/dashboard';
+        }
+    }
+    
     showLoading() {
-        document.getElementById('loading').style.display = 'flex';
-        document.getElementById('error').style.display = 'none';
-        document.getElementById('dashboardContent').style.display = 'none';
+        this.isLoading = true;
+        const contentArea = document.getElementById('contentArea');
+        
+        // Adicionar overlay de loading se não existir
+        if (!document.getElementById('loadingOverlay')) {
+            const loadingOverlay = document.createElement('div');
+            loadingOverlay.id = 'loadingOverlay';
+            loadingOverlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+            `;
+            loadingOverlay.innerHTML = `
+                <div style="
+                    background-color: var(--md-sys-color-surface-container);
+                    padding: 24px;
+                    border-radius: var(--md-sys-shape-corner-large);
+                    display: flex;
+                    align-items: center;
+                    gap: 16px;
+                ">
+                    <div class="loading-spinner"></div>
+                    <span>Carregando dados...</span>
+                </div>
+            `;
+            document.body.appendChild(loadingOverlay);
+        }
     }
-
-    showContent() {
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('error').style.display = 'none';
-        document.getElementById('dashboardContent').style.display = 'block';
+    
+    hideLoading() {
+        this.isLoading = false;
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.remove();
+        }
     }
-
-    showError() {
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('error').style.display = 'flex';
-        document.getElementById('dashboardContent').style.display = 'none';
+    
+    showError(message) {
+        const contentArea = document.getElementById('contentArea');
+        
+        // Remover erros existentes
+        const existingError = contentArea.querySelector('.error');
+        if (existingError) {
+            existingError.remove();
+        }
+        
+        // Criar novo erro
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error';
+        errorDiv.innerHTML = `
+            <span class="material-symbols-outlined">error</span>
+            <span>${message}</span>
+        `;
+        
+        // Inserir no topo do conteúdo
+        contentArea.insertBefore(errorDiv, contentArea.firstChild);
+        
+        // Auto-remover após 5 segundos
+        setTimeout(() => {
+            if (errorDiv.parentNode) {
+                errorDiv.remove();
+            }
+        }, 5000);
     }
-
-    updateTimestamp() {
-        const now = new Date();
-        document.getElementById('updateTime').textContent = now.toLocaleTimeString();
+    
+    // Método para atualizar dados em tempo real
+    async refreshData() {
+        console.log('🔄 Atualizando dados...');
+        
+        try {
+            await this.loadInitialData();
+            console.log('✅ Dados atualizados com sucesso');
+        } catch (error) {
+            console.error('❌ Erro ao atualizar dados:', error);
+            this.showError('Erro ao atualizar dados');
+        }
     }
 }
 
-// Initialize dashboard when DOM is loaded
+// Inicializar dashboard quando a página carregar
 document.addEventListener('DOMContentLoaded', () => {
-    new Dashboard();
+    console.log('📄 Página carregada, inicializando dashboard...');
+    
+    // Carregar tema salvo
+    const savedTheme = localStorage.getItem('dashboard-theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    
+    // Atualizar ícone do tema
+    const themeIcon = document.querySelector('#themeToggle .material-symbols-outlined');
+    if (themeIcon) {
+        themeIcon.textContent = savedTheme === 'light' ? 'dark_mode' : 'light_mode';
+    }
+    
+    // Inicializar dashboard
+    window.dashboard = new Dashboard();
+    
+    // Atualizar dados a cada 30 segundos
+    setInterval(() => {
+        if (window.dashboard && !window.dashboard.isLoading) {
+            window.dashboard.refreshData();
+        }
+    }, 30000);
 });
+
+// Exportar para uso global
+window.Dashboard = Dashboard;

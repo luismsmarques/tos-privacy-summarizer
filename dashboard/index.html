@@ -3,127 +3,813 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:;">
-    <title>📊 ToS Summarizer Dashboard</title>
-    <link rel="stylesheet" href="material-design-tokens.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
-    <script src="chart.min.js"></script>
-    <link rel="stylesheet" href="dashboard.css">
+    <title>Dashboard - ToS Privacy Summarizer</title>
+    
+    <!-- Material Design 3 -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Additional Dashboard Styles -->
+    <link rel="stylesheet" href="dashboard-styles.css">
+    
+    <!-- Material Design 3 CSS Variables -->
+    <style>
+        :root {
+            /* Light Theme */
+            --md-sys-color-primary: #6750A4;
+            --md-sys-color-on-primary: #FFFFFF;
+            --md-sys-color-primary-container: #EADDFF;
+            --md-sys-color-on-primary-container: #21005D;
+            
+            --md-sys-color-secondary: #625B71;
+            --md-sys-color-on-secondary: #FFFFFF;
+            --md-sys-color-secondary-container: #E8DEF8;
+            --md-sys-color-on-secondary-container: #1D192B;
+            
+            --md-sys-color-tertiary: #7D5260;
+            --md-sys-color-on-tertiary: #FFFFFF;
+            --md-sys-color-tertiary-container: #FFD8E4;
+            --md-sys-color-on-tertiary-container: #31111D;
+            
+            --md-sys-color-error: #BA1A1A;
+            --md-sys-color-on-error: #FFFFFF;
+            --md-sys-color-error-container: #FFDAD6;
+            --md-sys-color-on-error-container: #410002;
+            
+            --md-sys-color-surface: #FFFBFE;
+            --md-sys-color-on-surface: #1C1B1F;
+            --md-sys-color-surface-variant: #E7E0EC;
+            --md-sys-color-on-surface-variant: #49454F;
+            
+            --md-sys-color-outline: #79747E;
+            --md-sys-color-outline-variant: #CAC4D0;
+            
+            --md-sys-color-background: #FFFBFE;
+            --md-sys-color-on-background: #1C1B1F;
+            
+            --md-sys-color-surface-container-lowest: #FFFFFF;
+            --md-sys-color-surface-container-low: #F7F2FA;
+            --md-sys-color-surface-container: #F3EDF7;
+            --md-sys-color-surface-container-high: #ECE6F0;
+            --md-sys-color-surface-container-highest: #E6E0E9;
+            
+            /* Elevation */
+            --md-sys-elevation-level0: none;
+            --md-sys-elevation-level1: 0px 1px 2px 0px rgba(0, 0, 0, 0.3), 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+            --md-sys-elevation-level2: 0px 1px 2px 0px rgba(0, 0, 0, 0.3), 0px 2px 6px 2px rgba(0, 0, 0, 0.15);
+            --md-sys-elevation-level3: 0px 1px 3px 0px rgba(0, 0, 0, 0.3), 0px 4px 8px 3px rgba(0, 0, 0, 0.15);
+            --md-sys-elevation-level4: 0px 2px 3px 0px rgba(0, 0, 0, 0.3), 0px 6px 10px 4px rgba(0, 0, 0, 0.15);
+            --md-sys-elevation-level5: 0px 4px 4px 0px rgba(0, 0, 0, 0.3), 0px 8px 12px 6px rgba(0, 0, 0, 0.15);
+            
+            /* Shape */
+            --md-sys-shape-corner-none: 0px;
+            --md-sys-shape-corner-extra-small: 4px;
+            --md-sys-shape-corner-small: 8px;
+            --md-sys-shape-corner-medium: 12px;
+            --md-sys-shape-corner-large: 16px;
+            --md-sys-shape-corner-extra-large: 28px;
+            
+            /* Motion */
+            --md-sys-motion-duration-short1: 50ms;
+            --md-sys-motion-duration-short2: 100ms;
+            --md-sys-motion-duration-short3: 150ms;
+            --md-sys-motion-duration-short4: 200ms;
+            --md-sys-motion-duration-medium1: 250ms;
+            --md-sys-motion-duration-medium2: 300ms;
+            --md-sys-motion-duration-medium3: 350ms;
+            --md-sys-motion-duration-medium4: 400ms;
+            --md-sys-motion-duration-long1: 450ms;
+            --md-sys-motion-duration-long2: 500ms;
+            --md-sys-motion-duration-long3: 550ms;
+            --md-sys-motion-duration-long4: 600ms;
+            
+            --md-sys-motion-easing-linear: cubic-bezier(0, 0, 1, 1);
+            --md-sys-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+            --md-sys-motion-easing-standard-accelerate: cubic-bezier(0.3, 0, 1, 1);
+            --md-sys-motion-easing-standard-decelerate: cubic-bezier(0, 0, 0, 1);
+            --md-sys-motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+            --md-sys-motion-easing-emphasized-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+            --md-sys-motion-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+            
+            /* Typography */
+            --md-sys-typescale-display-large-font-size: 57px;
+            --md-sys-typescale-display-large-line-height: 64px;
+            --md-sys-typescale-display-large-font-weight: 400;
+            
+            --md-sys-typescale-headline-large-font-size: 32px;
+            --md-sys-typescale-headline-large-line-height: 40px;
+            --md-sys-typescale-headline-large-font-weight: 400;
+            
+            --md-sys-typescale-title-large-font-size: 22px;
+            --md-sys-typescale-title-large-line-height: 28px;
+            --md-sys-typescale-title-large-font-weight: 400;
+            
+            --md-sys-typescale-title-medium-font-size: 16px;
+            --md-sys-typescale-title-medium-line-height: 24px;
+            --md-sys-typescale-title-medium-font-weight: 500;
+            
+            --md-sys-typescale-body-large-font-size: 16px;
+            --md-sys-typescale-body-large-line-height: 24px;
+            --md-sys-typescale-body-large-font-weight: 400;
+            
+            --md-sys-typescale-body-medium-font-size: 14px;
+            --md-sys-typescale-body-medium-line-height: 20px;
+            --md-sys-typescale-body-medium-font-weight: 400;
+            
+            --md-sys-typescale-label-large-font-size: 14px;
+            --md-sys-typescale-label-large-line-height: 20px;
+            --md-sys-typescale-label-large-font-weight: 500;
+        }
+        
+        /* Dark Theme */
+        [data-theme="dark"] {
+            --md-sys-color-primary: #D0BCFF;
+            --md-sys-color-on-primary: #381E72;
+            --md-sys-color-primary-container: #4F378B;
+            --md-sys-color-on-primary-container: #EADDFF;
+            
+            --md-sys-color-secondary: #CCC2DC;
+            --md-sys-color-on-secondary: #332D41;
+            --md-sys-color-secondary-container: #4A4458;
+            --md-sys-color-on-secondary-container: #E8DEF8;
+            
+            --md-sys-color-tertiary: #EFB8C8;
+            --md-sys-color-on-tertiary: #492532;
+            --md-sys-color-tertiary-container: #633B48;
+            --md-sys-color-on-tertiary-container: #FFD8E4;
+            
+            --md-sys-color-error: #FFB4AB;
+            --md-sys-color-on-error: #690005;
+            --md-sys-color-error-container: #93000A;
+            --md-sys-color-on-error-container: #FFDAD6;
+            
+            --md-sys-color-surface: #141218;
+            --md-sys-color-on-surface: #E6E0E9;
+            --md-sys-color-surface-variant: #49454F;
+            --md-sys-color-on-surface-variant: #CAC4D0;
+            
+            --md-sys-color-outline: #938F99;
+            --md-sys-color-outline-variant: #49454F;
+            
+            --md-sys-color-background: #141218;
+            --md-sys-color-on-background: #E6E0E9;
+            
+            --md-sys-color-surface-container-lowest: #0F0D13;
+            --md-sys-color-surface-container-low: #1D1B20;
+            --md-sys-color-surface-container: #211F26;
+            --md-sys-color-surface-container-high: #2B2930;
+            --md-sys-color-surface-container-highest: #36343B;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--md-sys-color-background);
+            color: var(--md-sys-color-on-background);
+            transition: background-color var(--md-sys-motion-duration-medium4) var(--md-sys-motion-easing-standard);
+            overflow-x: hidden;
+        }
+        
+        /* Layout Principal */
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background-color: var(--md-sys-color-surface-container);
+            border-right: 1px solid var(--md-sys-color-outline-variant);
+            display: flex;
+            flex-direction: column;
+            transition: all var(--md-sys-motion-duration-medium4) var(--md-sys-motion-easing-standard);
+            position: fixed;
+            height: 100vh;
+            z-index: 1000;
+        }
+        
+        .sidebar.collapsed {
+            width: 80px;
+        }
+        
+        .sidebar-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .sidebar-header .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--md-sys-color-primary);
+            text-decoration: none;
+        }
+        
+        .sidebar-header .logo-icon {
+            font-size: 32px;
+        }
+        
+        .sidebar-header .logo-text {
+            font-size: var(--md-sys-typescale-title-large-font-size);
+            font-weight: var(--md-sys-typescale-title-large-font-weight);
+            transition: opacity var(--md-sys-motion-duration-medium4) var(--md-sys-motion-easing-standard);
+        }
+        
+        .sidebar.collapsed .sidebar-header .logo-text {
+            opacity: 0;
+            width: 0;
+            overflow: hidden;
+        }
+        
+        .sidebar-nav {
+            flex: 1;
+            padding: 16px 0;
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 24px;
+            color: var(--md-sys-color-on-surface-variant);
+            text-decoration: none;
+            transition: all var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+            position: relative;
+        }
+        
+        .nav-item:hover {
+            background-color: var(--md-sys-color-surface-container-high);
+            color: var(--md-sys-color-on-surface);
+        }
+        
+        .nav-item.active {
+            background-color: var(--md-sys-color-secondary-container);
+            color: var(--md-sys-color-on-secondary-container);
+        }
+        
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background-color: var(--md-sys-color-primary);
+        }
+        
+        .nav-item .nav-icon {
+            font-size: 24px;
+            min-width: 24px;
+        }
+        
+        .nav-item .nav-text {
+            font-size: var(--md-sys-typescale-body-large-font-size);
+            font-weight: var(--md-sys-typescale-body-large-font-weight);
+            transition: opacity var(--md-sys-motion-duration-medium4) var(--md-sys-motion-easing-standard);
+        }
+        
+        .sidebar.collapsed .nav-item .nav-text {
+            opacity: 0;
+            width: 0;
+            overflow: hidden;
+        }
+        
+        .sidebar-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--md-sys-color-outline-variant);
+        }
+        
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: var(--md-sys-shape-corner-large);
+            background-color: var(--md-sys-color-surface-container-high);
+            transition: all var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+        }
+        
+        .user-profile:hover {
+            background-color: var(--md-sys-color-surface-container-highest);
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--md-sys-color-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--md-sys-color-on-primary);
+            font-weight: 500;
+        }
+        
+        .user-info {
+            flex: 1;
+            transition: opacity var(--md-sys-motion-duration-medium4) var(--md-sys-motion-easing-standard);
+        }
+        
+        .sidebar.collapsed .user-info {
+            opacity: 0;
+            width: 0;
+            overflow: hidden;
+        }
+        
+        .user-name {
+            font-size: var(--md-sys-typescale-body-large-font-size);
+            font-weight: var(--md-sys-typescale-body-large-font-weight);
+            color: var(--md-sys-color-on-surface);
+        }
+        
+        .user-role {
+            font-size: var(--md-sys-typescale-body-small-font-size);
+            color: var(--md-sys-color-on-surface-variant);
+        }
+        
+        .logout-btn {
+            background: none;
+            border: none;
+            color: var(--md-sys-color-on-surface-variant);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: var(--md-sys-shape-corner-small);
+            transition: all var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+        }
+        
+        .logout-btn:hover {
+            background-color: var(--md-sys-color-error-container);
+            color: var(--md-sys-color-on-error-container);
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            transition: margin-left var(--md-sys-motion-duration-medium4) var(--md-sys-motion-easing-standard);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar.collapsed + .main-content {
+            margin-left: 80px;
+        }
+        
+        /* Top Bar */
+        .top-bar {
+            background-color: var(--md-sys-color-surface-container);
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .menu-toggle {
+            background: none;
+            border: none;
+            color: var(--md-sys-color-on-surface);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: var(--md-sys-shape-corner-small);
+            transition: background-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+        }
+        
+        .menu-toggle:hover {
+            background-color: var(--md-sys-color-surface-container-high);
+        }
+        
+        .page-title {
+            font-size: var(--md-sys-typescale-headline-large-font-size);
+            font-weight: var(--md-sys-typescale-headline-large-font-weight);
+            color: var(--md-sys-color-on-surface);
+        }
+        
+        .top-bar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--md-sys-color-on-surface);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: var(--md-sys-shape-corner-small);
+            transition: background-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+        }
+        
+        .theme-toggle:hover {
+            background-color: var(--md-sys-color-surface-container-high);
+        }
+        
+        /* Content Area */
+        .content-area {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+        }
+        
+        /* Cards */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        
+        .card {
+            background-color: var(--md-sys-color-surface-container);
+            border-radius: var(--md-sys-shape-corner-large);
+            box-shadow: var(--md-sys-elevation-level1);
+            padding: 24px;
+            transition: all var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+        }
+        
+        .card:hover {
+            box-shadow: var(--md-sys-elevation-level2);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        
+        .card-title {
+            font-size: var(--md-sys-typescale-title-medium-font-size);
+            font-weight: var(--md-sys-typescale-title-medium-font-weight);
+            color: var(--md-sys-color-on-surface);
+        }
+        
+        .card-icon {
+            font-size: 24px;
+            color: var(--md-sys-color-primary);
+        }
+        
+        .card-content {
+            color: var(--md-sys-color-on-surface-variant);
+        }
+        
+        .metric-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--md-sys-color-primary);
+            margin-bottom: 8px;
+        }
+        
+        .metric-label {
+            font-size: var(--md-sys-typescale-body-medium-font-size);
+            color: var(--md-sys-color-on-surface-variant);
+        }
+        
+        .metric-change {
+            font-size: var(--md-sys-typescale-body-small-font-size);
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .metric-change.positive {
+            color: var(--md-sys-color-tertiary);
+        }
+        
+        .metric-change.negative {
+            color: var(--md-sys-color-error);
+        }
+        
+        /* Charts */
+        .chart-container {
+            background-color: var(--md-sys-color-surface-container);
+            border-radius: var(--md-sys-shape-corner-large);
+            box-shadow: var(--md-sys-elevation-level1);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+        
+        .chart-title {
+            font-size: var(--md-sys-typescale-title-large-font-size);
+            font-weight: var(--md-sys-typescale-title-large-font-weight);
+            color: var(--md-sys-color-on-surface);
+        }
+        
+        .chart-canvas {
+            max-height: 400px;
+        }
+        
+        /* Loading States */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: var(--md-sys-color-on-surface-variant);
+        }
+        
+        .loading-spinner {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--md-sys-color-outline-variant);
+            border-top: 2px solid var(--md-sys-color-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 12px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Error States */
+        .error {
+            background-color: var(--md-sys-color-error-container);
+            color: var(--md-sys-color-on-error-container);
+            padding: 16px;
+            border-radius: var(--md-sys-shape-corner-medium);
+            margin: 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Utilities */
+        .hidden {
+            display: none !important;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .mb-16 {
+            margin-bottom: 16px;
+        }
+        
+        .mb-24 {
+            margin-bottom: 24px;
+        }
+        
+        .mt-16 {
+            margin-top: 16px;
+        }
+        
+        .mt-24 {
+            margin-top: 24px;
+        }
+    </style>
 </head>
 <body>
-    <div class="dashboard">
-        <!-- Header -->
-        <header class="dashboard-header">
-            <div class="header-left">
-                <h1>📊 ToS Summarizer Dashboard</h1>
-                <p class="subtitle">Monitorização em tempo real</p>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="#" class="logo">
+                    <span class="material-symbols-outlined logo-icon">dashboard</span>
+                    <span class="logo-text">ToS Dashboard</span>
+                </a>
             </div>
-            <div class="header-right">
-                <div class="last-updated" id="lastUpdated">
-                    Última atualização: <span id="updateTime">--:--</span>
+            
+            <div class="sidebar-nav">
+                <a href="#overview" class="nav-item active" data-section="overview">
+                    <span class="material-symbols-outlined nav-icon">analytics</span>
+                    <span class="nav-text">Visão Geral</span>
+                </a>
+                <a href="#users" class="nav-item" data-section="users">
+                    <span class="material-symbols-outlined nav-icon">people</span>
+                    <span class="nav-text">Utilizadores</span>
+                </a>
+                <a href="#summaries" class="nav-item" data-section="summaries">
+                    <span class="material-symbols-outlined nav-icon">description</span>
+                    <span class="nav-text">Resumos</span>
+                </a>
+                <a href="#analytics" class="nav-item" data-section="analytics">
+                    <span class="material-symbols-outlined nav-icon">bar_chart</span>
+                    <span class="nav-text">Analytics</span>
+                </a>
+                <a href="#settings" class="nav-item" data-section="settings">
+                    <span class="material-symbols-outlined nav-icon">settings</span>
+                    <span class="nav-text">Configurações</span>
+                </a>
+            </div>
+            
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar" id="userAvatar">A</div>
+                    <div class="user-info">
+                        <div class="user-name" id="userName">Administrador</div>
+                        <div class="user-role">Admin</div>
+                    </div>
+                    <button class="logout-btn" id="logoutBtn" title="Logout">
+                        <span class="material-symbols-outlined">logout</span>
+                    </button>
                 </div>
-                <button class="refresh-btn" id="refreshBtn" title="Atualizar dados">
-                    <span class="material-symbols-outlined">refresh</span>
-                </button>
             </div>
-        </header>
-
-        <!-- Loading State -->
-        <div class="loading" id="loading">
-            <div class="loading-spinner">
-                <span class="material-symbols-outlined">sync</span>
-            </div>
-            <p>Carregando métricas...</p>
-        </div>
-
-        <!-- Error State -->
-        <div class="error" id="error" style="display: none;">
-            <div class="error-icon">
-                <span class="material-symbols-outlined">error</span>
-            </div>
-            <p>Erro ao carregar dados. <button id="retryBtn">Tentar novamente</button></p>
-        </div>
-
+        </nav>
+        
         <!-- Main Content -->
-        <main class="dashboard-content" id="dashboardContent" style="display: none;">
-            <!-- Metrics Grid -->
-            <section class="metrics-grid">
-                <div class="metric-card">
-                    <div class="metric-icon">👥</div>
-                    <div class="metric-content">
-                        <h3>Utilizadores</h3>
-                        <div class="metric-value" id="totalUsers">--</div>
-                        <div class="metric-change positive">+12%</div>
-                    </div>
+        <main class="main-content">
+            <!-- Top Bar -->
+            <header class="top-bar">
+                <div class="top-bar-left">
+                    <button class="menu-toggle" id="menuToggle">
+                        <span class="material-symbols-outlined">menu</span>
+                    </button>
+                    <h1 class="page-title" id="pageTitle">Visão Geral</h1>
                 </div>
-
-                <div class="metric-card">
-                    <div class="metric-icon">📄</div>
-                    <div class="metric-content">
-                        <h3>Resumos</h3>
-                        <div class="metric-value" id="totalSummaries">--</div>
-                        <div class="metric-change positive">+8%</div>
-                    </div>
+                <div class="top-bar-right">
+                    <button class="theme-toggle" id="themeToggle" title="Alternar tema">
+                        <span class="material-symbols-outlined">dark_mode</span>
+                    </button>
                 </div>
-
-                <div class="metric-card">
-                    <div class="metric-icon">⚡</div>
-                    <div class="metric-content">
-                        <h3>Tempo Médio</h3>
-                        <div class="metric-value" id="avgResponseTime">--</div>
-                        <div class="metric-change negative">-5%</div>
+            </header>
+            
+            <!-- Content Area -->
+            <div class="content-area" id="contentArea">
+                <!-- Overview Section -->
+                <section id="overview-section" class="content-section">
+                    <div class="cards-grid">
+                        <div class="card card-enhanced">
+                            <div class="card-header">
+                                <h3 class="card-title">Total de Utilizadores</h3>
+                                <span class="material-symbols-outlined card-icon">people</span>
+                            </div>
+                            <div class="card-content">
+                                <div class="metric-value" id="totalUsers">-</div>
+                                <div class="metric-label">Utilizadores registados</div>
+                                <div class="metric-change positive" id="usersChange">
+                                    <span class="material-symbols-outlined">trending_up</span>
+                                    <span>+12% este mês</span>
+                                </div>
+                                <div class="status-indicator online" id="usersStatus">
+                                    <span class="material-symbols-outlined">check_circle</span>
+                                    <span>Ativo</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card card-enhanced">
+                            <div class="card-header">
+                                <h3 class="card-title">Resumos Processados</h3>
+                                <span class="material-symbols-outlined card-icon">description</span>
+                            </div>
+                            <div class="card-content">
+                                <div class="metric-value" id="totalSummaries">-</div>
+                                <div class="metric-label">Documentos analisados</div>
+                                <div class="metric-change positive" id="summariesChange">
+                                    <span class="material-symbols-outlined">trending_up</span>
+                                    <span>+8% esta semana</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="summariesProgress" style="width: 75%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card card-enhanced">
+                            <div class="card-header">
+                                <h3 class="card-title">API Requests</h3>
+                                <span class="material-symbols-outlined card-icon">api</span>
+                            </div>
+                            <div class="card-content">
+                                <div class="metric-value" id="totalRequests">-</div>
+                                <div class="metric-label">Chamadas à API</div>
+                                <div class="metric-change positive" id="requestsChange">
+                                    <span class="material-symbols-outlined">trending_up</span>
+                                    <span>+15% hoje</span>
+                                </div>
+                                <div class="badge primary" id="requestsBadge">
+                                    <span class="material-symbols-outlined">speed</span>
+                                    <span>Alta Performance</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card card-enhanced">
+                            <div class="card-header">
+                                <h3 class="card-title">Taxa de Sucesso</h3>
+                                <span class="material-symbols-outlined card-icon">check_circle</span>
+                            </div>
+                            <div class="card-content">
+                                <div class="metric-value" id="successRate">-</div>
+                                <div class="metric-label">Operações bem-sucedidas</div>
+                                <div class="metric-change positive" id="successChange">
+                                    <span class="material-symbols-outlined">trending_up</span>
+                                    <span>+2% esta semana</span>
+                                </div>
+                                <div class="tooltip" data-tooltip="Taxa de sucesso das operações de resumo">
+                                    <span class="material-symbols-outlined">info</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-
-                <div class="metric-card">
-                    <div class="metric-icon">🟢</div>
-                    <div class="metric-content">
-                        <h3>Uptime</h3>
-                        <div class="metric-value" id="uptime">--</div>
-                        <div class="metric-change positive">+0.1%</div>
+                    
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Atividade Recente</h3>
+                        </div>
+                        <canvas id="activityChart" class="chart-canvas"></canvas>
                     </div>
-                </div>
-            </section>
-
-            <!-- Charts Grid -->
-            <section class="charts-grid">
-                <div class="chart-container">
-                    <h3>📈 Requests por Minuto</h3>
-                    <canvas id="requestsChart"></canvas>
-                </div>
-
-                <div class="chart-container">
-                    <h3>📊 Tipos de Documentos</h3>
-                    <canvas id="documentTypesChart"></canvas>
-                </div>
-            </section>
-
-            <!-- Real-time Data -->
-            <section class="realtime-section">
-                <h3>🔄 Dados em Tempo Real</h3>
-                <div class="realtime-grid">
-                    <div class="realtime-card">
-                        <span class="realtime-label">Utilizadores Ativos</span>
-                        <span class="realtime-value" id="activeUsers">--</span>
+                    
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Tipos de Documentos</h3>
+                        </div>
+                        <canvas id="documentTypesChart" class="chart-canvas"></canvas>
                     </div>
-                    <div class="realtime-card">
-                        <span class="realtime-label">Requests/min</span>
-                        <span class="realtime-value" id="requestsPerMinute">--</span>
+                </section>
+                
+                <!-- Other sections will be added dynamically -->
+                <section id="users-section" class="content-section hidden">
+                    <div class="text-center">
+                        <h2>Gestão de Utilizadores</h2>
+                        <p>Esta secção será implementada em breve.</p>
                     </div>
-                    <div class="realtime-card">
-                        <span class="realtime-label">Tempo Resposta</span>
-                        <span class="realtime-value" id="realtimeResponseTime">--</span>
+                </section>
+                
+                <section id="summaries-section" class="content-section hidden">
+                    <div class="text-center">
+                        <h2>Histórico de Resumos</h2>
+                        <p>Esta secção será implementada em breve.</p>
                     </div>
-                    <div class="realtime-card">
-                        <span class="realtime-label">Taxa de Erro</span>
-                        <span class="realtime-value" id="errorRate">--</span>
+                </section>
+                
+                <section id="analytics-section" class="content-section hidden">
+                    <div class="text-center">
+                        <h2>Analytics Detalhados</h2>
+                        <p>Esta secção será implementada em breve.</p>
                     </div>
-                </div>
-            </section>
+                </section>
+                
+                <section id="settings-section" class="content-section hidden">
+                    <div class="text-center">
+                        <h2>Configurações</h2>
+                        <p>Esta secção será implementada em breve.</p>
+                    </div>
+                </section>
+            </div>
         </main>
+        
+        <!-- Floating Action Button -->
+        <button class="fab" id="refreshFab" title="Atualizar dados">
+            <span class="material-symbols-outlined">refresh</span>
+        </button>
+        
+        <!-- Skip Link for Accessibility -->
+        <a href="#contentArea" class="skip-link">Saltar para conteúdo principal</a>
     </div>
-
+    
     <script src="dashboard.js"></script>
 </body>
 </html>
