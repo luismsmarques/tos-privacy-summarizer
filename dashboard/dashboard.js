@@ -1,4 +1,5 @@
 // Dashboard JavaScript - ToS Privacy Summarizer
+// Version: 2.0.1 - Fixed syntax errors
 class Dashboard {
     constructor() {
         this.currentSection = 'overview';
@@ -185,7 +186,7 @@ class Dashboard {
                 }
             });
 
-            if (!response.ok) {
+        if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
 
@@ -282,7 +283,7 @@ class Dashboard {
     createDocumentTypesChart(data) {
         const ctx = document.getElementById('documentTypesChart');
         if (!ctx || !data) return;
-
+        
         // Destruir gráfico existente
         if (this.charts.documentTypes) {
             this.charts.documentTypes.destroy();
@@ -797,3 +798,6 @@ setInterval(() => {
 
 // Exportar para uso global
 window.Dashboard = Dashboard;
+
+// Cache busting - Force reload
+console.log('Dashboard v2.0.1 loaded at:', new Date().toISOString());
