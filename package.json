@@ -1,6 +1,6 @@
 {
   "name": "tos-privacy-summarizer",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Chrome extension for summarizing Terms of Service and Privacy Policies",
   "main": "index.js",
   "scripts": {
@@ -20,5 +20,6 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "_deployTimestamp": "2025-10-05T13:50:00Z"
+  "_deployTimestamp": "2025-10-05T13:00:00Z",
+  "_forceRebuild": true
 }

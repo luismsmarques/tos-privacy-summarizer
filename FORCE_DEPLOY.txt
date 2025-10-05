@@ -1,0 +1,9 @@
+# Force Vercel Deploy
+# This file forces Vercel to recognize changes and redeploy
+
+# Deploy timestamp: 2025-10-05T13:00:00Z
+# Force rebuild: true
+# Clear cache: true
+
+# This file should trigger a fresh deployment
+# If this file exists, the deployment should be updated
