@@ -49,7 +49,7 @@ class Dashboard {
     }
 
     async fetchData(endpoint) {
-        const response = await fetch(`${this.apiBase}?endpoint=${endpoint}`);
+        const response = await fetch(`${this.apiBase}/${endpoint}`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
