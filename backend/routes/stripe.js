@@ -1,11 +1,15 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import Stripe from 'stripe';
+import EmailService from '../utils/emailService.js';
 
 const router = express.Router();
 
 // Inicializar Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+// Inicializar serviço de email
+const emailService = new EmailService();
 
 // POST /create-checkout-session - Criar sessão de checkout
 router.post('/create-checkout-session',
@@ -152,6 +156,29 @@ router.post('/verify-payment',
             // Log da transação
             console.log(`Créditos adicionados: ${credits} para utilizador ${userId}. Novo saldo: ${newBalance}`);
 
+            // Enviar email de confirmação (se email disponível)
+            try {
+                const userEmail = session.customer_details?.email || session.customer_email;
+                if (userEmail) {
+                    const paymentData = {
+                        userId: userId,
+                        credits: credits,
+                        packageName: packageName,
+                        price: price,
+                        transactionId: sessionId,
+                        date: new Date().toLocaleDateString('pt-PT')
+                    };
+                    
+                    await emailService.sendPaymentConfirmation(userEmail, paymentData);
+                    console.log('✅ Email de confirmação enviado para:', userEmail);
+                } else {
+                    console.log('⚠️ Email não disponível para envio de confirmação');
+                }
+            } catch (emailError) {
+                console.error('❌ Erro ao enviar email de confirmação:', emailError);
+                // Não falhar a transação por causa do email
+            }
+
             res.json({
                 success: true,
                 credits: credits,
@@ -190,10 +217,46 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     switch (event.type) {
         case 'checkout.session.completed':
             const session = event.data.object;
-            console.log('Checkout session completed:', session.id);
+            console.log('✅ Webhook: Checkout session completed:', session.id);
             
-            // Aqui pode adicionar lógica adicional se necessário
-            // Por exemplo, enviar email de confirmação, etc.
+            // Processar pagamento bem-sucedido
+            try {
+                const userId = session.metadata.userId;
+                const credits = parseInt(session.metadata.credits);
+                const packageName = session.metadata.package;
+                const price = parseFloat(session.metadata.price);
+                
+                if (session.payment_status === 'paid' && userId && credits) {
+                    // Atualizar créditos no banco de dados
+                    const db = await import('../utils/database.js');
+                    const newBalance = await db.default.updateUserCredits(userId, credits);
+                    console.log(`✅ Webhook: Créditos adicionados para ${userId}. Novo saldo: ${newBalance}`);
+                    
+                    // Enviar email de confirmação
+                    try {
+                        const userEmail = session.customer_details?.email || session.customer_email;
+                        if (userEmail) {
+                            const paymentData = {
+                                userId: userId,
+                                credits: credits,
+                                packageName: packageName,
+                                price: price,
+                                transactionId: session.id,
+                                date: new Date().toLocaleDateString('pt-PT')
+                            };
+                            
+                            await emailService.sendPaymentConfirmation(userEmail, paymentData);
+                            console.log('✅ Webhook: Email de confirmação enviado para:', userEmail);
+                        } else {
+                            console.log('⚠️ Webhook: Email não disponível para confirmação');
+                        }
+                    } catch (emailError) {
+                        console.error('❌ Webhook: Erro ao enviar email:', emailError);
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Webhook: Erro ao processar pagamento:', error);
+            }
             break;
 
         case 'payment_intent.succeeded':

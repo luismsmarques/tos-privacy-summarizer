@@ -820,5 +820,58 @@ router.post('/seed', async (req, res) => {
   }
 });
 
+// GET /users - Obter lista de utilizadores
+router.get('/users', authenticateToken, async (req, res) => {
+    try {
+        console.log('📊 Obter lista de utilizadores');
+        
+        const db = await import('../utils/database.js');
+        
+        // Query para obter utilizadores com estatísticas
+        const query = `
+            SELECT 
+                u.user_id,
+                u.created_at,
+                u.updated_at as last_used,
+                u.credits,
+                COUNT(s.id) as summaries_count,
+                COALESCE(SUM(s.word_count), 0) as total_words,
+                COALESCE(AVG(s.processing_time), 0) as avg_processing_time
+            FROM users u
+            LEFT JOIN summaries s ON u.user_id = s.user_id
+            GROUP BY u.user_id, u.created_at, u.updated_at, u.credits
+            ORDER BY u.created_at DESC
+        `;
+        
+        const result = await db.default.query(query);
+        
+        const users = result.rows.map(row => ({
+            user_id: row.user_id,
+            created_at: row.created_at,
+            last_used: row.last_used,
+            credits: parseInt(row.credits),
+            summaries_count: parseInt(row.summaries_count),
+            total_words: parseInt(row.total_words),
+            avg_processing_time: parseFloat(row.avg_processing_time)
+        }));
+        
+        console.log(`✅ ${users.length} utilizadores encontrados`);
+        
+        res.json({
+            success: true,
+            data: users,
+            count: users.length
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro ao obter utilizadores:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Erro ao obter dados de utilizadores',
+            details: error.message
+        });
+    }
+});
+
 // Exportar funções para uso em outras rotas
 export { router, registerUser, registerSummary };

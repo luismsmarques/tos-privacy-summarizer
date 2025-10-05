@@ -53,8 +53,8 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Admin-Token']
 }));
 
-// Rate limiting
-const limiter = rateLimit({
+// Rate limiting - diferentes limites para diferentes endpoints
+const generalLimiter = rateLimit({
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutos
     max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // máximo 100 requests por IP
     message: {
@@ -65,7 +65,48 @@ const limiter = rateLimit({
     legacyHeaders: false,
 });
 
-app.use('/api/', limiter);
+// Rate limiting mais restritivo para endpoints de pagamento
+const paymentLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 10, // máximo 10 tentativas de pagamento por IP
+    message: {
+        error: 'Muitas tentativas de pagamento. Tente novamente em 15 minutos.',
+        retryAfter: '15 minutos'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Rate limiting para endpoints de IA (mais restritivo)
+const aiLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minuto
+    max: 5, // máximo 5 requests de IA por minuto por IP
+    message: {
+        error: 'Muitas solicitações de IA. Aguarde 1 minuto antes de tentar novamente.',
+        retryAfter: '1 minuto'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Rate limiting para dashboard/admin
+const adminLimiter = rateLimit({
+    windowMs: 5 * 60 * 1000, // 5 minutos
+    max: 50, // máximo 50 requests por IP
+    message: {
+        error: 'Muitas tentativas de acesso ao dashboard. Tente novamente em 5 minutos.',
+        retryAfter: '5 minutos'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Aplicar rate limiting específico
+app.use('/api/gemini/', aiLimiter);
+app.use('/api/stripe/', paymentLimiter);
+app.use('/api/analytics/', adminLimiter);
+app.use('/api/auth/', adminLimiter);
+app.use('/api/', generalLimiter);
 
 // Middleware para parsing JSON
 app.use(express.json({ limit: '10mb' }));
