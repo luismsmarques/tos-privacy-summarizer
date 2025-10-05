@@ -57,17 +57,33 @@ class Dashboard {
     }
 
     updateOverviewMetrics(data) {
-        document.getElementById('totalUsers').textContent = data.totalUsers.toLocaleString();
-        document.getElementById('totalSummaries').textContent = data.totalSummaries.toLocaleString();
-        document.getElementById('avgResponseTime').textContent = `${data.avgResponseTime}s`;
-        document.getElementById('uptime').textContent = `${data.uptime}%`;
+        console.log('Overview data received:', data);
+        
+        // Mapear dados da API para os campos esperados
+        const totalUsers = data.total_users || 0;
+        const totalSummaries = data.successful_summaries || 0;
+        const avgResponseTime = data.avg_duration ? (data.avg_duration / 1000).toFixed(2) : '--';
+        const uptime = 100; // Mock data for now
+        
+        document.getElementById('totalUsers').textContent = totalUsers.toLocaleString();
+        document.getElementById('totalSummaries').textContent = totalSummaries.toLocaleString();
+        document.getElementById('avgResponseTime').textContent = `${avgResponseTime}s`;
+        document.getElementById('uptime').textContent = `${uptime}%`;
     }
 
     updateRealtimeData(data) {
-        document.getElementById('activeUsers').textContent = data.activeUsers;
-        document.getElementById('requestsPerMinute').textContent = data.requestsPerMinute;
-        document.getElementById('realtimeResponseTime').textContent = `${data.avgResponseTime}s`;
-        document.getElementById('errorRate').textContent = `${data.errorRate}%`;
+        console.log('Realtime data received:', data);
+        
+        // Mapear dados da API para os campos esperados
+        const activeUsers = data.active_users || 0;
+        const requestsPerMinute = data.requests_per_minute || 0;
+        const avgResponseTime = data.current_response_time || 0;
+        const errorRate = data.error_rate || 0;
+        
+        document.getElementById('activeUsers').textContent = activeUsers;
+        document.getElementById('requestsPerMinute').textContent = requestsPerMinute;
+        document.getElementById('realtimeResponseTime').textContent = `${avgResponseTime}s`;
+        document.getElementById('errorRate').textContent = `${errorRate}%`;
     }
 
     createCharts(data) {
