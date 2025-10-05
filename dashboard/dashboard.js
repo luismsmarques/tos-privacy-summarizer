@@ -1,4 +1,18 @@
 // Dashboard JavaScript - ToS Privacy Summarizer
+
+// Debounce function for global use
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
 class Dashboard {
     constructor() {
         this.currentSection = 'overview';
@@ -1105,18 +1119,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Inicializar dashboard
     window.dashboard = new Dashboard();
     
-    // Debounce function for global use
-    window.debounce = function(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    };
     
     // Atualizar dados a cada 30 segundos (DESABILITADO para evitar loops)
     // setInterval(() => {
