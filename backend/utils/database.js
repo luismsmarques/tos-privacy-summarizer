@@ -162,11 +162,11 @@ class Database {
             console.log(`🗄️ Calculated wordCount: ${wordCount}, processingTime: ${processingTime}`);
             
             const query = `
-                INSERT INTO summaries (summary_id, user_id, success, duration, document_type, text_length, url, summary)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                INSERT INTO summaries (summary_id, user_id, success, duration, type, text_length, url, summary, title, word_count, processing_time, focus)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
                 RETURNING *
             `;
-            const params = [summaryId, userId, success, duration, documentType, textLength, url, summary];
+            const params = [summaryId, userId, success, duration, documentType, textLength, url, summary, title, wordCount, processingTime, focus];
             
             console.log(`🗄️ Executando query: ${query}`);
             console.log(`🗄️ Parâmetros:`, params);
