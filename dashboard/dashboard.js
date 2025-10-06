@@ -205,11 +205,18 @@ class Dashboard {
         }
     }
 
-    async fetchData(endpoint) {
+    async fetchData(endpoint, options = {}) {
         try {
             console.log(`📡 Fazendo request para: ${endpoint}`);
             
-            const token = this.getAuthToken();
+            let token = this.getAuthToken();
+            
+            // Se não há token, tentar login automático
+            if (!token) {
+                console.log('🔐 Nenhum token encontrado, tentando login automático...');
+                token = await this.autoLogin();
+            }
+            
             console.log('🔑 Token encontrado:', token ? 'Sim' : 'Não');
             
             const headers = {
@@ -221,16 +228,41 @@ class Dashboard {
                 headers['Authorization'] = `Bearer ${token}`;
             }
             
-            const response = await fetch(endpoint, {
+            // Configurações padrão
+            const defaultOptions = {
                 method: 'GET',
                 headers: headers,
                 credentials: 'include'
-            });
+            };
+            
+            // Mesclar opções fornecidas com padrões
+            const fetchOptions = {
+                ...defaultOptions,
+                ...options,
+                headers: {
+                    ...defaultOptions.headers,
+                    ...options.headers
+                }
+            };
+            
+            const response = await fetch(endpoint, fetchOptions);
             
         if (!response.ok) {
                 if (response.status === 401) {
-                    console.warn('🔒 Token inválido ou expirado, usando dados mock...');
-                    // Não redirecionar, apenas usar dados mock
+                    console.warn('🔒 Token inválido ou expirado, tentando login automático...');
+                    // Tentar login automático uma vez mais
+                    const newToken = await this.autoLogin();
+                    if (newToken) {
+                        // Refazer a requisição com novo token
+                        fetchOptions.headers['Authorization'] = `Bearer ${newToken}`;
+                        const retryResponse = await fetch(endpoint, fetchOptions);
+                        if (retryResponse.ok) {
+                            const retryData = await retryResponse.json();
+                            console.log(`✅ Dados recebidos de ${endpoint} (retry):`, retryData);
+                            return retryData;
+                        }
+                    }
+                    console.warn('🔒 Login automático falhou, usando dados mock...');
                     return null;
                 }
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -260,6 +292,40 @@ class Dashboard {
         
         console.warn('⚠️ Token não encontrado nos cookies');
         return null;
+    }
+
+    // Login automático para desenvolvimento/teste
+    async autoLogin() {
+        try {
+            console.log('🔐 Tentando login automático...');
+            
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username: 'admin',
+                    password: 'admin123'
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.token) {
+                    // Guardar token no cookie
+                    document.cookie = `adminToken=${data.token}; path=/; max-age=86400`;
+                    console.log('✅ Login automático realizado com sucesso');
+                    return data.token;
+                }
+            }
+            
+            console.warn('⚠️ Login automático falhou');
+            return null;
+        } catch (error) {
+            console.error('❌ Erro no login automático:', error);
+            return null;
+        }
     }
     
     isAuthenticated() {
