@@ -146,9 +146,20 @@ router.get('/debug/summaries', async (req, res) => {
     const summariesResult = await db.query('SELECT COUNT(*) as count FROM summaries');
     const summariesCount = summariesResult.rows[0].count;
     
-    // Verificar últimos resumos
+    // Verificar estrutura da tabela
+    const columnsResult = await db.query(`
+      SELECT column_name, data_type, is_nullable 
+      FROM information_schema.columns 
+      WHERE table_name = 'summaries' 
+      ORDER BY ordinal_position
+    `);
+    
+    // Verificar últimos resumos com todas as colunas disponíveis
     const recentSummaries = await db.query(`
-      SELECT summary_id, user_id, success, duration, type, text_length, created_at 
+      SELECT 
+        summary_id, user_id, success, duration, text_length, created_at,
+        COALESCE(type, document_type, 'unknown') as document_type,
+        url, summary, title, word_count, processing_time, focus, updated_at
       FROM summaries 
       ORDER BY created_at DESC 
       LIMIT 10
@@ -158,6 +169,7 @@ router.get('/debug/summaries', async (req, res) => {
       success: true,
       data: {
         total_summaries: summariesCount,
+        columns: columnsResult.rows,
         recent_summaries: recentSummaries.rows
       },
       timestamp: new Date().toISOString()
