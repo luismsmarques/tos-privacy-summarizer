@@ -103,6 +103,22 @@ document.addEventListener('DOMContentLoaded', function() {
             if (pageUrl) {
                 pageUrl.textContent = tab.url || 'URL não disponível';
             }
+            
+            // ATUALIZAÇÃO DIRETA: Definir complexidade padrão imediatamente
+            if (complexityText) {
+                complexityText.textContent = 'Média';
+                console.log('✅ Complexidade definida diretamente como: Média');
+            }
+            if (complexityIndicator) {
+                const dots = complexityIndicator.querySelectorAll('.complexity-dot');
+                dots.forEach((dot, index) => {
+                    dot.classList.remove('active', 'high');
+                    if (index < 2) { // Nível 2 = Média
+                        dot.classList.add('active');
+                    }
+                });
+                console.log('✅ Indicador de complexidade atualizado diretamente');
+            }
         } catch (error) {
             console.error('Erro ao obter aba atual:', error);
         }
