@@ -10,7 +10,7 @@ class EmailService {
     async initializeTransporter() {
         try {
             // Configuração para Gmail (pode ser alterada para outros provedores)
-            this.transporter = nodemailer.createTransporter({
+            this.transporter = nodemailer.createTransport({
                 service: 'gmail',
                 auth: {
                     user: process.env.EMAIL_USER,
