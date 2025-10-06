@@ -506,8 +506,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Mostrar resumo
-    function showSummary(summary) {
-        console.log('Mostrando resumo:', summary);
+    function showSummary(summary, ratings = null, documentType = null) {
+        console.log('Mostrando resumo:', summary, 'Ratings:', ratings, 'DocumentType:', documentType);
         hideProgress();
         
         // Parsear JSON se necessário
@@ -523,6 +523,14 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (e) {
             console.log('Não é JSON válido, usando como texto:', e);
             parsedSummary = { summary: summary };
+        }
+        
+        // Adicionar ratings e documentType ao objeto parseado
+        if (ratings) {
+            parsedSummary.ratings = ratings;
+        }
+        if (documentType) {
+            parsedSummary.documentType = documentType;
         }
         
         console.log('Resumo parseado:', parsedSummary);
@@ -552,6 +560,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Mostrar ratings se disponíveis
             if (parsedSummary.ratings) {
+                console.log('Exibindo ratings:', parsedSummary.ratings);
                 displayRiskScore(parsedSummary.ratings);
             }
         } else {
@@ -806,7 +815,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (request.summary && request.summary.startsWith('Erro')) {
                     showError(request.summary);
                 } else {
-                    showSummary(request.summary);
+                    showSummary(request.summary, request.ratings, request.documentType);
                 }
                 break;
                 

@@ -133,9 +133,13 @@ router.post('/proxy', [
         // Detectar tipo de documento baseado no conteúdo
         const documentType = detectDocumentType(text);
         
+        // Calcular ratings baseado no resumo e texto
+        const ratings = db.calculateRatings(geminiResponse, text.length, documentType);
+        
         // Registrar resumo no analytics
         const duration = Date.now() - startTime;
         console.log(`📊 Registrando resumo: userId=${userId}, success=${success}, duration=${duration}ms, type=${documentType}, textLength=${text.length}, url=${url}, title=${title}`);
+        console.log(`📊 Ratings calculados: complexidade=${ratings.complexidade}, boas_praticas=${ratings.boas_praticas}, risk_score=${ratings.risk_score}`);
         try {
             await registerSummary(userId, true, duration, documentType, text.length, url, JSON.stringify(geminiResponse), title, focus);
             console.log('✅ Resumo registrado com sucesso no analytics');
@@ -151,13 +155,17 @@ router.post('/proxy', [
             
             res.json({
                 summary: geminiResponse,
+                ratings: ratings,
                 credits: remainingCredits,
-                apiType: 'shared'
+                apiType: 'shared',
+                documentType: documentType
             });
         } else {
             res.json({
                 summary: geminiResponse,
-                apiType: 'own'
+                ratings: ratings,
+                apiType: 'own',
+                documentType: documentType
             });
         }
 

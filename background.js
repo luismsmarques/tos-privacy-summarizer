@@ -167,7 +167,9 @@ async function processSummaryAsync(text, focus = 'privacy', url = '', title = ''
       Logger.log('Enviando resumo para popup');
       chrome.runtime.sendMessage({
         action: 'displaySummary',
-        summary: summary
+        summary: summary.summary || summary, // Compatibilidade com formato antigo
+        ratings: summary.ratings,
+        documentType: summary.documentType
       });
     }, 500);
 
@@ -322,7 +324,20 @@ async function summarizeWithBackend(text, userId, focus = 'privacy', url = '', t
       chrome.storage.local.set({ sharedCredits: result.credits });
     }
     
-    return result.summary;
+    // Processar ratings se disponíveis
+    if (result.ratings) {
+      Logger.log('Ratings recebidos:', result.ratings);
+      chrome.storage.local.set({ 
+        lastRatings: result.ratings,
+        lastDocumentType: result.documentType || 'unknown'
+      });
+    }
+    
+    return {
+      summary: result.summary,
+      ratings: result.ratings,
+      documentType: result.documentType
+    };
     
   } catch (error) {
     Logger.error('Erro no backend:', error);
