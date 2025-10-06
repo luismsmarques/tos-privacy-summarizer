@@ -1034,8 +1034,115 @@ router.get('/user-history/:userId', async (req, res) => {
   }
 });
 
-// Endpoint para migrar base de dados (adicionar colunas em falta)
-router.post('/migrate', async (req, res) => {
+// Endpoint para executar migração SQL direta
+router.post('/migrate-sql', async (req, res) => {
+  try {
+    console.log('🔄 Executando migração SQL direta...');
+    
+    if (!db.isConnected) {
+      const connected = await db.connect();
+      if (!connected) {
+        throw new Error('Não foi possível conectar à base de dados');
+      }
+    }
+
+    const migrationsApplied = [];
+    
+    // Migração 1: Adicionar colunas básicas
+    try {
+      console.log('📝 Migração 1: Adicionar colunas url, summary, updated_at');
+      await db.query(`
+        ALTER TABLE summaries 
+        ADD COLUMN IF NOT EXISTS url TEXT,
+        ADD COLUMN IF NOT EXISTS summary TEXT,
+        ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      `);
+      migrationsApplied.push('Colunas url, summary, updated_at adicionadas');
+    } catch (error) {
+      console.log('⚠️ Migração 1 já aplicada ou erro:', error.message);
+    }
+    
+    // Migração 2: Adicionar colunas extras
+    try {
+      console.log('📝 Migração 2: Adicionar colunas title, word_count, processing_time, focus, document_type');
+      await db.query(`
+        ALTER TABLE summaries 
+        ADD COLUMN IF NOT EXISTS title TEXT,
+        ADD COLUMN IF NOT EXISTS word_count INTEGER,
+        ADD COLUMN IF NOT EXISTS processing_time DECIMAL(10,2),
+        ADD COLUMN IF NOT EXISTS focus VARCHAR(50) DEFAULT 'privacy',
+        ADD COLUMN IF NOT EXISTS document_type VARCHAR(50) DEFAULT 'unknown'
+      `);
+      migrationsApplied.push('Colunas title, word_count, processing_time, focus, document_type adicionadas');
+    } catch (error) {
+      console.log('⚠️ Migração 2 já aplicada ou erro:', error.message);
+    }
+
+    // Migração 3: Renomear coluna type para document_type se necessário
+    try {
+      console.log('📝 Migração 3: Renomear coluna type para document_type');
+      await db.query(`
+        DO $$ 
+        BEGIN
+            IF EXISTS (SELECT 1 FROM information_schema.columns 
+                       WHERE table_name = 'summaries' AND column_name = 'type')
+            AND NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                            WHERE table_name = 'summaries' AND column_name = 'document_type') THEN
+                ALTER TABLE summaries RENAME COLUMN type TO document_type;
+            END IF;
+        END $$;
+      `);
+      migrationsApplied.push('Coluna type renomeada para document_type');
+    } catch (error) {
+      console.log('⚠️ Migração 3 já aplicada ou erro:', error.message);
+    }
+
+    // Migração 4: Atualizar registros existentes
+    try {
+      console.log('📝 Migração 4: Atualizar registros existentes');
+      await db.query(`
+        UPDATE summaries 
+        SET updated_at = created_at 
+        WHERE updated_at IS NULL
+      `);
+      
+      await db.query(`
+        UPDATE summaries 
+        SET document_type = 'unknown' 
+        WHERE document_type IS NULL
+      `);
+      
+      migrationsApplied.push('Registros existentes atualizados');
+    } catch (error) {
+      console.log('⚠️ Migração 4 já aplicada ou erro:', error.message);
+    }
+
+    // Verificar estrutura final
+    const columnsResult = await db.query(`
+      SELECT column_name, data_type, is_nullable 
+      FROM information_schema.columns 
+      WHERE table_name = 'summaries' 
+      ORDER BY ordinal_position
+    `);
+
+    console.log('✅ Migração SQL direta concluída com sucesso');
+    
+    res.json({
+      success: true,
+      message: 'Migração SQL direta concluída com sucesso',
+      migrationsApplied: migrationsApplied,
+      columns: columnsResult.rows,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro na migração SQL direta:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro na migração SQL direta: ' + error.message
+    });
+  }
+});
   try {
     console.log('🔄 Executando migração da base de dados...');
     
