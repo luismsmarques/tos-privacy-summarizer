@@ -29,10 +29,11 @@ router.post('/login', async (req, res) => {
         
         // Definir cookie com o token
         res.cookie('adminToken', token, {
-            httpOnly: true,
-            secure: false, // Para desenvolvimento local
-            sameSite: 'lax',
-            maxAge: 24 * 60 * 60 * 1000 // 24 horas
+            httpOnly: false, // Permitir acesso via JavaScript para o dashboard
+            secure: process.env.NODE_ENV === 'production', // HTTPS apenas em produção
+            sameSite: 'lax', // Compatível com Vercel
+            maxAge: 24 * 60 * 60 * 1000, // 24 horas
+            path: '/' // Disponível em todo o site
         });
         
         res.json({

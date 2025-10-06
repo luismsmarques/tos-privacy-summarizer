@@ -121,7 +121,7 @@ app.use('/api/', generalLimiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Middleware para cookies (simples)
+// Middleware para cookies (melhorado)
 app.use((req, res, next) => {
     req.cookies = {};
     if (req.headers.cookie) {
@@ -129,8 +129,8 @@ app.use((req, res, next) => {
         req.headers.cookie.split(';').forEach(cookie => {
             const [name, value] = cookie.trim().split('=');
             if (name && value) {
-                req.cookies[name] = value;
-                console.log(`🍪 Parsed cookie: ${name} = ${value.substring(0, 20)}...`);
+                req.cookies[name.trim()] = decodeURIComponent(value.trim());
+                console.log(`🍪 Parsed cookie: ${name.trim()} = ${value.substring(0, 20)}...`);
             }
         });
     }

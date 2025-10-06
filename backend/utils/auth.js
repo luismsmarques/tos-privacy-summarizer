@@ -79,10 +79,16 @@ class AuthService {
 
     // Middleware para proteger dashboard
     protectDashboard(req, res, next) {
+        // Para arquivos estáticos, permitir acesso direto
+        if (req.path.includes('.') && !req.path.endsWith('/')) {
+            return next();
+        }
+
         const cookies = req.cookies || {};
         const token = cookies.adminToken || req.headers['x-admin-token'];
         
         console.log('🔐 Dashboard protection check:', {
+            path: req.path,
             hasToken: !!token,
             tokenLength: token ? token.length : 0,
             cookies: Object.keys(cookies),
@@ -96,24 +102,28 @@ class AuthService {
                 <html>
                 <head>
                     <title>Acesso Restrito</title>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
                     <style>
-                        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-                        .login-form { max-width: 400px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
-                        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; }
-                        button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+                        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f5f5f5; }
+                        .login-form { max-width: 400px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+                        button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
                         button:hover { background: #0056b3; }
                         .error { color: red; margin: 10px 0; }
+                        .success { color: green; margin: 10px 0; }
                     </style>
                 </head>
                 <body>
                     <h1>🔐 Acesso Administrativo</h1>
                     <div class="login-form">
                         <form id="loginForm">
-                            <input type="text" id="username" placeholder="Utilizador" required>
-                            <input type="password" id="password" placeholder="Palavra-passe" required>
+                            <input type="text" id="username" placeholder="Utilizador" required value="admin">
+                            <input type="password" id="password" placeholder="Palavra-passe" required value="admin123">
                             <button type="submit">Entrar</button>
                         </form>
                         <div id="error" class="error" style="display: none;"></div>
+                        <div id="success" class="success" style="display: none;"></div>
                     </div>
                     <script>
                         document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -131,15 +141,25 @@ class AuthService {
                                 const data = await response.json();
                                 
                                 if (data.success) {
-                                    document.cookie = 'adminToken=' + data.token + '; path=/; max-age=86400';
-                                    window.location.reload();
+                                    document.getElementById('success').textContent = 'Login realizado com sucesso! Redirecionando...';
+                                    document.getElementById('success').style.display = 'block';
+                                    document.getElementById('error').style.display = 'none';
+                                    
+                                    // Definir cookie com configurações adequadas para produção
+                                    document.cookie = 'adminToken=' + data.token + '; path=/; max-age=86400; SameSite=Lax';
+                                    
+                                    setTimeout(() => {
+                                        window.location.href = '/dashboard/';
+                                    }, 1000);
                                 } else {
-                                    document.getElementById('error').textContent = data.error;
+                                    document.getElementById('error').textContent = data.error || 'Erro no login';
                                     document.getElementById('error').style.display = 'block';
+                                    document.getElementById('success').style.display = 'none';
                                 }
                             } catch (error) {
-                                document.getElementById('error').textContent = 'Erro de ligação';
+                                document.getElementById('error').textContent = 'Erro de ligação: ' + error.message;
                                 document.getElementById('error').style.display = 'block';
+                                document.getElementById('success').style.display = 'none';
                             }
                         });
                     </script>
@@ -157,7 +177,30 @@ class AuthService {
             next();
         } catch (error) {
             console.error('❌ Token verification failed:', error.message);
-            return res.status(401).send('Token inválido');
+            return res.status(401).send(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Token Inválido</title>
+                    <meta charset="UTF-8">
+                    <style>
+                        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f5f5f5; }
+                        .error-box { max-width: 400px; margin: 0 auto; padding: 20px; border: 1px solid #dc3545; border-radius: 8px; background: white; }
+                        .error { color: #dc3545; font-size: 18px; }
+                        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 20px; }
+                        button:hover { background: #0056b3; }
+                    </style>
+                </head>
+                <body>
+                    <div class="error-box">
+                        <h1>❌ Token Inválido</h1>
+                        <p class="error">O seu token de acesso expirou ou é inválido.</p>
+                        <p>Por favor, faça login novamente.</p>
+                        <button onclick="window.location.href='/dashboard/'">Fazer Login</button>
+                    </div>
+                </body>
+                </html>
+            `);
         }
     }
 }
