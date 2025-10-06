@@ -207,7 +207,11 @@ class Dashboard {
 
     async fetchData(endpoint, options = {}) {
         try {
-            console.log(`📡 Fazendo request para: ${endpoint}`);
+            // Configurar URL base do backend
+            const backendUrl = 'http://localhost:3000';
+            const fullUrl = endpoint.startsWith('http') ? endpoint : `${backendUrl}${endpoint}`;
+            
+            console.log(`📡 Fazendo request para: ${fullUrl}`);
             
             let token = this.getAuthToken();
             
@@ -245,7 +249,7 @@ class Dashboard {
                 }
             };
             
-            const response = await fetch(endpoint, fetchOptions);
+            const response = await fetch(fullUrl, fetchOptions);
             
         if (!response.ok) {
                 if (response.status === 401) {
@@ -255,7 +259,7 @@ class Dashboard {
                     if (newToken) {
                         // Refazer a requisição com novo token
                         fetchOptions.headers['Authorization'] = `Bearer ${newToken}`;
-                        const retryResponse = await fetch(endpoint, fetchOptions);
+                        const retryResponse = await fetch(fullUrl, fetchOptions);
                         if (retryResponse.ok) {
                             const retryData = await retryResponse.json();
                             console.log(`✅ Dados recebidos de ${endpoint} (retry):`, retryData);
@@ -299,7 +303,7 @@ class Dashboard {
         try {
             console.log('🔐 Tentando login automático...');
             
-            const response = await fetch('/api/auth/login', {
+            const response = await fetch('http://localhost:3000/api/auth/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -1117,7 +1121,7 @@ class Dashboard {
         
         try {
             // Fazer request de logout
-            const response = await fetch('/api/auth/logout', {
+            const response = await fetch('http://localhost:3000/api/auth/logout', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
