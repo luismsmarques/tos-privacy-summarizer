@@ -6,7 +6,7 @@ class AuthService {
     constructor() {
         this.adminCredentials = {
             username: process.env.ADMIN_USERNAME || 'admin',
-            password: process.env.ADMIN_PASSWORD || 'admin123'
+            password: process.env.ADMIN_PASSWORD || 'CHANGE_THIS_PASSWORD_IN_PRODUCTION'
         };
         // Use a more secure fallback JWT secret for production
         this.jwtSecret = process.env.JWT_SECRET || 'tos-privacy-summarizer-secure-jwt-secret-key-2024';

@@ -43,11 +43,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const creditsText = document.getElementById('creditsText');
     const creditsBadge = document.getElementById('creditsBadge');
     
-    // API Status elements
-    const apiStatusIcon = document.getElementById('apiStatusIcon');
-    const apiModeText = document.getElementById('apiModeText');
-    const apiDescriptionText = document.getElementById('apiDescriptionText');
-    const apiBadge = document.getElementById('apiBadge');
+    // Connection Status elements
+    const connectionIcon = document.getElementById('connectionIcon');
+    const connectionType = document.getElementById('connectionType');
+    const connectionDescription = document.getElementById('connectionDescription');
+    const connectionBadge = document.getElementById('connectionBadge');
+    const statusIndicator = document.getElementById('statusIndicator');
+    const statusText = document.getElementById('statusText');
     const creditsStatus = document.getElementById('creditsStatus');
     
     // Quick Actions elements
@@ -417,8 +419,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const credits = result.sharedCredits || 5;
             const hasApiKey = !!result.geminiApiKey && result.geminiApiKey !== 'SHARED_API';
             
-            // Atualizar status da API
-            updateApiStatus(hasApiKey, credits);
+            // Atualizar status da conexão
+            updateConnectionStatus(hasApiKey, credits);
             
             if (hasApiKey) {
                 // Usando API própria - esconder seção de créditos
@@ -445,34 +447,35 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Atualizar status da API
-    function updateApiStatus(hasApiKey, credits) {
+    // Atualizar status da conexão
+    function updateConnectionStatus(hasApiKey, credits) {
         if (hasApiKey) {
             // Usando API própria do utilizador
-            if (apiStatusIcon) apiStatusIcon.textContent = 'key';
-            if (apiModeText) apiModeText.textContent = 'Sua Chave Gemini';
-            if (apiDescriptionText) apiDescriptionText.textContent = 'Usando sua chave API pessoal';
-            if (apiBadge) {
-                apiBadge.textContent = 'SUA API';
-                apiBadge.className = 'api-badge own-api';
+            if (connectionIcon) connectionIcon.textContent = 'key';
+            if (connectionType) connectionType.textContent = 'Sua Chave Gemini';
+            if (connectionDescription) connectionDescription.textContent = 'Usando sua chave API pessoal';
+            if (statusText) statusText.textContent = 'ATIVO';
+            if (statusIndicator) {
+                statusIndicator.className = 'status-indicator';
             }
             
-            // Mostrar botões para API própria
-            if (quickActionsServer) quickActionsServer.style.display = 'none';
-            if (quickActionsOwn) quickActionsOwn.style.display = 'flex';
+            // Ocultar créditos quando usa API própria
+            if (creditsStatus) creditsStatus.style.display = 'none';
         } else {
             // Usando API da extensão (Vercel)
-            if (apiStatusIcon) apiStatusIcon.textContent = 'cloud';
-            if (apiModeText) apiModeText.textContent = 'API da Extensão';
-            if (apiDescriptionText) apiDescriptionText.textContent = 'Usando chave configurada no servidor';
-            if (apiBadge) {
-                apiBadge.textContent = 'SERVIDOR';
-                apiBadge.className = 'api-badge server-api';
+            if (connectionIcon) connectionIcon.textContent = 'cloud';
+            if (connectionType) connectionType.textContent = 'API do Servidor';
+            if (connectionDescription) connectionDescription.textContent = 'Conectado e pronto para análise';
+            if (statusText) statusText.textContent = 'ATIVO';
+            if (statusIndicator) {
+                statusIndicator.className = 'status-indicator';
             }
             
-            // Mostrar botões para API do servidor
-            if (quickActionsServer) quickActionsServer.style.display = 'flex';
-            if (quickActionsOwn) quickActionsOwn.style.display = 'none';
+            // Mostrar créditos quando usa API do servidor
+            if (creditsStatus) {
+                creditsStatus.style.display = 'flex';
+                if (creditsText) creditsText.textContent = `${credits} Créditos Grátis Restantes`;
+            }
         }
     }
 

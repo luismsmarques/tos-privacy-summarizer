@@ -296,6 +296,76 @@
             color: var(--md-sys-color-on-tertiary);
         }
 
+        /* Connection Status - New Simplified Version */
+        .connection-status {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding: 12px;
+            background: var(--md-sys-color-surface-container-low);
+            border-radius: 12px;
+            border: 1px solid var(--md-sys-color-outline-variant);
+        }
+
+        .connection-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .connection-info .material-icons {
+            font-size: 20px;
+            color: var(--md-sys-color-primary);
+        }
+
+        .connection-details {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .connection-type {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--md-sys-color-on-surface);
+        }
+
+        .connection-description {
+            font-size: 12px;
+            color: var(--md-sys-color-on-surface-variant);
+        }
+
+        .connection-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--md-sys-color-primary);
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.inactive {
+            background: var(--md-sys-color-error);
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
         .api-badge.server-api {
             background: var(--md-sys-color-secondary);
             color: var(--md-sys-color-on-secondary);
@@ -1122,52 +1192,28 @@
     <div class="main-container">
         <!-- Value Communication Zone -->
         <div class="value-zone">
-        <!-- API Status -->
-        <div class="api-status">
-            <div class="api-info">
-                <span class="material-icons" id="apiStatusIcon">cloud</span>
-                <div class="api-details">
-                    <span class="api-mode" id="apiModeText">API da Extensão</span>
-                    <span class="api-description" id="apiDescriptionText">Usando chave configurada no servidor</span>
+        <!-- Connection Status -->
+        <div class="connection-status">
+            <div class="connection-info">
+                <span class="material-icons" id="connectionIcon">cloud</span>
+                <div class="connection-details">
+                    <span class="connection-type" id="connectionType">API do Servidor</span>
+                    <span class="connection-description" id="connectionDescription">Conectado e pronto para análise</span>
                 </div>
             </div>
-            <div class="api-badge" id="apiBadge">SERVIDOR</div>
+            <div class="connection-badge" id="connectionBadge">
+                <span class="status-indicator" id="statusIndicator"></span>
+                <span id="statusText">ATIVO</span>
+            </div>
         </div>
         
-        <!-- Credits Status (Hidden when using own API) -->
-        <div class="credits-status" id="creditsStatus">
+        <!-- Credits Status (Only shown for server API) -->
+        <div class="credits-status" id="creditsStatus" style="display: none;">
             <div class="credits-info">
                 <span class="material-icons">account_balance_wallet</span>
-                <span id="creditsText">5 Créditos Grátis Restantes</span>
+                <span id="creditsText">Créditos disponíveis</span>
             </div>
             <div class="credits-badge" id="creditsBadge">GRÁTIS</div>
-        </div>
-        
-        <!-- Quick Actions -->
-        <div class="quick-actions" id="quickActions">
-            <!-- Botões para quando usa API do servidor -->
-            <div class="quick-actions-server" id="quickActionsServer">
-                <a href="#" class="quick-action-link" id="configureApiLink">
-                    <span class="material-icons">settings</span>
-                    <span>Configurar API</span>
-                </a>
-                <a href="#" class="quick-action-link" id="buyCreditsLink">
-                    <span class="material-icons">shopping_cart</span>
-                    <span>Comprar Créditos</span>
-                </a>
-            </div>
-            
-            <!-- Botões para quando usa API própria -->
-            <div class="quick-actions-own" id="quickActionsOwn" style="display: none;">
-                <a href="#" class="quick-action-link" id="switchToServerApiLink">
-                    <span class="material-icons">cloud</span>
-                    <span>Usar API Servidor</span>
-                </a>
-                <a href="#" class="quick-action-link" id="manageApiLink">
-                    <span class="material-icons">settings</span>
-                    <span>Gerir API</span>
-                </a>
-            </div>
         </div>
         
         <!-- Risk Score Display (Hidden by default, shown after analysis) -->
