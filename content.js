@@ -29,11 +29,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 
             case 'analyzePage':
                 try {
+                    console.log('Content script: Iniciando análise da página...');
                     const analysis = analyzePage();
-                    Logger.log('Análise da página concluída:', analysis);
+                    console.log('Content script: Análise da página concluída:', analysis);
                     sendResponse({ success: true, analysis: analysis });
                 } catch (error) {
-                    Logger.error('Erro na análise da página:', error);
+                    console.error('Content script: Erro na análise da página:', error);
                     sendResponse({ 
                         success: false, 
                         error: error.message,
@@ -110,12 +111,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // Função para analisar a página
 function analyzePage() {
     try {
-        Logger.log('Iniciando análise da página...');
+        console.log('Content script: Iniciando análise da página...');
         
         const text = extractPageText();
+        console.log('Content script: Texto extraído:', text.length, 'caracteres');
+        
         const type = detectDocumentType(text);
+        console.log('Content script: Tipo detectado:', type);
+        
         const isLegal = isLegalPage();
+        console.log('Content script: É página legal:', isLegal);
+        
         const complexity = calculateTextComplexity(text);
+        console.log('Content script: Complexidade calculada:', complexity);
         
         const analysis = {
             textLength: text.length,
@@ -128,11 +136,11 @@ function analyzePage() {
             domain: window.location.hostname
         };
         
-        Logger.log('Análise concluída:', analysis);
+        console.log('Content script: Análise concluída:', analysis);
         return analysis;
         
     } catch (error) {
-        Logger.error('Erro ao analisar página:', error);
+        console.error('Content script: Erro ao analisar página:', error);
         return {
             textLength: 0,
             type: 'unknown',

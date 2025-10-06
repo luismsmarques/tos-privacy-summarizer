@@ -205,7 +205,6 @@
         .main-container {
             display: flex;
             flex-direction: column;
-            min-height: calc(100vh - 60px);
             height: auto;
         }
 
@@ -978,9 +977,6 @@
 
         /* Responsive adjustments */
         @media (max-height: 800px) {
-            .main-container {
-                min-height: calc(100vh - 50px);
-            }
             
             .value-zone, .context-zone, .action-zone {
                 padding: 12px;
@@ -1000,10 +996,6 @@
             
             .header h1 {
                 font-size: 18px;
-            }
-            
-            .main-container {
-                min-height: calc(100vh - 40px);
             }
             
             .summary-container {

@@ -96,15 +96,24 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!currentTab) return;
         
         try {
-            console.log('Analisando página atual...');
+            console.log('Analisando página atual...', currentTab.url);
             
             // Injetar content script se necessário
             await injectContentScript();
             
-            // Solicitar análise da página
+            // Solicitar análise da página com timeout
+            const timeoutId = setTimeout(() => {
+                console.log('Timeout na análise da página, usando fallback');
+                updateContextUI(null);
+            }, 3000); // 3 segundos de timeout
+            
             chrome.tabs.sendMessage(currentTab.id, { action: 'analyzePage' }, (response) => {
+                clearTimeout(timeoutId);
+                console.log('Resposta do content script:', response);
+                console.log('Chrome runtime error:', chrome.runtime.lastError);
+                
                 if (chrome.runtime.lastError) {
-                    console.log('Content script não disponível, injetando...');
+                    console.log('Content script não disponível, injetando...', chrome.runtime.lastError.message);
                     injectContentScript().then(() => {
                         setTimeout(() => analyzeCurrentPage(), 500);
                     });
@@ -112,10 +121,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 if (response && response.success) {
+                    console.log('Análise recebida com sucesso:', response.analysis);
                     pageAnalysis = response.analysis;
                     updateContextUI(response.analysis);
                 } else {
-                    console.log('Análise não disponível');
+                    console.log('Análise não disponível ou falhou:', response);
                     updateContextUI(null);
                 }
             });
@@ -158,13 +168,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Atualizar UI de contexto
     function updateContextUI(analysis) {
+        console.log('updateContextUI chamada com:', analysis);
+        
         if (!analysis) {
-            if (contentType) contentType.textContent = 'A analisar...';
-            if (complexityText) complexityText.textContent = 'A calcular...';
-            if (timeSaved) timeSaved.textContent = 'A calcular...';
+            console.log('Nenhuma análise disponível, tentando fallback...');
+            
+            // Tentar fallback: estimar baseado na URL atual
+            const fallbackAnalysis = createFallbackAnalysis();
+            if (fallbackAnalysis) {
+                console.log('Usando análise de fallback:', fallbackAnalysis);
+                updateUIWithAnalysis(fallbackAnalysis);
+            } else {
+                console.log('Fallback falhou, definindo textos padrão');
+                if (contentType) contentType.textContent = 'A analisar...';
+                if (complexityText) complexityText.textContent = 'A calcular...';
+                if (timeSaved) timeSaved.textContent = 'A calcular...';
+            }
             return;
         }
 
+        console.log('Atualizando UI com análise:', analysis);
+        updateUIWithAnalysis(analysis);
+    }
+
+    // Função auxiliar para atualizar UI com análise
+    function updateUIWithAnalysis(analysis) {
         // Tipo de conteúdo
         const typeMap = {
             'terms_of_service': 'Termos de Serviço',
@@ -173,19 +201,81 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         if (contentType) {
             contentType.textContent = typeMap[analysis.type] || 'Outros';
+            console.log('Tipo de conteúdo definido como:', contentType.textContent);
         }
 
         // Complexidade
         const complexity = calculateComplexity(analysis.textLength);
+        console.log('Complexidade calculada:', complexity);
         updateComplexityIndicator(complexity);
         if (complexityText) {
             complexityText.textContent = complexity.text;
+            console.log('Texto de complexidade definido como:', complexityText.textContent);
         }
 
         // Tempo poupança
         const estimatedReadingTime = calculateReadingTime(analysis.textLength, analysis.type, complexity);
         if (timeSaved) {
             timeSaved.textContent = `≈ ${estimatedReadingTime} minutos de leitura`;
+            console.log('Tempo poupança definido como:', timeSaved.textContent);
+        }
+    }
+
+    // Criar análise de fallback baseada na URL
+    function createFallbackAnalysis() {
+        if (!currentTab) return null;
+        
+        try {
+            const url = currentTab.url.toLowerCase();
+            const title = currentTab.title.toLowerCase();
+            
+            // Detectar tipo baseado na URL/título
+            let type = 'unknown';
+            if (url.includes('termos') || url.includes('terms') || 
+                title.includes('termos') || title.includes('terms')) {
+                type = 'terms_of_service';
+            } else if (url.includes('privacidade') || url.includes('privacy') || 
+                       title.includes('privacidade') || title.includes('privacy')) {
+                type = 'privacy_policy';
+            }
+            
+            // Estimar tamanho baseado no tipo (valores típicos)
+            let estimatedLength = 2000; // Padrão
+            if (type === 'privacy_policy') {
+                estimatedLength = 3000; // Políticas são geralmente mais longas
+            } else if (type === 'terms_of_service') {
+                estimatedLength = 2500; // Termos são geralmente médios
+            }
+            
+            return {
+                textLength: estimatedLength,
+                type: type,
+                url: currentTab.url,
+                title: currentTab.title,
+                isLegalPage: true,
+                complexity: calculateTextComplexity(estimatedLength),
+                timestamp: new Date().toISOString(),
+                domain: new URL(currentTab.url).hostname,
+                isFallback: true
+            };
+        } catch (error) {
+            console.error('Erro ao criar análise de fallback:', error);
+            return null;
+        }
+    }
+
+    // Função auxiliar para calcular complexidade do texto (para fallback)
+    function calculateTextComplexity(textLength) {
+        if (textLength < 1000) {
+            return { level: 1, text: 'Baixa' };
+        } else if (textLength < 3000) {
+            return { level: 2, text: 'Média' };
+        } else if (textLength < 6000) {
+            return { level: 3, text: 'Alta' };
+        } else if (textLength < 10000) {
+            return { level: 4, text: 'Muito Alta' };
+        } else {
+            return { level: 5, text: 'Extrema' };
         }
     }
 
