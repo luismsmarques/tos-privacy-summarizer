@@ -880,12 +880,32 @@ async function registerUser(userId, deviceId) {
 async function registerSummary(userId, success = true, duration = 0, documentType = 'unknown', textLength = 0, url = null, summary = null, title = null, focus = 'privacy') {
   try {
     console.log(`📝 Criando resumo: userId=${userId}, success=${success}, duration=${duration}, documentType=${documentType}, textLength=${textLength}, url=${url}, title=${title}, focus=${focus}`);
+    console.log(`📝 Summary content length: ${summary ? summary.length : 0}`);
+    
     const summaryId = `summary_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    console.log(`📝 Generated summaryId: ${summaryId}`);
+    
+    // Verificar conexão à base de dados
+    if (!db.isConnected) {
+      console.log('🔌 Conectando à base de dados...');
+      const connected = await db.connect();
+      if (!connected) {
+        throw new Error('Não foi possível conectar à base de dados');
+      }
+    }
+    
+    console.log('📝 Chamando db.createSummary...');
     const result = await db.createSummary(summaryId, userId, success, duration, documentType, textLength, url, summary, title, focus);
-    console.log(`✅ Resumo criado com sucesso: ${summaryId}`);
+    console.log(`✅ Resumo criado com sucesso: ${summaryId}`, result);
     return result;
   } catch (error) {
     console.error('❌ Error registering summary:', error);
+    console.error('❌ Error details:', {
+      message: error.message,
+      stack: error.stack,
+      userId,
+      summaryId: `summary_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    });
     throw error;
   }
 }
