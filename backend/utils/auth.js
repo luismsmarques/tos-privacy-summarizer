@@ -8,8 +8,17 @@ class AuthService {
             username: process.env.ADMIN_USERNAME || 'admin',
             password: process.env.ADMIN_PASSWORD || 'admin123'
         };
-        this.jwtSecret = process.env.JWT_SECRET || 'your-secret-key';
+        // Use a more secure fallback JWT secret for production
+        this.jwtSecret = process.env.JWT_SECRET || 'tos-privacy-summarizer-secure-jwt-secret-key-2024';
         this.jwtExpiry = '24h';
+        
+        // Log environment status for debugging
+        console.log('🔐 AuthService initialized:', {
+            hasJwtSecret: !!this.jwtSecret,
+            jwtSecretLength: this.jwtSecret ? this.jwtSecret.length : 0,
+            isDefaultSecret: this.jwtSecret === 'tos-privacy-summarizer-secure-jwt-secret-key-2024',
+            nodeEnv: process.env.NODE_ENV || 'development'
+        });
     }
 
     // Verificar credenciais de login
@@ -28,6 +37,11 @@ class AuthService {
 
     // Gerar token JWT
     generateToken(userId) {
+        if (!this.jwtSecret) {
+            console.error('❌ JWT Secret is not configured in generateToken');
+            throw new Error('JWT Secret não configurado');
+        }
+        
         return jwt.sign(
             { 
                 userId: userId,
@@ -42,6 +56,10 @@ class AuthService {
     // Verificar token JWT
     verifyToken(token) {
         try {
+            if (!this.jwtSecret) {
+                console.error('❌ JWT Secret is not configured in verifyToken');
+                return null;
+            }
             return jwt.verify(token, this.jwtSecret);
         } catch (error) {
             console.error('Token verification failed:', error);
@@ -63,6 +81,15 @@ class AuthService {
 
         // Verificar token diretamente usando JWT
         try {
+            // Check if jwtSecret is available
+            if (!this.jwtSecret) {
+                console.error('❌ JWT Secret is not configured in authenticateToken');
+                return res.status(500).json({ 
+                    success: false, 
+                    error: 'JWT Secret não configurado' 
+                });
+            }
+            
             console.log('🔍 AuthenticateToken - Verifying token with secret:', this.jwtSecret.substring(0, 10) + '...');
             const decoded = jwt.verify(token, this.jwtSecret);
             console.log('✅ AuthenticateToken - Token verified successfully:', decoded);
@@ -170,6 +197,31 @@ class AuthService {
 
         // Verificar token diretamente usando JWT
         try {
+            // Check if jwtSecret is available
+            if (!this.jwtSecret) {
+                console.error('❌ JWT Secret is not configured');
+                return res.status(500).send(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Erro de Configuração</title>
+                        <meta charset="UTF-8">
+                        <style>
+                            body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f5f5f5; }
+                            .error-box { max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #dc3545; border-radius: 8px; background: white; }
+                            .error { color: #dc3545; font-size: 18px; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="error-box">
+                            <h1>❌ Erro de Configuração</h1>
+                            <p class="error">JWT Secret não configurado. Contacte o administrador.</p>
+                        </div>
+                    </body>
+                    </html>
+                `);
+            }
+            
             console.log('🔍 Verifying token with secret:', this.jwtSecret.substring(0, 10) + '...');
             console.log('🔍 Token to verify:', token.substring(0, 20) + '...');
             const decoded = jwt.verify(token, this.jwtSecret);
@@ -178,7 +230,7 @@ class AuthService {
             next();
         } catch (error) {
             console.error('❌ Token verification failed:', error.message);
-            console.error('❌ JWT Secret being used:', this.jwtSecret.substring(0, 20) + '...');
+            console.error('❌ JWT Secret being used:', this.jwtSecret ? this.jwtSecret.substring(0, 20) + '...' : 'UNDEFINED');
             console.error('❌ Token being verified:', token.substring(0, 20) + '...');
             
             return res.status(401).send(`
