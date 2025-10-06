@@ -11,18 +11,6 @@ const pageUrl = document.getElementById('pageUrl');
 const themeToggle = document.getElementById('themeToggle');
 const backButton = document.getElementById('backButton');
 
-// Elementos do modal de feedback
-const feedbackModal = document.getElementById('feedbackModal');
-const feedbackModalClose = document.getElementById('feedbackModalClose');
-const feedbackForm = document.getElementById('feedbackForm');
-const feedbackCancel = document.getElementById('feedbackCancel');
-const feedbackSubmit = document.getElementById('feedbackSubmit');
-const feedbackSuccess = document.getElementById('feedbackSuccess');
-const feedbackType = document.getElementById('feedbackType');
-const feedbackSection = document.getElementById('feedbackSection');
-const feedbackDescription = document.getElementById('feedbackDescription');
-const feedbackSuggestion = document.getElementById('feedbackSuggestion');
-
 // Estado da aplicação
 let summaryData = null;
 let pageData = null;
@@ -54,23 +42,7 @@ function setupEventListeners() {
     // Atalho de teclado para voltar
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            if (feedbackModal.classList.contains('show')) {
-                closeFeedbackModal();
-            } else {
-                window.close();
-            }
-        }
-    });
-    
-    // Event listeners do modal de feedback
-    feedbackModalClose.addEventListener('click', closeFeedbackModal);
-    feedbackCancel.addEventListener('click', closeFeedbackModal);
-    feedbackForm.addEventListener('submit', handleFeedbackSubmit);
-    
-    // Fechar modal ao clicar fora dele
-    feedbackModal.addEventListener('click', (e) => {
-        if (e.target === feedbackModal) {
-            closeFeedbackModal();
+            window.close();
         }
     });
 }
@@ -157,12 +129,6 @@ function formatStructuredSummary(data) {
     if (data.resumo_conciso) {
         html += `
             <div class="summary-section">
-                <div class="section-feedback">
-                    <button class="feedback-button" onclick="openFeedbackModal('resumo_conciso')" title="Reportar problema nesta secção">
-                        <span class="material-symbols-outlined">feedback</span>
-                        Reportar erro
-                    </button>
-                </div>
                 <h3>
                     <span class="material-symbols-outlined">description</span>
                     Resumo Conciso
@@ -173,12 +139,6 @@ function formatStructuredSummary(data) {
     } else if (data.summary) {
         html += `
             <div class="summary-section">
-                <div class="section-feedback">
-                    <button class="feedback-button" onclick="openFeedbackModal('resumo_conciso')" title="Reportar problema nesta secção">
-                        <span class="material-symbols-outlined">feedback</span>
-                        Reportar erro
-                    </button>
-                </div>
                 <h3>
                     <span class="material-symbols-outlined">description</span>
                     Resumo
@@ -192,12 +152,6 @@ function formatStructuredSummary(data) {
     if (data.pontos_chave && data.pontos_chave.length > 0) {
         html += `
             <div class="summary-section">
-                <div class="section-feedback">
-                    <button class="feedback-button" onclick="openFeedbackModal('pontos_chave')" title="Reportar problema nesta secção">
-                        <span class="material-symbols-outlined">feedback</span>
-                        Reportar erro
-                    </button>
-                </div>
                 <h3>
                     <span class="material-symbols-outlined">key</span>
                     Pontos Chave
@@ -213,12 +167,6 @@ function formatStructuredSummary(data) {
     if (data.alertas_privacidade && data.alertas_privacidade.length > 0) {
         html += `
             <div class="summary-section">
-                <div class="section-feedback">
-                    <button class="feedback-button" onclick="openFeedbackModal('alertas_privacidade')" title="Reportar problema nesta secção">
-                        <span class="material-symbols-outlined">feedback</span>
-                        Reportar erro
-                    </button>
-                </div>
                 <h3>
                     <span class="material-symbols-outlined">warning</span>
                     Alertas de Privacidade
@@ -231,18 +179,6 @@ function formatStructuredSummary(data) {
                         </div>
                     `).join('')}
                 </div>
-            </div>
-        `;
-    }
-    
-    // Botão de feedback geral no final
-    if (html) {
-        html += `
-            <div style="text-align: center; margin-top: 32px;">
-                <button class="feedback-button" onclick="openFeedbackModal('geral')" style="margin-top: 0;">
-                    <span class="material-symbols-outlined">feedback</span>
-                    O resumo não captou o ponto X? Reportar erro de análise
-                </button>
             </div>
         `;
     }
@@ -316,153 +252,3 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         displaySummary();
     }
 });
-
-// ===== FUNÇÕES DE FEEDBACK =====
-
-// Abrir modal de feedback
-function openFeedbackModal(section = 'geral') {
-    console.log('Abrindo modal de feedback para secção:', section);
-    
-    // Resetar formulário
-    feedbackForm.reset();
-    feedbackSuccess.classList.add('hidden');
-    
-    // Definir secção automaticamente se especificada
-    if (section !== 'geral') {
-        feedbackSection.value = section;
-    }
-    
-    // Mostrar modal
-    feedbackModal.classList.add('show');
-    document.body.style.overflow = 'hidden';
-    
-    // Focar no primeiro campo
-    setTimeout(() => {
-        feedbackType.focus();
-    }, 100);
-}
-
-// Fechar modal de feedback
-function closeFeedbackModal() {
-    console.log('Fechando modal de feedback');
-    
-    feedbackModal.classList.remove('show');
-    document.body.style.overflow = '';
-    
-    // Resetar formulário após animação
-    setTimeout(() => {
-        feedbackForm.reset();
-        feedbackSuccess.classList.add('hidden');
-    }, 300);
-}
-
-// Lidar com submissão do feedback
-async function handleFeedbackSubmit(e) {
-    e.preventDefault();
-    
-    console.log('Submetendo feedback...');
-    
-    // Desabilitar botão de submit
-    feedbackSubmit.disabled = true;
-    feedbackSubmit.innerHTML = '<span class="material-symbols-outlined">hourglass_empty</span> Enviando...';
-    
-    try {
-        // Coletar dados do formulário
-        const feedbackData = {
-            type: feedbackType.value,
-            section: feedbackSection.value,
-            description: feedbackDescription.value.trim(),
-            suggestion: feedbackSuggestion.value.trim(),
-            pageUrl: pageData?.url || 'N/A',
-            pageTitle: pageData?.title || 'N/A',
-            timestamp: new Date().toISOString(),
-            userAgent: navigator.userAgent,
-            summaryId: generateSummaryId()
-        };
-        
-        console.log('Dados do feedback:', feedbackData);
-        
-        // Enviar feedback para o backend
-        await sendFeedbackToBackend(feedbackData);
-        
-        // Mostrar mensagem de sucesso
-        feedbackSuccess.classList.remove('hidden');
-        feedbackForm.style.display = 'none';
-        
-        // Fechar modal após 2 segundos
-        setTimeout(() => {
-            closeFeedbackModal();
-        }, 2000);
-        
-    } catch (error) {
-        console.error('Erro ao enviar feedback:', error);
-        alert('Erro ao enviar feedback. Tente novamente.');
-    } finally {
-        // Reabilitar botão
-        feedbackSubmit.disabled = false;
-        feedbackSubmit.innerHTML = '<span class="material-symbols-outlined">send</span> Enviar Feedback';
-    }
-}
-
-// Enviar feedback para o backend
-async function sendFeedbackToBackend(feedbackData) {
-    const backendUrl = 'https://tos-privacy-summarizer.vercel.app/api/feedback';
-    
-    try {
-        const response = await fetch(backendUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(feedbackData)
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const result = await response.json();
-        console.log('✅ Feedback enviado com sucesso:', result);
-        
-    } catch (error) {
-        console.error('❌ Erro ao enviar feedback para o backend:', error);
-        
-        // Fallback: salvar localmente se o backend falhar
-        console.log('💾 Salvando feedback localmente como fallback...');
-        await saveFeedbackLocally(feedbackData);
-    }
-}
-
-// Salvar feedback localmente (fallback)
-async function saveFeedbackLocally(feedbackData) {
-    return new Promise((resolve) => {
-        chrome.storage.local.get(['feedbackData'], (result) => {
-            const existingFeedback = result.feedbackData || [];
-            existingFeedback.push(feedbackData);
-            
-            chrome.storage.local.set({ feedbackData: existingFeedback }, () => {
-                console.log('Feedback salvo localmente:', feedbackData);
-                resolve();
-            });
-        });
-    });
-}
-
-// Gerar ID único para o resumo
-function generateSummaryId() {
-    return 'summary_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-}
-
-// Criar botão de feedback para uma secção
-function createFeedbackButton(section) {
-    const button = document.createElement('button');
-    button.className = 'feedback-button';
-    button.innerHTML = `
-        <span class="material-symbols-outlined">feedback</span>
-        Reportar erro
-    `;
-    button.title = 'Reportar problema nesta secção';
-    button.addEventListener('click', () => openFeedbackModal(section));
-    
-    return button;
-}

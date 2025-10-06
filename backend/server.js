@@ -121,7 +121,7 @@ app.use('/api/', generalLimiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Middleware para cookies (melhorado)
+// Middleware para cookies (simples)
 app.use((req, res, next) => {
     req.cookies = {};
     if (req.headers.cookie) {
@@ -129,8 +129,8 @@ app.use((req, res, next) => {
         req.headers.cookie.split(';').forEach(cookie => {
             const [name, value] = cookie.trim().split('=');
             if (name && value) {
-                req.cookies[name.trim()] = decodeURIComponent(value.trim());
-                console.log(`🍪 Parsed cookie: ${name.trim()} = ${value.substring(0, 20)}...`);
+                req.cookies[name] = value;
+                console.log(`🍪 Parsed cookie: ${name} = ${value.substring(0, 20)}...`);
             }
         });
     }
@@ -145,7 +145,6 @@ import creditsRoutes from './routes/credits.js';
 import stripeRoutes from './routes/stripe.js';
 import { router as analyticsRoutes } from './routes/analytics.js';
 import authRoutes from './routes/auth.js';
-import feedbackRoutes from './routes/feedback.js';
 import db from './utils/database.js';
 import auth from './utils/auth.js';
 
@@ -156,7 +155,6 @@ app.use('/api/users', userRoutes);
 app.use('/api/credits', creditsRoutes);
 app.use('/api/stripe', stripeRoutes);
 app.use('/api/analytics', analyticsRoutes);
-app.use('/api/feedback', feedbackRoutes);
 
 // Middleware para proteger todas as rotas do dashboard
 app.use('/dashboard', auth.protectDashboard);
@@ -170,20 +168,6 @@ app.get('/health', (req, res) => {
         status: 'OK', 
         timestamp: new Date().toISOString(),
         version: '1.0.0'
-    });
-});
-
-// Rota de debug para verificar configurações (apenas em desenvolvimento)
-app.get('/debug/config', (req, res) => {
-    if (process.env.NODE_ENV === 'production') {
-        return res.status(404).json({ error: 'Not found' });
-    }
-    
-    res.json({
-        jwtSecret: process.env.JWT_SECRET ? process.env.JWT_SECRET.substring(0, 20) + '...' : 'NOT_SET',
-        adminUsername: process.env.ADMIN_USERNAME || 'NOT_SET',
-        nodeEnv: process.env.NODE_ENV || 'NOT_SET',
-        timestamp: new Date().toISOString()
     });
 });
 
