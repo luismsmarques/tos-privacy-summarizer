@@ -631,8 +631,20 @@ document.addEventListener('DOMContentLoaded', function() {
         // Mostrar o display
         riskScoreDisplay.classList.remove('hidden');
         
+        // FORÇAR VISIBILIDADE (fix temporário)
+        riskScoreDisplay.style.display = 'block';
+        riskScoreDisplay.style.visibility = 'visible';
+        riskScoreDisplay.style.opacity = '1';
+        riskScoreDisplay.style.position = 'relative';
+        riskScoreDisplay.style.zIndex = '999';
+        
         console.log(`✅ Risk score exibido: ${risk_score}/10 (${riskClass})`);
         console.log('👁️ Elemento riskScoreDisplay visível:', !riskScoreDisplay.classList.contains('hidden'));
+        console.log('🎨 Estilos aplicados:', {
+            display: riskScoreDisplay.style.display,
+            visibility: riskScoreDisplay.style.visibility,
+            opacity: riskScoreDisplay.style.opacity
+        });
     }
 
     // Mostrar modal de créditos insuficientes
