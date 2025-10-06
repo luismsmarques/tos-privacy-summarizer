@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Gestão de Utilizadores</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .users-table th,
+        .users-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .users-table th {
+            background: #f8f9fa;
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste - Gestão de Utilizadores</h1>
+        
+        <div class="test-section">
+            <h2>📊 Teste da API</h2>
+            <button onclick="testAPI()">Testar API /api/analytics/users</button>
+            <div id="apiResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>👥 Dados dos Utilizadores</h2>
+            <button onclick="loadUsers()">Carregar Utilizadores</button>
+            <div id="usersResult"></div>
+            <table class="users-table" id="usersTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>ID do Utilizador</th>
+                        <th>Data de Registo</th>
+                        <th>Última Atividade</th>
+                        <th>Créditos</th>
+                        <th>Resumos</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="test-section">
+            <h2>📈 Estatísticas</h2>
+            <div id="statsResult"></div>
+        </div>
+    </div>
+
+    <script>
+        let usersData = [];
+        
+        async function testAPI() {
+            const resultDiv = document.getElementById('apiResult');
+            resultDiv.innerHTML = '<div class="info">🔄 Testando API...</div>';
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/analytics/users', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    mode: 'cors'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        ✅ API funcionando!<br>
+                        Status: ${response.status}<br>
+                        Utilizadores encontrados: ${data.data ? data.data.length : 0}<br>
+                        <details style="margin-top: 10px;">
+                            <summary>Ver resposta completa</summary>
+                            <pre style="background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto;">${JSON.stringify(data, null, 2)}</pre>
+                        </details>
+                    </div>
+                `;
+                usersData = data.data || [];
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        ❌ Erro de conexão<br>
+                        <strong>Erro:</strong> ${error.message}<br>
+                        <strong>Possíveis soluções:</strong><br>
+                        1. Verifique se o servidor está rodando em http://localhost:3000<br>
+                        2. Verifique se o CORS está configurado corretamente<br>
+                        3. Tente abrir este arquivo através de um servidor HTTP local
+                    </div>
+                `;
+            }
+        }
+        
+        function loadUsers() {
+            const resultDiv = document.getElementById('usersResult');
+            const table = document.getElementById('usersTable');
+            const tbody = document.getElementById('usersTableBody');
+            
+            if (usersData.length === 0) {
+                resultDiv.innerHTML = '<div class="error">❌ Nenhum dado de utilizadores disponível. Execute o teste da API primeiro.</div>';
+                return;
+            }
+            
+            resultDiv.innerHTML = `<div class="success">✅ ${usersData.length} utilizadores carregados</div>`;
+            
+            tbody.innerHTML = usersData.map(user => {
+                const createdAt = new Date(user.created_at);
+                const lastUsed = new Date(user.last_used || user.updated_at || user.created_at);
+                const isActive = (Date.now() - lastUsed.getTime()) < (7 * 24 * 60 * 60 * 1000);
+                
+                return `
+                    <tr>
+                        <td>${user.user_id}</td>
+                        <td>${createdAt.toLocaleDateString('pt-PT')}</td>
+                        <td>${lastUsed.toLocaleDateString('pt-PT')}</td>
+                        <td>${user.credits || 0}</td>
+                        <td>${user.summaries_count || 0}</td>
+                        <td>
+                            <span class="status-badge ${isActive ? 'status-active' : 'status-inactive'}">
+                                ${isActive ? 'Ativo' : 'Inativo'}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            
+            table.style.display = 'table';
+            updateStats();
+        }
+        
+        function updateStats() {
+            const statsDiv = document.getElementById('statsResult');
+            
+            if (usersData.length === 0) {
+                statsDiv.innerHTML = '<div class="error">❌ Nenhum dado disponível</div>';
+                return;
+            }
+            
+            const totalUsers = usersData.length;
+            const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+            const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+            
+            const activeUsers = usersData.filter(user => {
+                const lastUsed = new Date(user.last_used || user.updated_at || user.created_at);
+                return lastUsed > weekAgo;
+            }).length;
+            
+            const newUsers = usersData.filter(user => {
+                const createdAt = new Date(user.created_at);
+                return createdAt > monthAgo;
+            }).length;
+            
+            const totalCredits = usersData.reduce((sum, user) => sum + (user.credits || 0), 0);
+            const totalSummaries = usersData.reduce((sum, user) => sum + (user.summaries_count || 0), 0);
+            
+            statsDiv.innerHTML = `
+                <div class="success">
+                    <h3>📊 Estatísticas dos Utilizadores</h3>
+                    <p><strong>Total de Utilizadores:</strong> ${totalUsers}</p>
+                    <p><strong>Utilizadores Ativos (7 dias):</strong> ${activeUsers}</p>
+                    <p><strong>Novos Utilizadores (30 dias):</strong> ${newUsers}</p>
+                    <p><strong>Total de Créditos:</strong> ${totalCredits}</p>
+                    <p><strong>Total de Resumos:</strong> ${totalSummaries}</p>
+                    <p><strong>Média de Créditos por Utilizador:</strong> ${(totalCredits / totalUsers).toFixed(1)}</p>
+                    <p><strong>Média de Resumos por Utilizador:</strong> ${(totalSummaries / totalUsers).toFixed(1)}</p>
+                </div>
+            `;
+        }
+        
+        // Executar teste automático ao carregar a página
+        window.onload = function() {
+            testAPI();
+        };
+    </script>
+</body>
+</html>

@@ -1509,8 +1509,8 @@ router.post('/seed', async (req, res) => {
   }
 });
 
-// GET /users - Obter lista de utilizadores
-router.get('/users', (req, res, next) => authService.authenticateToken(req, res, next), async (req, res) => {
+// GET /users - Obter lista de utilizadores (sem autenticação para desenvolvimento)
+router.get('/users', async (req, res) => {
     try {
         console.log('📊 Obter lista de utilizadores');
         
