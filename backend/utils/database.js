@@ -150,7 +150,7 @@ class Database {
     }
 
     // Summary operations
-    async createSummary(summaryId, userId, success, duration, textLength, url, summary, title = null, focus = 'privacy') {
+    async createSummary(summaryId, userId, success, duration, textLength, url, summary, title = null) {
         try {
             console.log(`🗄️ createSummary chamado: summaryId=${summaryId}, userId=${userId}, success=${success}, duration=${duration}, textLength=${textLength}, url=${url}, summary=${summary ? summary.substring(0, 100) + '...' : 'null'}`);
             console.log(`🗄️ Summary content length: ${summary ? summary.length : 0}`);
@@ -173,15 +173,15 @@ class Database {
                     INSERT INTO summaries (
                         summary_id, user_id, success, duration, text_length, 
                         url, summary, title, document_type, word_count, 
-                        processing_time, focus, rating_complexidade, rating_boas_praticas, risk_score
+                        processing_time, rating_complexidade, rating_boas_praticas, risk_score
                     )
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
                     RETURNING *
                 `;
                 const params = [
                     summaryId, userId, success, duration, textLength, 
                     url, summary, title, documentType, wordCount, 
-                    processingTime, focus, ratings.complexidade, ratings.boas_praticas, ratings.risk_score
+                    processingTime, ratings.complexidade, ratings.boas_praticas, ratings.risk_score
                 ];
                 
                 console.log(`🗄️ Tentando inserção completa com todas as colunas`);
@@ -317,7 +317,6 @@ class Database {
                     word_count,
                     summary,
                     processing_time,
-                    focus,
                     created_at,
                     updated_at
                 FROM summaries 

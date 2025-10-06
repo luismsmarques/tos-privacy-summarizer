@@ -43,13 +43,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const creditsText = document.getElementById('creditsText');
     const creditsBadge = document.getElementById('creditsBadge');
 
-    // Focus selector
-    const focusOptions = document.querySelectorAll('.focus-option');
-
     // Estado da aplicação
     let isProcessing = false;
     let currentTab = null;
-    let currentFocus = 'privacy';
     let pageAnalysis = null;
     let processingStartTime = null;
     let progressInterval = null;
@@ -322,16 +318,6 @@ document.addEventListener('DOMContentLoaded', function() {
             historyBtn.addEventListener('click', openHistory);
         }
         
-        // Focus selector
-        focusOptions.forEach(option => {
-            option.addEventListener('click', () => {
-                focusOptions.forEach(opt => opt.classList.remove('active'));
-                option.classList.add('active');
-                currentFocus = option.dataset.focus;
-                console.log('Foco alterado para:', currentFocus);
-            });
-        });
-        
         // Links do footer
         const privacyLink = document.getElementById('privacyLink');
         if (privacyLink) {
@@ -413,8 +399,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Solicitar resumo
             console.log('Enviando mensagem para content script...');
             chrome.tabs.sendMessage(currentTab.id, { 
-                action: 'summarizeText',
-                focus: currentFocus
+                action: 'summarizeText'
             }, (response) => {
                 if (chrome.runtime.lastError) {
                     console.error('Erro ao comunicar com content script:', chrome.runtime.lastError);

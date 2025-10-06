@@ -651,31 +651,6 @@
             gap: 8px;
         }
 
-        .focus-selector {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-
-        .focus-option {
-            flex: 1;
-            padding: 8px 12px;
-            border: 1px solid var(--md-sys-color-outline-variant);
-            background: var(--md-sys-color-surface-container-low);
-            color: var(--md-sys-color-on-surface);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 12px;
-            text-align: center;
-        }
-
-        .focus-option.active {
-            background: var(--md-sys-color-primary);
-            color: var(--md-sys-color-on-primary);
-            border-color: var(--md-sys-color-primary);
-        }
-
         .action-button {
             background: var(--md-sys-color-primary);
             color: var(--md-sys-color-on-primary);
@@ -1150,18 +1125,6 @@
 
     <!-- Action Zone -->
     <div class="action-zone">
-        <div class="customization-section">
-            <div class="customization-label">
-                <span class="material-icons">tune</span>
-                <span>Foco do Resumo</span>
-            </div>
-            <div class="focus-selector">
-                <div class="focus-option active" data-focus="privacy">Privacidade</div>
-                <div class="focus-option" data-focus="terms">Direitos (ToS)</div>
-                <div class="focus-option" data-focus="general">Geral</div>
-            </div>
-        </div>
-        
         <button class="action-button" id="actionButton">
             <span class="material-icons">summarize</span>
             <span id="actionButtonText">Extrair & Resumir</span>

@@ -63,7 +63,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     chrome.runtime.sendMessage({
                         action: 'summarizeText',
                         text: text,
-                        focus: request.focus || 'privacy',
                         url: window.location.href,
                         title: document.title
                     }, (response) => {

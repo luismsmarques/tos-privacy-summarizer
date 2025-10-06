@@ -109,7 +109,7 @@ router.post('/proxy', [
             });
         }
 
-        const { userId, text, focus = 'privacy', apiType = 'shared', url, title } = req.body;
+        const { userId, text, apiType = 'shared', url, title } = req.body;
 
         // Registrar utilizador no analytics
         await registerUser(userId, req.ip || 'unknown');
@@ -127,7 +127,7 @@ router.post('/proxy', [
         }
 
         // Chamar API Gemini
-        const geminiResponse = await callGeminiAPI(text, focus);
+        const geminiResponse = await callGeminiAPI(text);
         success = true;
         
         // Detectar tipo de documento baseado no conteúdo
@@ -141,7 +141,7 @@ router.post('/proxy', [
         console.log(`📊 Registrando resumo: userId=${userId}, success=${success}, duration=${duration}ms, type=${documentType}, textLength=${text.length}, url=${url}, title=${title}`);
         console.log(`📊 Ratings calculados: complexidade=${ratings.complexidade}, boas_praticas=${ratings.boas_praticas}, risk_score=${ratings.risk_score}`);
         try {
-            await registerSummary(userId, true, duration, documentType, text.length, url, JSON.stringify(geminiResponse), title, focus);
+            await registerSummary(userId, true, duration, documentType, text.length, url, JSON.stringify(geminiResponse), title);
             console.log('✅ Resumo registrado com sucesso no analytics');
         } catch (error) {
             console.error('❌ Erro ao registrar resumo no analytics:', error);
@@ -203,22 +203,8 @@ router.post('/proxy', [
     }
 });
 
-// Função para obter instruções baseadas no foco
-function getFocusInstructions(focus) {
-    switch (focus) {
-        case 'privacy':
-            return 'Concentre-se especialmente em questões de privacidade, recolha de dados, partilha de informações pessoais, cookies, e políticas de dados. Destaque riscos relacionados com a privacidade do utilizador.';
-        case 'terms':
-            return 'Concentre-se nos direitos e responsabilidades do utilizador, limitações de responsabilidade da empresa, propriedade intelectual, e cláusulas que afetam os direitos legais do utilizador.';
-        case 'general':
-            return 'Forneça uma análise equilibrada cobrindo tanto aspectos de privacidade quanto direitos do utilizador, dando uma visão geral completa do documento.';
-        default:
-            return 'Forneça uma análise equilibrada cobrindo tanto aspectos de privacidade quanto direitos do utilizador, dando uma visão geral completa do documento.';
-    }
-}
-
 // Função para chamar a API Gemini
-async function callGeminiAPI(text, focus = 'privacy') {
+async function callGeminiAPI(text) {
     const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
     const apiKey = process.env.GEMINI_API_KEY;
     
@@ -227,8 +213,6 @@ async function callGeminiAPI(text, focus = 'privacy') {
     const textToSummarize = text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
 
     const prompt = `Você é um especialista em direito do consumidor e privacidade de dados. Sua tarefa é analisar o texto legal fornecido (Termos de Serviço ou Política de Privacidade) e transformá-lo em informações claras, acionáveis e estritamente formatadas em JSON para um utilizador comum.
-
-FOCO DA ANÁLISE: ${getFocusInstructions(focus)}
 
 A ÚNICA saída permitida deve ser um objeto JSON puro. NÃO use blocos de código Markdown. NÃO inclua qualquer texto introdutório, explicativo ou conclusivo. A resposta deve ser APENAS o JSON em português (Portugal) seguindo esta estrutura EXATA:
 

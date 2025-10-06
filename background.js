@@ -64,13 +64,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'summarizeText') {
     Logger.log('Recebido texto para resumir:', {
       textLength: request.text?.length || 0,
-      focus: request.focus,
       url: request.url,
       title: request.title
     });
 
     // Processar de forma assíncrona mas sem usar sendResponse
-    processSummaryAsync(request.text, request.focus, request.url, request.title)
+    processSummaryAsync(request.text, request.url, request.title)
       .catch(error => {
         Logger.error('Erro no processamento assíncrono:', error);
         chrome.runtime.sendMessage({
@@ -85,9 +84,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 // Função assíncrona para processar o resumo
-async function processSummaryAsync(text, focus = 'privacy', url = '', title = '') {
+async function processSummaryAsync(text, url = '', title = '') {
   try {
-    Logger.log('Processando resumo com foco:', focus);
+    Logger.log('Processando resumo...');
     
     // Validar entrada
     if (!text || typeof text !== 'string') {
@@ -135,7 +134,7 @@ async function processSummaryAsync(text, focus = 'privacy', url = '', title = ''
     if (apiType === 'shared') {
       // Usar backend seguro com retry
       summary = await RetryManager.executeWithRetry(
-        () => summarizeWithBackend(text, userId, focus, url, title),
+        () => summarizeWithBackend(text, userId, url, title),
         'summarizeWithBackend'
       );
     } else {
@@ -276,12 +275,11 @@ function generateDeviceId() {
 }
 
 // Função para usar backend seguro
-async function summarizeWithBackend(text, userId, focus = 'privacy', url = '', title = '') {
+async function summarizeWithBackend(text, userId, url = '', title = '') {
   try {
     Logger.log('Usando backend seguro para resumir texto...', {
       url: API_ENDPOINTS.PROXY,
       userId: userId,
-      focus: focus,
       textLength: text.length,
       pageUrl: url,
       pageTitle: title
@@ -295,7 +293,6 @@ async function summarizeWithBackend(text, userId, focus = 'privacy', url = '', t
       body: JSON.stringify({
         userId: userId,
         text: text,
-        focus: focus,
         apiType: 'shared',
         url: url,
         title: title

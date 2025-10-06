@@ -159,7 +159,7 @@ router.get('/debug/summaries', async (req, res) => {
       SELECT 
         summary_id, user_id, success, duration, text_length, created_at,
         COALESCE(type, document_type, 'unknown') as document_type,
-        url, summary, title, word_count, processing_time, focus, updated_at
+        url, summary, title, word_count, processing_time, updated_at
       FROM summaries 
       ORDER BY created_at DESC 
       LIMIT 10
@@ -534,7 +534,6 @@ router.get('/summaries-history', async (req, res) => {
         s.title,
         s.word_count,
         s.processing_time,
-        s.focus,
         s.updated_at
       FROM summaries s
       WHERE 1=1
@@ -896,7 +895,7 @@ async function registerUser(userId, deviceId) {
 }
 
 // Função para registrar novo resumo
-async function registerSummary(userId, success = true, duration = 0, documentType = 'unknown', textLength = 0, url = null, summary = null, title = null, focus = 'privacy') {
+async function registerSummary(userId, success = true, duration = 0, documentType = 'unknown', textLength = 0, url = null, summary = null, title = null) {
   try {
     const summaryId = `summary_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
@@ -909,7 +908,7 @@ async function registerSummary(userId, success = true, duration = 0, documentTyp
       }
     }
     
-    const result = await db.createSummary(summaryId, userId, success, duration, textLength, url, summary, title, focus);
+    const result = await db.createSummary(summaryId, userId, success, duration, textLength, url, summary, title);
     return result;
   } catch (error) {
     console.error('❌ Error registering summary:', error);
@@ -963,8 +962,7 @@ router.post('/test-db-connection', async (req, res) => {
       100,
       'https://test.com',
       'Teste de conexão',
-      'Teste',
-      'privacy'
+      'Teste'
     );
     console.log('🧪 Resumo de teste criado:', testResult);
     
@@ -1058,16 +1056,15 @@ router.post('/migrate-sql', async (req, res) => {
     
     // Migração 2: Adicionar colunas extras
     try {
-      console.log('📝 Migração 2: Adicionar colunas title, word_count, processing_time, focus, document_type');
+      console.log('📝 Migração 2: Adicionar colunas title, word_count, processing_time, document_type');
       await db.query(`
         ALTER TABLE summaries 
         ADD COLUMN IF NOT EXISTS title TEXT,
         ADD COLUMN IF NOT EXISTS word_count INTEGER,
         ADD COLUMN IF NOT EXISTS processing_time DECIMAL(10,2),
-        ADD COLUMN IF NOT EXISTS focus VARCHAR(50) DEFAULT 'privacy',
         ADD COLUMN IF NOT EXISTS document_type VARCHAR(50) DEFAULT 'unknown'
       `);
-      migrationsApplied.push('Colunas title, word_count, processing_time, focus, document_type adicionadas');
+      migrationsApplied.push('Colunas title, word_count, processing_time, document_type adicionadas');
     } catch (error) {
       console.log('⚠️ Migração 2 já aplicada ou erro:', error.message);
     }
@@ -1168,15 +1165,14 @@ router.post('/migrate', async (req, res) => {
     
     // Migração 2: Adicionar colunas extras
     try {
-      console.log('📝 Migração 2: Adicionar colunas title, word_count, processing_time, focus');
+      console.log('📝 Migração 2: Adicionar colunas title, word_count, processing_time');
       await db.query(`
         ALTER TABLE summaries 
         ADD COLUMN IF NOT EXISTS title TEXT,
         ADD COLUMN IF NOT EXISTS word_count INTEGER,
-        ADD COLUMN IF NOT EXISTS processing_time DECIMAL(10,2),
-        ADD COLUMN IF NOT EXISTS focus VARCHAR(50) DEFAULT 'privacy'
+        ADD COLUMN IF NOT EXISTS processing_time DECIMAL(10,2)
       `);
-      migrationsApplied.push('Colunas title, word_count, processing_time, focus adicionadas');
+      migrationsApplied.push('Colunas title, word_count, processing_time adicionadas');
     } catch (error) {
       console.log('⚠️ Migração 2 já aplicada ou erro:', error.message);
     }

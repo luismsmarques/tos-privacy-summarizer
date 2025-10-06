@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <div class="meta-item">
                             <span class="material-icons">tune</span>
-                            <span>${getFocusName(summary.focus)}</span>
+                            <span>Geral</span>
                         </div>
                     </div>
                     
@@ -277,12 +277,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Obter nome do foco
     function getFocusName(focus) {
-        const focusMap = {
-            'privacy': 'Privacidade',
-            'terms': 'Direitos (ToS)',
-            'general': 'Geral'
-        };
-        return focusMap[focus] || 'Geral';
+        return 'Geral';
     }
 
     // Renderizar estatísticas do utilizador
@@ -678,7 +673,7 @@ URL: ${summary.url}
 Data: ${formatDate(summary.created_at)}
 Palavras: ${summary.word_count || 0}
 Tempo de processamento: ${summary.processing_time || 0}s
-Foco: ${getFocusName(summary.focus)}
+Foco: Geral
 
 ${'='.repeat(50)}
 
@@ -701,8 +696,8 @@ https://tos-privacy-summarizer.vercel.app`;
             created_at: summary.created_at,
             word_count: summary.word_count || 0,
             processing_time: summary.processing_time || 0,
-            focus: summary.focus,
-            focus_name: getFocusName(summary.focus),
+            focus: 'general',
+            focus_name: 'Geral',
             summary: summary.summary,
             exported_at: new Date().toISOString(),
             exported_by: 'ToS & Privacy Summarizer'
@@ -920,7 +915,7 @@ https://tos-privacy-summarizer.vercel.app`;
             </div>
             <div class="meta-item">
                 <span class="meta-label">Foco:</span> 
-                <span class="meta-value">${getFocusName(summary.focus)}</span>
+                <span class="meta-value">Geral</span>
             </div>
         </div>
         
@@ -961,8 +956,8 @@ https://tos-privacy-summarizer.vercel.app`;
                     created_at: summary.created_at,
                     word_count: summary.word_count || 0,
                     processing_time: summary.processing_time || 0,
-                    focus: summary.focus,
-                    focus_name: getFocusName(summary.focus),
+                    focus: 'general',
+                    focus_name: 'Geral',
                     summary: summary.summary
                 }))
             };
@@ -985,7 +980,7 @@ URL: ${summary.url}
 Data: ${formatDate(summary.created_at)}
 Palavras: ${summary.word_count || 0}
 Tempo: ${summary.processing_time || 0}s
-Foco: ${getFocusName(summary.focus)}
+Foco: Geral
 
 ${summary.summary || 'Resumo não disponível'}
 
