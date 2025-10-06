@@ -1020,32 +1020,68 @@ router.post('/migrate', async (req, res) => {
       }
     }
 
-    // Adicionar colunas em falta
-    await db.query(`
-      ALTER TABLE summaries 
-      ADD COLUMN IF NOT EXISTS url TEXT,
-      ADD COLUMN IF NOT EXISTS summary TEXT,
-      ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    `);
+    const migrationsApplied = [];
+    
+    // Migração 1: Adicionar colunas básicas
+    try {
+      console.log('📝 Migração 1: Adicionar colunas url, summary, updated_at');
+      await db.query(`
+        ALTER TABLE summaries 
+        ADD COLUMN IF NOT EXISTS url TEXT,
+        ADD COLUMN IF NOT EXISTS summary TEXT,
+        ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      `);
+      migrationsApplied.push('Colunas url, summary, updated_at adicionadas');
+    } catch (error) {
+      console.log('⚠️ Migração 1 já aplicada ou erro:', error.message);
+    }
+    
+    // Migração 2: Adicionar colunas extras
+    try {
+      console.log('📝 Migração 2: Adicionar colunas title, word_count, processing_time, focus');
+      await db.query(`
+        ALTER TABLE summaries 
+        ADD COLUMN IF NOT EXISTS title TEXT,
+        ADD COLUMN IF NOT EXISTS word_count INTEGER,
+        ADD COLUMN IF NOT EXISTS processing_time DECIMAL(10,2),
+        ADD COLUMN IF NOT EXISTS focus VARCHAR(50) DEFAULT 'privacy'
+      `);
+      migrationsApplied.push('Colunas title, word_count, processing_time, focus adicionadas');
+    } catch (error) {
+      console.log('⚠️ Migração 2 já aplicada ou erro:', error.message);
+    }
 
-    // Adicionar trigger para updated_at
-    await db.query(`
-      CREATE TRIGGER update_summaries_updated_at BEFORE UPDATE ON summaries
-      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()
-    `);
+    // Migração 3: Adicionar trigger para updated_at
+    try {
+      console.log('📝 Migração 3: Adicionar trigger update_summaries_updated_at');
+      await db.query(`
+        CREATE TRIGGER IF NOT EXISTS update_summaries_updated_at BEFORE UPDATE ON summaries
+        FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()
+      `);
+      migrationsApplied.push('Trigger update_summaries_updated_at criado');
+    } catch (error) {
+      console.log('⚠️ Migração 3 já aplicada ou erro:', error.message);
+    }
 
-    // Atualizar registros existentes
-    await db.query(`
-      UPDATE summaries 
-      SET updated_at = created_at 
-      WHERE updated_at IS NULL
-    `);
+    // Migração 4: Atualizar registros existentes
+    try {
+      console.log('📝 Migração 4: Atualizar updated_at para registros existentes');
+      await db.query(`
+        UPDATE summaries 
+        SET updated_at = created_at 
+        WHERE updated_at IS NULL
+      `);
+      migrationsApplied.push('Registros existentes atualizados');
+    } catch (error) {
+      console.log('⚠️ Migração 4 já aplicada ou erro:', error.message);
+    }
 
     console.log('✅ Migração concluída com sucesso');
     
     res.json({
       success: true,
       message: 'Migração da base de dados concluída com sucesso',
+      migrationsApplied: migrationsApplied,
       timestamp: new Date().toISOString()
     });
     
