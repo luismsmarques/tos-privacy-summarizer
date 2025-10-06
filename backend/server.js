@@ -125,13 +125,16 @@ app.use(express.urlencoded({ extended: true }));
 app.use((req, res, next) => {
     req.cookies = {};
     if (req.headers.cookie) {
+        console.log('🍪 Raw cookie header:', req.headers.cookie);
         req.headers.cookie.split(';').forEach(cookie => {
             const [name, value] = cookie.trim().split('=');
             if (name && value) {
                 req.cookies[name] = value;
+                console.log(`🍪 Parsed cookie: ${name} = ${value.substring(0, 20)}...`);
             }
         });
     }
+    console.log('🍪 Final cookies object:', Object.keys(req.cookies));
     next();
 });
 
