@@ -137,7 +137,7 @@ router.post('/proxy', [
         const duration = Date.now() - startTime;
         console.log(`📊 Registrando resumo: userId=${userId}, success=${success}, duration=${duration}ms, type=${documentType}, textLength=${text.length}, url=${url}, title=${title}`);
         try {
-            await registerSummary(userId, true, duration, documentType, text.length, url, geminiResponse, title, focus);
+            await registerSummary(userId, true, duration, documentType, text.length, url, JSON.stringify(geminiResponse), title, focus);
             console.log('✅ Resumo registrado com sucesso no analytics');
         } catch (error) {
             console.error('❌ Erro ao registrar resumo no analytics:', error);
