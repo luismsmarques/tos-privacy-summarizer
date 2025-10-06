@@ -954,7 +954,6 @@ router.post('/test-db-connection', async (req, res) => {
       'test_user',
       true,
       1000,
-      'test',
       100,
       'https://test.com',
       'Teste de conexão',
