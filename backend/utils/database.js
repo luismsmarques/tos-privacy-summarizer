@@ -152,28 +152,55 @@ class Database {
     // Summary operations
     async createSummary(summaryId, userId, success, duration, documentType = 'unknown', textLength = 0, url = null, summary = null, title = null, focus = 'privacy') {
         try {
+            console.log(`🗄️ createSummary chamado: summaryId=${summaryId}, userId=${userId}, success=${success}, duration=${duration}, documentType=${documentType}, textLength=${textLength}, url=${url}, title=${title}, focus=${focus}`);
+            console.log(`🗄️ Summary content length: ${summary ? summary.length : 0}`);
+            
             // Calcular word_count baseado no summary
             const wordCount = summary ? summary.split(/\s+/).length : 0;
             const processingTime = Math.round(duration / 1000.0 * 100) / 100; // Arredondar para 2 casas decimais
             
-            const result = await this.query(`
+            console.log(`🗄️ Calculated wordCount: ${wordCount}, processingTime: ${processingTime}`);
+            
+            const query = `
                 INSERT INTO summaries (summary_id, user_id, success, duration, document_type, text_length, url, summary, title, word_count, processing_time, focus)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
                 RETURNING *
-            `, [summaryId, userId, success, duration, documentType, textLength, url, summary, title, wordCount, processingTime, focus]);
+            `;
+            const params = [summaryId, userId, success, duration, documentType, textLength, url, summary, title, wordCount, processingTime, focus];
+            
+            console.log(`🗄️ Executando query: ${query}`);
+            console.log(`🗄️ Parâmetros:`, params);
+            
+            const result = await this.query(query, params);
+            console.log(`🗄️ Query executada com sucesso. Resultado:`, result);
             
             // Update user summary count
             if (success) {
+                console.log(`🗄️ Atualizando contador de resumos para userId: ${userId}`);
                 await this.query(`
                     UPDATE users 
                     SET summaries_generated = summaries_generated + 1
                     WHERE user_id = $1
                 `, [userId]);
+                console.log(`🗄️ Contador de resumos atualizado`);
             }
             
+            console.log(`🗄️ createSummary concluído com sucesso. Retornando:`, result.rows[0]);
             return result.rows[0];
         } catch (error) {
-            console.error('Error creating summary:', error);
+            console.error('❌ Error creating summary:', error);
+            console.error('❌ Error details:', {
+                message: error.message,
+                stack: error.stack,
+                summaryId,
+                userId,
+                query: `
+                    INSERT INTO summaries (summary_id, user_id, success, duration, document_type, text_length, url, summary, title, word_count, processing_time, focus)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                    RETURNING *
+                `,
+                params: [summaryId, userId, success, duration, documentType, textLength, url, summary, title, wordCount, processingTime, focus]
+            });
             throw error;
         }
     }
