@@ -63,12 +63,13 @@ class AuthService {
 
         // Verificar token diretamente usando JWT
         try {
-            const jwtSecret = process.env.JWT_SECRET || 'your-secret-key';
-            const decoded = jwt.verify(token, jwtSecret);
+            console.log('🔍 AuthenticateToken - Verifying token with secret:', this.jwtSecret.substring(0, 10) + '...');
+            const decoded = jwt.verify(token, this.jwtSecret);
+            console.log('✅ AuthenticateToken - Token verified successfully:', decoded);
             req.user = decoded;
             next();
         } catch (error) {
-            console.error('Token verification failed:', error);
+            console.error('❌ AuthenticateToken - Token verification failed:', error.message);
             return res.status(403).json({ 
                 success: false, 
                 error: 'Token inválido ou expirado' 
