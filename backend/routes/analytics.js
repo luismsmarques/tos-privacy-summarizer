@@ -1143,6 +1143,9 @@ router.post('/migrate-sql', async (req, res) => {
     });
   }
 });
+
+// Endpoint para migrar base de dados (adicionar colunas em falta)
+router.post('/migrate', async (req, res) => {
   try {
     console.log('🔄 Executando migração da base de dados...');
     
