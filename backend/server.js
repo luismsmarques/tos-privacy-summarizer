@@ -142,7 +142,7 @@ app.use('/api/gemini', geminiRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/credits', creditsRoutes);
 app.use('/api/stripe', stripeRoutes);
-app.use('/api/analytics', auth.authenticateToken, analyticsRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Middleware para proteger todas as rotas do dashboard
 app.use('/dashboard', auth.protectDashboard);

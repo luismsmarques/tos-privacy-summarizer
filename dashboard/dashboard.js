@@ -378,11 +378,12 @@ class Dashboard {
             totalUsersEl.textContent = '-';
         }
         
-        // Total de resumos (usar successful_summaries)
+        // Total de resumos (somar successful + failed)
         const totalSummariesEl = document.getElementById('totalSummaries');
-        if (totalSummariesEl && overviewData.successful_summaries !== undefined) {
-            totalSummariesEl.textContent = parseInt(overviewData.successful_summaries).toLocaleString();
-            console.log('✅ Total summaries atualizado:', overviewData.successful_summaries);
+        if (totalSummariesEl && overviewData.successful_summaries !== undefined && overviewData.failed_summaries !== undefined) {
+            const totalSummaries = parseInt(overviewData.successful_summaries) + parseInt(overviewData.failed_summaries);
+            totalSummariesEl.textContent = totalSummaries.toLocaleString();
+            console.log('✅ Total summaries atualizado:', totalSummaries);
         } else if (totalSummariesEl) {
             totalSummariesEl.textContent = '-';
         }
@@ -1972,42 +1973,70 @@ class Dashboard {
         const failedSummariesEl = document.getElementById('failedSummariesCount');
         const avgProcessingTimeEl = document.getElementById('avgProcessingTime');
 
-        // Verificar se summariesData é um array válido
-        if (!Array.isArray(this.summariesData)) {
-            console.warn('⚠️ summariesData não é um array válido:', this.summariesData);
-            this.summariesData = [];
-        }
-
-        if (totalSummariesEl) {
-            totalSummariesEl.textContent = this.summariesData.length;
-        }
-
-        if (successfulSummariesEl) {
-            const successful = this.summariesData.filter(summary => 
-                summary && summary.success === true
-            ).length;
-            successfulSummariesEl.textContent = successful;
-        }
-
-        if (failedSummariesEl) {
-            const failed = this.summariesData.filter(summary => 
-                summary && summary.success === false
-            ).length;
-            failedSummariesEl.textContent = failed;
-        }
-
-        if (avgProcessingTimeEl) {
-            const successfulSummaries = this.summariesData.filter(summary => 
-                summary && summary.success === true && summary.duration
-            );
+        // Usar dados da API em vez de calcular localmente
+        if (this.data.overview && this.data.overview.successful_summaries !== undefined) {
+            const overview = this.data.overview;
             
-            if (successfulSummaries.length > 0) {
-                const avgDuration = successfulSummaries.reduce((sum, summary) => 
-                    sum + (summary.duration / 1000), 0
-                ) / successfulSummaries.length;
-                avgProcessingTimeEl.textContent = avgDuration.toFixed(1);
-            } else {
-                avgProcessingTimeEl.textContent = '0.0';
+            // Total de resumos = bem-sucedidos + falhados
+            const totalSummaries = parseInt(overview.successful_summaries || 0) + parseInt(overview.failed_summaries || 0);
+            
+            if (totalSummariesEl) {
+                totalSummariesEl.textContent = totalSummaries.toLocaleString();
+            }
+
+            if (successfulSummariesEl) {
+                successfulSummariesEl.textContent = parseInt(overview.successful_summaries || 0).toLocaleString();
+            }
+
+            if (failedSummariesEl) {
+                failedSummariesEl.textContent = parseInt(overview.failed_summaries || 0).toLocaleString();
+            }
+
+            if (avgProcessingTimeEl && overview.avg_duration) {
+                const avgDurationSeconds = (overview.avg_duration / 1000).toFixed(1);
+                avgProcessingTimeEl.textContent = avgDurationSeconds;
+            }
+        } else {
+            // Fallback para cálculo local se não houver dados da API
+            console.warn('⚠️ Usando fallback para estatísticas de resumos');
+            
+            // Verificar se summariesData é um array válido
+            if (!Array.isArray(this.summariesData)) {
+                console.warn('⚠️ summariesData não é um array válido:', this.summariesData);
+                this.summariesData = [];
+            }
+
+            if (totalSummariesEl) {
+                totalSummariesEl.textContent = this.summariesData.length;
+            }
+
+            if (successfulSummariesEl) {
+                const successful = this.summariesData.filter(summary => 
+                    summary && summary.success === true
+                ).length;
+                successfulSummariesEl.textContent = successful;
+            }
+
+            if (failedSummariesEl) {
+                const failed = this.summariesData.filter(summary => 
+                    summary && summary.success === false
+                ).length;
+                failedSummariesEl.textContent = failed;
+            }
+
+            if (avgProcessingTimeEl) {
+                const successfulSummaries = this.summariesData.filter(summary => 
+                    summary && summary.success === true && summary.duration
+                );
+                
+                if (successfulSummaries.length > 0) {
+                    const avgDuration = successfulSummaries.reduce((sum, summary) => 
+                        sum + (summary.duration / 1000), 0
+                    ) / successfulSummaries.length;
+                    avgProcessingTimeEl.textContent = avgDuration.toFixed(1);
+                } else {
+                    avgProcessingTimeEl.textContent = '0.0';
+                }
             }
         }
     }
