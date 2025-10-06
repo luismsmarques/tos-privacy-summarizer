@@ -42,6 +42,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const timeSaved = document.getElementById('timeSaved');
     const creditsText = document.getElementById('creditsText');
     const creditsBadge = document.getElementById('creditsBadge');
+    
+    // API Status elements
+    const apiStatusIcon = document.getElementById('apiStatusIcon');
+    const apiModeText = document.getElementById('apiModeText');
+    const apiDescriptionText = document.getElementById('apiDescriptionText');
+    const apiBadge = document.getElementById('apiBadge');
+    const creditsStatus = document.getElementById('creditsStatus');
 
     // Estado da aplicação
     let isProcessing = false;
@@ -399,21 +406,23 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Carregar créditos
+    // Carregar créditos e atualizar status da API
     async function loadCredits() {
         try {
             const result = await chrome.storage.local.get(['sharedCredits', 'apiKey']);
             const credits = result.sharedCredits || 5;
             const hasApiKey = !!result.apiKey;
             
+            // Atualizar status da API
+            updateApiStatus(hasApiKey, credits);
+            
             if (hasApiKey) {
-                if (creditsText) creditsText.textContent = 'Conta Premium (Ilimitado)';
-                if (creditsBadge) {
-                    creditsBadge.textContent = 'PREMIUM';
-                    creditsBadge.classList.add('premium');
-                }
+                // Usando API própria - esconder seção de créditos
+                if (creditsStatus) creditsStatus.style.display = 'none';
                 if (actionButtonCost) actionButtonCost.textContent = '(Gratuito)';
             } else {
+                // Usando créditos grátis - mostrar seção de créditos
+                if (creditsStatus) creditsStatus.style.display = 'flex';
                 if (creditsText) creditsText.textContent = `${credits} Créditos Grátis Restantes`;
                 if (creditsBadge) {
                     creditsBadge.textContent = 'GRÁTIS';
@@ -429,6 +438,29 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Erro ao carregar créditos:', error);
+        }
+    }
+    
+    // Atualizar status da API
+    function updateApiStatus(hasApiKey, credits) {
+        if (hasApiKey) {
+            // Usando API própria do utilizador
+            if (apiStatusIcon) apiStatusIcon.textContent = 'key';
+            if (apiModeText) apiModeText.textContent = 'Sua Chave Gemini';
+            if (apiDescriptionText) apiDescriptionText.textContent = 'Usando sua chave API pessoal';
+            if (apiBadge) {
+                apiBadge.textContent = 'SUA API';
+                apiBadge.className = 'api-badge own-api';
+            }
+        } else {
+            // Usando API da extensão (Vercel)
+            if (apiStatusIcon) apiStatusIcon.textContent = 'cloud';
+            if (apiModeText) apiModeText.textContent = 'API da Extensão';
+            if (apiDescriptionText) apiDescriptionText.textContent = 'Usando chave configurada no servidor';
+            if (apiBadge) {
+                apiBadge.textContent = 'SERVIDOR';
+                apiBadge.className = 'api-badge server-api';
+            }
         }
     }
 
@@ -503,6 +535,15 @@ document.addEventListener('DOMContentLoaded', function() {
             useOwnApiModalBtn.addEventListener('click', () => {
                 chrome.runtime.openOptionsPage();
                 hideCreditsModal();
+            });
+        }
+        
+        // Botão Configurar API na área de quick actions
+        const configureApiLink = document.getElementById('configureApiLink');
+        if (configureApiLink) {
+            configureApiLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                chrome.runtime.openOptionsPage();
             });
         }
     }
