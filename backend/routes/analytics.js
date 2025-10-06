@@ -931,6 +931,14 @@ router.post('/test-db-connection', async (req, res) => {
     const result = await db.query('SELECT NOW() as current_time, COUNT(*) as total_summaries FROM summaries');
     console.log('🧪 Query de teste executada com sucesso:', result.rows[0]);
     
+    // Criar usuário de teste
+    console.log('🧪 Criando usuário de teste...');
+    try {
+      await db.createUser('test_user', 'test_device');
+    } catch (error) {
+      console.log('⚠️ Usuário de teste já existe ou erro:', error.message);
+    }
+    
     // Testar inserção de resumo de teste
     console.log('🧪 Testando inserção de resumo...');
     const testSummaryId = `test_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
