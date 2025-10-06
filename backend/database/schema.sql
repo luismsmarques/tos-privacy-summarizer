@@ -30,6 +30,9 @@ CREATE TABLE IF NOT EXISTS summaries (
     summary TEXT,
     processing_time DECIMAL(10,2),
     focus VARCHAR(50) DEFAULT 'privacy',
+    rating_complexidade INTEGER DEFAULT 0, -- 1-10 escala de complexidade
+    rating_boas_praticas INTEGER DEFAULT 0, -- 1-10 escala de boas práticas
+    risk_score INTEGER DEFAULT 0, -- 1-10 escala de risco (calculado)
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE

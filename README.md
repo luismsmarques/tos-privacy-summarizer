@@ -6,7 +6,7 @@
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
 [![Status](https://img.shields.io/badge/status-Production%20Ready-success)](https://github.com/luismsmarques/tos-privacy-summarizer)
 
-Uma extensão do Chrome que utiliza **Inteligência Artificial** para resumir Termos de Serviço e Políticas de Privacidade de forma clara e compreensível. Nunca mais aceite termos sem entender o que está a concordar!
+**O Seu Advogado Digital com IA.** Analise Termos de Serviço e Políticas de Privacidade de forma segura, receba ratings de risco e poupe horas de leitura com o poder do Google Gemini. Acionável e Seguro.
 
 ## ✨ Funcionalidades Principais
 
@@ -38,6 +38,9 @@ Uma extensão do Chrome que utiliza **Inteligência Artificial** para resumir Te
 - **API Própria**: Configure sua própria chave Google Gemini
 - **Compra de Créditos**: Sistema de pagamento integrado com Stripe
 - **Gestão transparente** de créditos e utilização
+
+#### **Porquê Pagar?**
+**O Nosso Comprometimento:** Cada resumo de alta precisão requer o uso do modelo avançado Google Gemini, processamento em backend seguro (Vercel) e gestão de base de dados. O nosso sistema de créditos cobre estes custos, garantindo a mais alta qualidade, velocidade e privacidade, que extensões gratuitas e menos robustas não conseguem oferecer.
 
 ## 🚀 Instalação e Configuração
 

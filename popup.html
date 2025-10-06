@@ -280,6 +280,269 @@
             transition: width 0.3s ease;
         }
 
+        .rating-fill.complexity {
+            background: var(--md-sys-color-tertiary);
+        }
+
+        .rating-fill.practices {
+            background: var(--md-sys-color-success);
+        }
+
+        /* Risk Score Display Styles */
+        .risk-score-display {
+            background: var(--md-sys-color-surface-container-high);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 12px;
+            border: 1px solid var(--md-sys-color-outline-variant);
+        }
+
+        .risk-score-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            font-weight: 500;
+            color: var(--md-sys-color-on-surface);
+        }
+
+        .risk-score-content {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .risk-score-main {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--md-sys-color-surface-container);
+            border-radius: 8px;
+            border: 1px solid var(--md-sys-color-outline-variant);
+        }
+
+        .risk-score-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--md-sys-color-primary);
+        }
+
+        .risk-score-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--md-sys-color-on-surface-variant);
+        }
+
+        .risk-score-main.low .risk-score-number {
+            color: var(--md-sys-color-success);
+        }
+
+        .risk-score-main.medium .risk-score-number {
+            color: var(--md-sys-color-warning);
+        }
+
+        .risk-score-main.high .risk-score-number {
+            color: var(--md-sys-color-error);
+        }
+
+        .risk-breakdown {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .risk-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--md-sys-color-on-surface-variant);
+        }
+
+        .risk-item .rating-bar {
+            width: 40px;
+        }
+
+        /* Credits Modal Styles */
+        .credits-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1000;
+        }
+
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: var(--md-sys-color-surface-container);
+            border-radius: 16px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 24px 24px 16px 24px;
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+        }
+
+        .modal-icon {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+            width: 48px;
+            height: 48px;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .modal-title {
+            flex: 1;
+        }
+
+        .modal-title h3 {
+            margin: 0 0 4px 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--md-sys-color-on-surface);
+        }
+
+        .modal-title p {
+            margin: 0;
+            font-size: 14px;
+            color: var(--md-sys-color-on-surface-variant);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--md-sys-color-on-surface);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+
+        .modal-close:hover {
+            background: var(--md-sys-color-surface-container-high);
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .credits-reasons h4 {
+            margin: 0 0 16px 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--md-sys-color-on-surface);
+        }
+
+        .reasons-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 24px 0;
+        }
+
+        .reasons-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+        }
+
+        .reasons-list li:last-child {
+            border-bottom: none;
+        }
+
+        .reasons-list .material-icons {
+            color: var(--md-sys-color-primary);
+            font-size: 20px;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .reasons-list div {
+            flex: 1;
+        }
+
+        .reasons-list strong {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--md-sys-color-on-surface);
+            margin-bottom: 2px;
+        }
+
+        .reasons-list span {
+            font-size: 12px;
+            color: var(--md-sys-color-on-surface-variant);
+            line-height: 1.4;
+        }
+
+        .credits-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .credits-actions .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .credits-actions .btn-primary {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+        }
+
+        .credits-actions .btn-primary:hover {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+        }
+
+        .credits-actions .btn-secondary {
+            background: var(--md-sys-color-surface-container-high);
+            color: var(--md-sys-color-on-surface);
+            border: 1px solid var(--md-sys-color-outline);
+        }
+
+        .credits-actions .btn-secondary:hover {
+            background: var(--md-sys-color-surface-container-highest);
+        }
+
         /* Context Data Zone */
         .context-zone {
             padding: 16px;
@@ -827,6 +1090,36 @@
                 <span>Alta</span>
             </div>
         </div>
+        
+        <!-- Risk Score Display (Hidden by default, shown after analysis) -->
+        <div class="risk-score-display hidden" id="riskScoreDisplay">
+            <div class="risk-score-header">
+                <span class="material-icons">security</span>
+                <span>Score de Risco</span>
+            </div>
+            <div class="risk-score-content">
+                <div class="risk-score-main" id="riskScoreMain">
+                    <span class="risk-score-number" id="riskScoreNumber">-</span>
+                    <span class="risk-score-label" id="riskScoreLabel">A calcular...</span>
+                </div>
+                <div class="risk-breakdown" id="riskBreakdown">
+                    <div class="risk-item">
+                        <span>Complexidade:</span>
+                        <div class="rating-bar">
+                            <div class="rating-fill complexity" id="complexityBar"></div>
+                        </div>
+                        <span id="complexityText">-</span>
+                    </div>
+                    <div class="risk-item">
+                        <span>Boas Práticas:</span>
+                        <div class="rating-bar">
+                            <div class="rating-fill practices" id="practicesBar"></div>
+                        </div>
+                        <span id="practicesText">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Context Data Zone -->
@@ -918,6 +1211,66 @@
     <!-- Error Container (Hidden by default) -->
     <div id="errorContainer" class="error-message hidden">
         <div id="errorMessage"></div>
+    </div>
+
+    <!-- Credits Insufficient Modal (Hidden by default) -->
+    <div id="creditsModal" class="credits-modal hidden">
+        <div class="modal-overlay">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-icon">
+                        <span class="material-icons">account_balance_wallet</span>
+                    </div>
+                    <div class="modal-title">
+                        <h3>Créditos Insuficientes</h3>
+                        <p>Recarregue para continuar a análise premium</p>
+                    </div>
+                    <button class="modal-close" id="closeCreditsModal">
+                        <span class="material-icons">close</span>
+                    </button>
+                </div>
+                
+                <div class="modal-body">
+                    <div class="credits-reasons">
+                        <h4>Porquê pagar?</h4>
+                        <ul class="reasons-list">
+                            <li>
+                                <span class="material-icons">security</span>
+                                <div>
+                                    <strong>Segurança</strong>
+                                    <span>Processamento em backend seguro (Vercel)</span>
+                                </div>
+                            </li>
+                            <li>
+                                <span class="material-icons">speed</span>
+                                <div>
+                                    <strong>Velocidade Gemini Pro</strong>
+                                    <span>Modelo avançado para máxima precisão</span>
+                                </div>
+                            </li>
+                            <li>
+                                <span class="material-icons">analytics</span>
+                                <div>
+                                    <strong>Análise Estruturada</strong>
+                                    <span>Ratings de risco e boas práticas</span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="credits-actions">
+                        <button class="btn btn-primary" id="buyCreditsModalBtn">
+                            <span class="material-icons">shopping_cart</span>
+                            Comprar Créditos
+                        </button>
+                        <button class="btn btn-secondary" id="useOwnApiModalBtn">
+                            <span class="material-icons">key</span>
+                            Usar Minha Chave API
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     </div>

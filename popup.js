@@ -356,6 +356,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 chrome.tabs.create({ url: chrome.runtime.getURL('checkout.html') });
             });
         }
+        
+        // Modal de créditos
+        const closeCreditsModal = document.getElementById('closeCreditsModal');
+        if (closeCreditsModal) {
+            closeCreditsModal.addEventListener('click', hideCreditsModal);
+        }
+        
+        const buyCreditsModalBtn = document.getElementById('buyCreditsModalBtn');
+        if (buyCreditsModalBtn) {
+            buyCreditsModalBtn.addEventListener('click', () => {
+                chrome.tabs.create({ url: chrome.runtime.getURL('checkout.html') });
+                hideCreditsModal();
+            });
+        }
+        
+        const useOwnApiModalBtn = document.getElementById('useOwnApiModalBtn');
+        if (useOwnApiModalBtn) {
+            useOwnApiModalBtn.addEventListener('click', () => {
+                chrome.runtime.openOptionsPage();
+                hideCreditsModal();
+            });
+        }
     }
 
     // Handler para resumir
@@ -363,6 +385,17 @@ document.addEventListener('DOMContentLoaded', function() {
         if (isProcessing) return;
         
         try {
+            // Verificar créditos antes de iniciar
+            const result = await chrome.storage.local.get(['sharedCredits', 'apiKey']);
+            const credits = result.sharedCredits || 5;
+            const hasApiKey = !!result.apiKey;
+            
+            if (!hasApiKey && credits <= 0) {
+                console.log('Créditos insuficientes, mostrando modal');
+                showCreditsModal();
+                return;
+            }
+            
             console.log('Iniciando processo de resumo...');
             isProcessing = true;
             if (actionButton) actionButton.disabled = true;
@@ -516,6 +549,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (parsedSummary.resumo_conciso || parsedSummary.summary) {
             console.log('Renderizando resumo com estrutura:', Object.keys(parsedSummary));
             summaryContent.innerHTML = formatStructuredSummary(parsedSummary);
+            
+            // Mostrar ratings se disponíveis
+            if (parsedSummary.ratings) {
+                displayRiskScore(parsedSummary.ratings);
+            }
         } else {
             console.log('Nenhum resumo encontrado no objeto');
             summaryContent.innerHTML = '<p>Resumo não disponível</p>';
@@ -527,6 +565,62 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Mostrar botão voltar
         backBtn.classList.remove('hidden');
+    }
+
+    // Mostrar score de risco
+    function displayRiskScore(ratings) {
+        const riskScoreDisplay = document.getElementById('riskScoreDisplay');
+        const riskScoreNumber = document.getElementById('riskScoreNumber');
+        const riskScoreLabel = document.getElementById('riskScoreLabel');
+        const riskScoreMain = document.getElementById('riskScoreMain');
+        const complexityBar = document.getElementById('complexityBar');
+        const complexityText = document.getElementById('complexityText');
+        const practicesBar = document.getElementById('practicesBar');
+        const practicesText = document.getElementById('practicesText');
+        
+        if (!riskScoreDisplay || !ratings) return;
+        
+        const { risk_score, complexidade, boas_praticas } = ratings;
+        
+        // Definir classe de risco
+        const riskClass = risk_score <= 3 ? 'low' : risk_score <= 6 ? 'medium' : 'high';
+        const riskLabel = risk_score <= 3 ? 'Baixo Risco' : risk_score <= 6 ? 'Risco Médio' : 'Alto Risco';
+        
+        // Atualizar elementos
+        if (riskScoreNumber) riskScoreNumber.textContent = `${risk_score}/10`;
+        if (riskScoreLabel) riskScoreLabel.textContent = riskLabel;
+        if (riskScoreMain) {
+            riskScoreMain.className = `risk-score-main ${riskClass}`;
+        }
+        
+        // Atualizar barras de rating
+        if (complexityBar) complexityBar.style.width = `${(complexidade / 10) * 100}%`;
+        if (complexityText) complexityText.textContent = `${complexidade}/10`;
+        if (practicesBar) practicesBar.style.width = `${(boas_praticas / 10) * 100}%`;
+        if (practicesText) practicesText.textContent = `${boas_praticas}/10`;
+        
+        // Mostrar o display
+        riskScoreDisplay.classList.remove('hidden');
+        
+        console.log(`📊 Risk score exibido: ${risk_score}/10 (${riskClass})`);
+    }
+
+    // Mostrar modal de créditos insuficientes
+    function showCreditsModal() {
+        const creditsModal = document.getElementById('creditsModal');
+        if (creditsModal) {
+            creditsModal.classList.remove('hidden');
+            console.log('Modal de créditos mostrado');
+        }
+    }
+
+    // Esconder modal de créditos
+    function hideCreditsModal() {
+        const creditsModal = document.getElementById('creditsModal');
+        if (creditsModal) {
+            creditsModal.classList.add('hidden');
+            console.log('Modal de créditos escondido');
+        }
     }
 
     // Abrir página dedicada para o resumo

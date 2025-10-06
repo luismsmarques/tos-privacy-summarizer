@@ -164,21 +164,24 @@ class Database {
             // Detectar tipo de documento baseado no conteúdo
             const documentType = this.detectDocumentType(summary || '');
             
+            // Calcular ratings de complexidade e boas práticas
+            const ratings = this.calculateRatings(summary || '', textLength, documentType);
+            
             // Primeiro, tentar inserir com todas as colunas (schema completo)
             try {
                 const query = `
                     INSERT INTO summaries (
                         summary_id, user_id, success, duration, text_length, 
                         url, summary, title, document_type, word_count, 
-                        processing_time, focus
+                        processing_time, focus, rating_complexidade, rating_boas_praticas, risk_score
                     )
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
                     RETURNING *
                 `;
                 const params = [
                     summaryId, userId, success, duration, textLength, 
                     url, summary, title, documentType, wordCount, 
-                    processingTime, focus
+                    processingTime, focus, ratings.complexidade, ratings.boas_praticas, ratings.risk_score
                 ];
                 
                 console.log(`🗄️ Tentando inserção completa com todas as colunas`);
@@ -577,6 +580,63 @@ class Database {
             this.isConnected = false;
             console.log('Database connection closed');
         }
+    }
+
+    // Calcular ratings de complexidade e boas práticas
+    calculateRatings(summary, textLength, documentType) {
+        // Rating de Complexidade (1-10)
+        let complexidade = 1;
+        
+        // Baseado no tamanho do texto
+        if (textLength > 10000) complexidade += 3;
+        else if (textLength > 5000) complexidade += 2;
+        else if (textLength > 2000) complexidade += 1;
+        
+        // Baseado no tipo de documento
+        if (documentType === 'privacy_policy') complexidade += 2;
+        else if (documentType === 'terms_of_service') complexidade += 1;
+        
+        // Baseado no conteúdo do resumo (palavras-chave complexas)
+        const complexKeywords = ['jurisdição', 'arbitragem', 'litígio', 'responsabilidade', 'indenização', 'cláusula', 'penalidade', 'multa'];
+        const complexCount = complexKeywords.filter(keyword => 
+            summary.toLowerCase().includes(keyword)
+        ).length;
+        complexidade += Math.min(complexCount, 3);
+        
+        // Limitar entre 1-10
+        complexidade = Math.min(Math.max(complexidade, 1), 10);
+        
+        // Rating de Boas Práticas (1-10, onde 10 é melhor)
+        let boas_praticas = 5; // Base neutra
+        
+        // Indicadores de boas práticas
+        const goodPractices = ['transparência', 'clareza', 'direitos do utilizador', 'proteção de dados', 'consentimento'];
+        const goodCount = goodPractices.filter(practice => 
+            summary.toLowerCase().includes(practice)
+        ).length;
+        boas_praticas += goodCount;
+        
+        // Indicadores de más práticas
+        const badPractices = ['alteração unilateral', 'responsabilidade limitada', 'dados pessoais', 'terceiros', 'marketing'];
+        const badCount = badPractices.filter(practice => 
+            summary.toLowerCase().includes(practice)
+        ).length;
+        boas_praticas -= badCount;
+        
+        // Limitar entre 1-10
+        boas_praticas = Math.min(Math.max(boas_praticas, 1), 10);
+        
+        // Risk Score (1-10, onde 10 é mais arriscado)
+        // Combinação de alta complexidade e baixas boas práticas
+        const risk_score = Math.round((complexidade + (10 - boas_praticas)) / 2);
+        
+        console.log(`📊 Ratings calculados: complexidade=${complexidade}, boas_praticas=${boas_praticas}, risk_score=${risk_score}`);
+        
+        return {
+            complexidade,
+            boas_praticas,
+            risk_score: Math.min(Math.max(risk_score, 1), 10)
+        };
     }
 }
 

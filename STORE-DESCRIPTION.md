@@ -2,7 +2,7 @@
 
 ## 📋 Descrição
 
-**ToS & Privacy Summarizer** é uma extensão do Chrome que utiliza inteligência artificial para resumir Termos de Serviço e Políticas de Privacidade de forma clara e compreensível.
+**O Seu Advogado Digital com IA.** Analise Termos de Serviço e Políticas de Privacidade de forma segura, receba ratings de risco e poupe horas de leitura com o poder do Google Gemini. Acionável e Seguro.
 
 ## ✨ Funcionalidades
 
