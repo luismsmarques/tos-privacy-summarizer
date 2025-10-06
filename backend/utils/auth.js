@@ -68,7 +68,7 @@ class AuthService {
     }
 
     // Middleware de autenticação
-    authenticateToken(req, res, next) {
+    authenticateToken = (req, res, next) => {
         const authHeader = req.headers['authorization'];
         const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
@@ -105,7 +105,7 @@ class AuthService {
     }
 
     // Middleware para proteger dashboard
-    protectDashboard(req, res, next) {
+    protectDashboard = (req, res, next) => {
         // Para arquivos estáticos, permitir acesso direto
         if (req.path.includes('.') && !req.path.endsWith('/')) {
             return next();
