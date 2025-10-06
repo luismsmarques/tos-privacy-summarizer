@@ -895,7 +895,7 @@ async function registerSummary(userId, success = true, duration = 0, documentTyp
     }
     
     console.log('📝 Chamando db.createSummary...');
-    const result = await db.createSummary(summaryId, userId, success, duration, documentType, textLength, url, summary, title, focus);
+    const result = await db.createSummary(summaryId, userId, success, duration, textLength, url, summary);
     console.log(`✅ Resumo criado com sucesso: ${summaryId}`, result);
     return result;
   } catch (error) {
