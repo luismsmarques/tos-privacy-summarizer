@@ -1054,11 +1054,20 @@ router.post('/migrate', async (req, res) => {
     // Migração 3: Adicionar trigger para updated_at
     try {
       console.log('📝 Migração 3: Adicionar trigger update_summaries_updated_at');
-      await db.query(`
-        CREATE TRIGGER IF NOT EXISTS update_summaries_updated_at BEFORE UPDATE ON summaries
-        FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()
+      // Verificar se o trigger já existe
+      const triggerCheck = await db.query(`
+        SELECT 1 FROM pg_trigger WHERE tgname = 'update_summaries_updated_at'
       `);
-      migrationsApplied.push('Trigger update_summaries_updated_at criado');
+      
+      if (triggerCheck.rows.length === 0) {
+        await db.query(`
+          CREATE TRIGGER update_summaries_updated_at BEFORE UPDATE ON summaries
+          FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()
+        `);
+        migrationsApplied.push('Trigger update_summaries_updated_at criado');
+      } else {
+        migrationsApplied.push('Trigger update_summaries_updated_at já existe');
+      }
     } catch (error) {
       console.log('⚠️ Migração 3 já aplicada ou erro:', error.message);
     }
