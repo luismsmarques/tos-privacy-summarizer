@@ -4,6 +4,7 @@
 [![Version](https://img.shields.io/badge/version-1.2.0-blue)](https://github.com/luismsmarques/tos-privacy-summarizer)
 [![License](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
+[![Status](https://img.shields.io/badge/status-Production%20Ready-success)](https://github.com/luismsmarques/tos-privacy-summarizer)
 
 Uma extensão do Chrome que utiliza **Inteligência Artificial** para resumir Termos de Serviço e Políticas de Privacidade de forma clara e compreensível. Nunca mais aceite termos sem entender o que está a concordar!
 
@@ -12,11 +13,13 @@ Uma extensão do Chrome que utiliza **Inteligência Artificial** para resumir Te
 ### 🤖 **Análise com IA**
 - Utiliza **Google Gemini AI** para análise inteligente de documentos legais
 - Transforma texto jurídico complexo em informações claras e compreensíveis
+- **Processamento em tempo real** com feedback visual
 - Detecção automática do tipo de documento (Termos de Serviço vs Política de Privacidade)
 
 ### 📄 **Resumos Estruturados**
 - **Resumo Conciso**: Visão geral em linguagem simples
 - **Pontos-Chave**: 5-7 pontos essenciais destacados
+- **Formatação Markdown** para melhor legibilidade
 - **Alertas de Privacidade**: Riscos importantes identificados automaticamente
 
 ### 🎯 **Foco Personalizado**
@@ -24,15 +27,17 @@ Uma extensão do Chrome que utiliza **Inteligência Artificial** para resumir Te
 - **Termos**: Foca em direitos e responsabilidades do utilizador
 - **Geral**: Análise equilibrada de ambos os aspetos
 
-### 📊 **Histórico e Gestão**
-- Histórico completo dos resumos criados
-- Dashboard administrativo com analytics detalhados
-- Sistema de créditos flexível
+### 📊 **Histórico e Gestão Avançada**
+- **Histórico completo** dos resumos criados com filtros avançados
+- **Dashboard administrativo** com analytics detalhados em tempo real
+- **Sistema de créditos** flexível e transparente
+- **Exportação de dados** em múltiplos formatos (JSON, CSV, TXT)
 
-### 💳 **Sistema de Créditos**
+### 💳 **Sistema de Créditos Inteligente**
 - **API Compartilhada**: Use créditos gratuitos incluídos
 - **API Própria**: Configure sua própria chave Google Gemini
 - **Compra de Créditos**: Sistema de pagamento integrado com Stripe
+- **Gestão transparente** de créditos e utilização
 
 ## 🚀 Instalação e Configuração
 
@@ -218,6 +223,22 @@ npm start           # Iniciar servidor backend
 npm run dev         # Modo desenvolvimento com nodemon
 ```
 
+
+## 🆕 Últimas Atualizações (v1.2.0)
+
+### **✅ Melhorias Implementadas**
+- **Dashboard Corrigido**: Estatísticas agora mostram dados reais em vez de fallback
+- **Conexão Backend**: Problemas de CORS e URL resolvidos
+- **Segurança Aprimorada**: `.gitignore` melhorado com arquivos sensíveis
+- **Organização**: Pasta `chrome-store-package` otimizada para distribuição
+- **Documentação**: README atualizado com todas as funcionalidades
+
+### **🔧 Correções Técnicas**
+- Contagem de resumos corrigida (512 total, 511 bem-sucedidos)
+- URLs do backend configuradas corretamente
+- CORS configurado para localhost:8080
+- Arquivos de ambiente protegidos no Git
+
 ## 📊 Analytics e Monitorização
 
 ### **Dashboard Administrativo**
@@ -229,11 +250,12 @@ npm run dev         # Modo desenvolvimento com nodemon
   - Monitorização de erros
 
 ### **Métricas Disponíveis**
-- Total de utilizadores
-- Resumos criados
-- Taxa de sucesso
+- Total de utilizadores ativos
+- Resumos criados (bem-sucedidos e falhados)
+- Taxa de sucesso em tempo real
 - Tempo médio de processamento
 - Tipos de documentos analisados
+- Distribuição geográfica dos utilizadores
 
 ## 🤝 Contribuição
 
@@ -272,6 +294,9 @@ R: Sim, pode configurar sua própria chave Google Gemini nas configurações.
 **P: Quanto custa usar a extensão?**
 R: A extensão é gratuita com créditos incluídos. Pode comprar créditos adicionais se necessário.
 
+
+**P: O dashboard mostra dados reais?**
+R: Sim, desde a v1.2.0 o dashboard mostra dados reais da base de dados em tempo real.
 ## 📈 Roadmap
 
 ### **Versão 1.3.0 (Próxima)**
