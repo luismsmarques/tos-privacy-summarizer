@@ -1128,6 +1128,681 @@
                 padding: 16px;
             }
         }
+
+        /* Settings Section Styles */
+        .settings-category {
+            background: var(--md-sys-color-surface-container-low);
+            border-radius: var(--md-sys-shape-corner-large);
+            margin-bottom: 24px;
+            border: 1px solid var(--md-sys-color-outline-variant);
+            overflow: hidden;
+        }
+
+        .settings-category.danger-zone {
+            border-color: var(--md-sys-color-error);
+            background: var(--md-sys-color-error-container);
+        }
+
+        .category-header {
+            padding: 20px 24px;
+            background: var(--md-sys-color-surface-container);
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+        }
+
+        .category-header:hover {
+            background: var(--md-sys-color-surface-container-high);
+        }
+
+        .category-header h3 {
+            font-size: var(--md-sys-typescale-title-medium-font-size);
+            font-weight: var(--md-sys-typescale-title-medium-font-weight);
+            color: var(--md-sys-color-on-surface);
+            margin: 0;
+        }
+
+        .category-header .material-symbols-outlined {
+            color: var(--md-sys-color-on-surface-variant);
+            transition: transform var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+        }
+
+        .category-header.expanded .material-symbols-outlined {
+            transform: rotate(180deg);
+        }
+
+        .category-content {
+            padding: 24px;
+            display: none;
+        }
+
+        .category-content.expanded {
+            display: block;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .setting-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .setting-item.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .setting-item label {
+            font-size: var(--md-sys-typescale-body-large-font-size);
+            font-weight: var(--md-sys-typescale-body-large-font-weight);
+            color: var(--md-sys-color-on-surface);
+        }
+
+        .setting-item input,
+        .setting-item select {
+            padding: 12px 16px;
+            border: 1px solid var(--md-sys-color-outline);
+            border-radius: var(--md-sys-shape-corner-medium);
+            background: var(--md-sys-color-surface);
+            color: var(--md-sys-color-on-surface);
+            font-size: var(--md-sys-typescale-body-large-font-size);
+            transition: all var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+        }
+
+        .setting-item input:focus,
+        .setting-item select:focus {
+            outline: none;
+            border-color: var(--md-sys-color-primary);
+            box-shadow: 0 0 0 2px var(--md-sys-color-primary-container);
+        }
+
+        .input-with-action {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-with-action input {
+            flex: 1;
+        }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            color: var(--md-sys-color-on-surface-variant);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: var(--md-sys-shape-corner-small);
+            transition: all var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+        }
+
+        .btn-icon:hover {
+            background: var(--md-sys-color-surface-container-high);
+            color: var(--md-sys-color-on-surface);
+        }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--md-sys-color-outline-variant);
+            transition: var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--md-sys-color-primary);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        /* Danger Zone */
+        .danger-warning {
+            background: var(--md-sys-color-error-container);
+            color: var(--md-sys-color-on-error-container);
+            padding: 16px;
+            border-radius: var(--md-sys-shape-corner-medium);
+            margin-bottom: 24px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .danger-warning .material-symbols-outlined {
+            font-size: 24px;
+            margin-top: 2px;
+        }
+
+        .danger-warning p {
+            margin: 0;
+            font-size: var(--md-sys-typescale-body-medium-font-size);
+        }
+
+        .btn-danger {
+            background: var(--md-sys-color-error);
+            color: var(--md-sys-color-on-error);
+        }
+
+        .btn-danger:hover {
+            background: var(--md-sys-color-error-container);
+            color: var(--md-sys-color-on-error-container);
+        }
+
+        /* Performance Monitor */
+        .performance-monitor {
+            background: var(--md-sys-color-surface-container-low);
+            border-radius: var(--md-sys-shape-corner-large);
+            padding: 24px;
+            border: 1px solid var(--md-sys-color-outline-variant);
+        }
+
+        .performance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .performance-item {
+            background: var(--md-sys-color-surface-container);
+            padding: 20px;
+            border-radius: var(--md-sys-shape-corner-medium);
+            border: 1px solid var(--md-sys-color-outline-variant);
+        }
+
+        .performance-label {
+            font-size: var(--md-sys-typescale-body-medium-font-size);
+            color: var(--md-sys-color-on-surface-variant);
+            margin-bottom: 8px;
+        }
+
+        .performance-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--md-sys-color-primary);
+            margin-bottom: 12px;
+        }
+
+        .performance-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--md-sys-color-outline-variant);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .performance-fill {
+            height: 100%;
+            background: var(--md-sys-color-primary);
+            transition: width var(--md-sys-motion-duration-medium4) var(--md-sys-motion-easing-standard);
+            border-radius: 4px;
+        }
+
+        .performance-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        /* Responsive Settings */
+        @media (max-width: 768px) {
+            .settings-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .performance-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .category-content {
+                padding: 16px;
+            }
+            
+            .performance-monitor {
+                padding: 16px;
+            }
+        }
+
+        /* Analytics Section Styles */
+        .time-range-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .time-range-selector label {
+            font-size: var(--md-sys-typescale-body-medium-font-size);
+            color: var(--md-sys-color-on-surface-variant);
+        }
+
+        .time-range-selector select {
+            padding: 8px 12px;
+            border: 1px solid var(--md-sys-color-outline);
+            border-radius: var(--md-sys-shape-corner-small);
+            background: var(--md-sys-color-surface);
+            color: var(--md-sys-color-on-surface);
+            font-size: var(--md-sys-typescale-body-medium-font-size);
+        }
+
+        .analytics-metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .metric-card {
+            background: var(--md-sys-color-surface-container);
+            border-radius: var(--md-sys-shape-corner-large);
+            padding: 24px;
+            border: 1px solid var(--md-sys-color-outline-variant);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: all var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+        }
+
+        .metric-card:hover {
+            box-shadow: var(--md-sys-elevation-level2);
+            transform: translateY(-2px);
+        }
+
+        .metric-card.primary {
+            border-left: 4px solid var(--md-sys-color-primary);
+        }
+
+        .metric-card.success {
+            border-left: 4px solid var(--md-sys-color-tertiary);
+        }
+
+        .metric-card.warning {
+            border-left: 4px solid var(--md-sys-color-error);
+        }
+
+        .metric-card.info {
+            border-left: 4px solid var(--md-sys-color-secondary);
+        }
+
+        .metric-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .metric-card.primary .metric-icon {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+        }
+
+        .metric-card.success .metric-icon {
+            background: var(--md-sys-color-tertiary-container);
+            color: var(--md-sys-color-on-tertiary-container);
+        }
+
+        .metric-card.warning .metric-icon {
+            background: var(--md-sys-color-error-container);
+            color: var(--md-sys-color-on-error-container);
+        }
+
+        .metric-card.info .metric-icon {
+            background: var(--md-sys-color-secondary-container);
+            color: var(--md-sys-color-on-secondary-container);
+        }
+
+        .metric-content {
+            flex: 1;
+        }
+
+        .metric-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--md-sys-color-on-surface);
+            margin-bottom: 4px;
+        }
+
+        .metric-label {
+            font-size: var(--md-sys-typescale-body-medium-font-size);
+            color: var(--md-sys-color-on-surface-variant);
+            margin-bottom: 8px;
+        }
+
+        .metric-change {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: var(--md-sys-typescale-body-small-font-size);
+            font-weight: 500;
+        }
+
+        .metric-change.positive {
+            color: var(--md-sys-color-tertiary);
+        }
+
+        .metric-change.negative {
+            color: var(--md-sys-color-error);
+        }
+
+        .analytics-charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .chart-card {
+            background: var(--md-sys-color-surface-container);
+            border-radius: var(--md-sys-shape-corner-large);
+            border: 1px solid var(--md-sys-color-outline-variant);
+            overflow: hidden;
+        }
+
+        .chart-card.large {
+            grid-column: 1 / -1;
+        }
+
+        .chart-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chart-header h3 {
+            font-size: var(--md-sys-typescale-title-medium-font-size);
+            font-weight: var(--md-sys-typescale-title-medium-font-weight);
+            color: var(--md-sys-color-on-surface);
+            margin: 0;
+        }
+
+        .chart-controls,
+        .heatmap-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chart-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--md-sys-color-outline);
+            border-radius: var(--md-sys-shape-corner-small);
+            background: var(--md-sys-color-surface);
+            color: var(--md-sys-color-on-surface);
+            font-size: var(--md-sys-typescale-body-small-font-size);
+            cursor: pointer;
+            transition: all var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+        }
+
+        .chart-btn:hover {
+            background: var(--md-sys-color-surface-container-high);
+        }
+
+        .chart-btn.active {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            border-color: var(--md-sys-color-primary);
+        }
+
+        .chart-container {
+            padding: 24px;
+            height: 300px;
+        }
+
+        .heatmap-container {
+            padding: 24px;
+            height: 200px;
+            overflow: auto;
+        }
+
+        .top-urls-list {
+            padding: 24px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .url-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+        }
+
+        .url-item:last-child {
+            border-bottom: none;
+        }
+
+        .url-info {
+            flex: 1;
+            margin-right: 16px;
+        }
+
+        .url-domain {
+            font-weight: 500;
+            color: var(--md-sys-color-on-surface);
+            margin-bottom: 4px;
+        }
+
+        .url-path {
+            font-size: var(--md-sys-typescale-body-small-font-size);
+            color: var(--md-sys-color-on-surface-variant);
+            word-break: break-all;
+        }
+
+        .url-count {
+            font-weight: 600;
+            color: var(--md-sys-color-primary);
+        }
+
+        .analytics-insights {
+            background: var(--md-sys-color-surface-container-low);
+            border-radius: var(--md-sys-shape-corner-large);
+            padding: 24px;
+            margin-bottom: 32px;
+            border: 1px solid var(--md-sys-color-outline-variant);
+        }
+
+        .insights-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .insights-header h3 {
+            font-size: var(--md-sys-typescale-title-large-font-size);
+            font-weight: var(--md-sys-typescale-title-large-font-weight);
+            color: var(--md-sys-color-on-surface);
+            margin: 0;
+        }
+
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .insight-card {
+            background: var(--md-sys-color-surface-container);
+            border-radius: var(--md-sys-shape-corner-medium);
+            padding: 20px;
+            border: 1px solid var(--md-sys-color-outline-variant);
+            display: flex;
+            gap: 16px;
+        }
+
+        .insight-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .insight-content h4 {
+            font-size: var(--md-sys-typescale-title-medium-font-size);
+            font-weight: var(--md-sys-typescale-title-medium-font-weight);
+            color: var(--md-sys-color-on-surface);
+            margin: 0 0 8px 0;
+        }
+
+        .insight-content p {
+            font-size: var(--md-sys-typescale-body-medium-font-size);
+            color: var(--md-sys-color-on-surface-variant);
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .analytics-comparisons {
+            background: var(--md-sys-color-surface-container-low);
+            border-radius: var(--md-sys-shape-corner-large);
+            padding: 24px;
+            border: 1px solid var(--md-sys-color-outline-variant);
+        }
+
+        .comparison-header h3 {
+            font-size: var(--md-sys-typescale-title-large-font-size);
+            font-weight: var(--md-sys-typescale-title-large-font-weight);
+            color: var(--md-sys-color-on-surface);
+            margin: 0 0 24px 0;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .comparison-card {
+            background: var(--md-sys-color-surface-container);
+            border-radius: var(--md-sys-shape-corner-medium);
+            padding: 20px;
+            border: 1px solid var(--md-sys-color-outline-variant);
+        }
+
+        .comparison-card h4 {
+            font-size: var(--md-sys-typescale-title-medium-font-size);
+            font-weight: var(--md-sys-typescale-title-medium-font-weight);
+            color: var(--md-sys-color-on-surface);
+            margin: 0 0 16px 0;
+        }
+
+        .comparison-item,
+        .forecast-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+        }
+
+        .comparison-item:last-child,
+        .forecast-item:last-child {
+            border-bottom: none;
+        }
+
+        .comparison-label,
+        .forecast-label {
+            font-size: var(--md-sys-typescale-body-medium-font-size);
+            color: var(--md-sys-color-on-surface-variant);
+        }
+
+        .comparison-value,
+        .forecast-value {
+            font-weight: 600;
+            font-size: var(--md-sys-typescale-body-medium-font-size);
+        }
+
+        .comparison-value.positive,
+        .forecast-value.positive {
+            color: var(--md-sys-color-tertiary);
+        }
+
+        .comparison-value.negative,
+        .forecast-value.negative {
+            color: var(--md-sys-color-error);
+        }
+
+        /* Responsive Analytics */
+        @media (max-width: 768px) {
+            .analytics-metrics-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .analytics-charts-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .insights-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .comparison-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .chart-container {
+                height: 250px;
+                padding: 16px;
+            }
+            
+            .heatmap-container {
+                height: 150px;
+                padding: 16px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1489,16 +2164,557 @@
                 </section>
                 
                 <section id="analytics-section" class="content-section hidden">
-                    <div class="text-center">
-                        <h2>Analytics Detalhados</h2>
-                        <p>Esta secção será implementada em breve.</p>
+                    <div class="section-header">
+                        <h2>📊 Analytics Detalhados</h2>
+                        <div class="section-controls">
+                            <button class="btn btn-primary" id="refreshAnalyticsBtn">
+                                <span class="material-symbols-outlined">refresh</span>
+                                Atualizar Analytics
+                            </button>
+                            <button class="btn btn-secondary" id="exportAnalyticsBtn">
+                                <span class="material-symbols-outlined">download</span>
+                                Exportar Relatório
+                            </button>
+                            <div class="time-range-selector">
+                                <label for="analyticsTimeRange">Período:</label>
+                                <select id="analyticsTimeRange">
+                                    <option value="24h">Últimas 24h</option>
+                                    <option value="7d">Últimos 7 dias</option>
+                                    <option value="30d" selected>Últimos 30 dias</option>
+                                    <option value="90d">Últimos 90 dias</option>
+                                    <option value="1y">Último ano</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Métricas Principais -->
+                    <div class="analytics-metrics-grid">
+                        <div class="metric-card primary">
+                            <div class="metric-icon">
+                                <span class="material-symbols-outlined">trending_up</span>
+                            </div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="analyticsTotalRequests">-</div>
+                                <div class="metric-label">Total de Requests</div>
+                                <div class="metric-change positive" id="requestsGrowth">
+                                    <span class="material-symbols-outlined">arrow_upward</span>
+                                    <span id="requestsGrowthValue">+12%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="metric-card success">
+                            <div class="metric-icon">
+                                <span class="material-symbols-outlined">speed</span>
+                            </div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="analyticsAvgResponseTime">-</div>
+                                <div class="metric-label">Tempo Médio de Resposta</div>
+                                <div class="metric-change negative" id="responseTimeChange">
+                                    <span class="material-symbols-outlined">arrow_downward</span>
+                                    <span id="responseTimeValue">-8%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="metric-card warning">
+                            <div class="metric-icon">
+                                <span class="material-symbols-outlined">error</span>
+                            </div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="analyticsErrorRate">-</div>
+                                <div class="metric-label">Taxa de Erro</div>
+                                <div class="metric-change positive" id="errorRateChange">
+                                    <span class="material-symbols-outlined">arrow_downward</span>
+                                    <span id="errorRateValue">-2%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="metric-card info">
+                            <div class="metric-icon">
+                                <span class="material-symbols-outlined">memory</span>
+                            </div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="analyticsCacheHitRate">-</div>
+                                <div class="metric-label">Cache Hit Rate</div>
+                                <div class="metric-change positive" id="cacheHitChange">
+                                    <span class="material-symbols-outlined">arrow_upward</span>
+                                    <span id="cacheHitValue">+5%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gráficos Principais -->
+                    <div class="analytics-charts-grid">
+                        <!-- Gráfico de Requests ao Longo do Tempo -->
+                        <div class="chart-card large">
+                            <div class="chart-header">
+                                <h3>📈 Requests ao Longo do Tempo</h3>
+                                <div class="chart-controls">
+                                    <button class="chart-btn active" data-type="requests">Requests</button>
+                                    <button class="chart-btn" data-type="users">Utilizadores</button>
+                                    <button class="chart-btn" data-type="summaries">Resumos</button>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="requestsOverTimeChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Gráfico de Distribuição por Tipo -->
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3>📊 Distribuição por Tipo</h3>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="documentTypesChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Gráfico de Performance -->
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3>⚡ Performance Metrics</h3>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="performanceChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Gráfico de Utilizadores Ativos -->
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3>👥 Utilizadores Ativos</h3>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="activeUsersChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Heatmap de Atividade -->
+                        <div class="chart-card large">
+                            <div class="chart-header">
+                                <h3>🔥 Heatmap de Atividade</h3>
+                                <div class="heatmap-controls">
+                                    <button class="chart-btn active" data-period="daily">Diário</button>
+                                    <button class="chart-btn" data-period="weekly">Semanal</button>
+                                    <button class="chart-btn" data-period="monthly">Mensal</button>
+                                </div>
+                            </div>
+                            <div class="heatmap-container">
+                                <div id="activityHeatmap"></div>
+                            </div>
+                        </div>
+
+                        <!-- Top URLs -->
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3>🔗 Top URLs Processadas</h3>
+                            </div>
+                            <div class="top-urls-list" id="topUrlsList">
+                                <!-- URLs serão carregadas aqui -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Análises Avançadas -->
+                    <div class="analytics-insights">
+                        <div class="insights-header">
+                            <h3>🔍 Insights e Análises</h3>
+                            <button class="btn btn-secondary" id="generateInsightsBtn">
+                                <span class="material-symbols-outlined">auto_awesome</span>
+                                Gerar Insights
+                            </button>
+                        </div>
+                        
+                        <div class="insights-grid">
+                            <div class="insight-card">
+                                <div class="insight-icon">
+                                    <span class="material-symbols-outlined">trending_up</span>
+                                </div>
+                                <div class="insight-content">
+                                    <h4>Crescimento de Utilizadores</h4>
+                                    <p id="usersGrowthInsight">O número de utilizadores ativos cresceu 15% este mês comparado ao mês anterior.</p>
+                                </div>
+                            </div>
+
+                            <div class="insight-card">
+                                <div class="insight-icon">
+                                    <span class="material-symbols-outlined">schedule</span>
+                                </div>
+                                <div class="insight-content">
+                                    <h4>Horário de Pico</h4>
+                                    <p id="peakTimeInsight">O horário de maior atividade é entre 14h-16h, com 35% dos requests totais.</p>
+                                </div>
+                            </div>
+
+                            <div class="insight-card">
+                                <div class="insight-icon">
+                                    <span class="material-symbols-outlined">warning</span>
+                                </div>
+                                <div class="insight-content">
+                                    <h4>Alertas de Performance</h4>
+                                    <p id="performanceAlertInsight">Tempo de resposta aumentou 20% nas últimas 2 horas. Recomenda-se verificar o servidor.</p>
+                                </div>
+                            </div>
+
+                            <div class="insight-card">
+                                <div class="insight-icon">
+                                    <span class="material-symbols-outlined">recommend</span>
+                                </div>
+                                <div class="insight-content">
+                                    <h4>Recomendações</h4>
+                                    <p id="recommendationsInsight">Considere implementar cache adicional para URLs mais populares para melhorar performance.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Comparações e Tendências -->
+                    <div class="analytics-comparisons">
+                        <div class="comparison-header">
+                            <h3>📈 Comparações e Tendências</h3>
+                        </div>
+                        
+                        <div class="comparison-grid">
+                            <div class="comparison-card">
+                                <h4>Comparação Período Anterior</h4>
+                                <div class="comparison-metrics">
+                                    <div class="comparison-item">
+                                        <span class="comparison-label">Requests:</span>
+                                        <span class="comparison-value positive">+23%</span>
+                                    </div>
+                                    <div class="comparison-item">
+                                        <span class="comparison-label">Utilizadores:</span>
+                                        <span class="comparison-value positive">+18%</span>
+                                    </div>
+                                    <div class="comparison-item">
+                                        <span class="comparison-label">Tempo de Resposta:</span>
+                                        <span class="comparison-value negative">+5%</span>
+                                    </div>
+                                    <div class="comparison-item">
+                                        <span class="comparison-label">Taxa de Erro:</span>
+                                        <span class="comparison-value positive">-12%</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="comparison-card">
+                                <h4>Previsões para Próximo Mês</h4>
+                                <div class="forecast-metrics">
+                                    <div class="forecast-item">
+                                        <span class="forecast-label">Requests Esperados:</span>
+                                        <span class="forecast-value">~15,000</span>
+                                    </div>
+                                    <div class="forecast-item">
+                                        <span class="forecast-label">Novos Utilizadores:</span>
+                                        <span class="forecast-value">~450</span>
+                                    </div>
+                                    <div class="forecast-item">
+                                        <span class="forecast-label">Crescimento Estimado:</span>
+                                        <span class="forecast-value positive">+25%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </section>
                 
                 <section id="settings-section" class="content-section hidden">
-                    <div class="text-center">
-                        <h2>Configurações</h2>
-                        <p>Esta secção será implementada em breve.</p>
+                    <div class="section-header">
+                        <h2>🛠️ Configurações Avançadas</h2>
+                        <div class="section-controls">
+                            <button class="btn btn-primary" id="saveSettingsBtn">
+                                <span class="material-symbols-outlined">save</span>
+                                Guardar Configurações
+                            </button>
+                            <button class="btn btn-secondary" id="resetSettingsBtn">
+                                <span class="material-symbols-outlined">restore</span>
+                                Restaurar Padrões
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Configurações Gerais -->
+                    <div class="settings-category">
+                        <div class="category-header">
+                            <h3>⚙️ Configurações Gerais</h3>
+                            <span class="material-symbols-outlined">expand_more</span>
+                        </div>
+                        <div class="category-content">
+                            <div class="settings-grid">
+                                <div class="setting-item">
+                                    <label for="themeSetting">Tema</label>
+                                    <select id="themeSetting">
+                                        <option value="light">Claro</option>
+                                        <option value="dark">Escuro</option>
+                                        <option value="auto">Automático</option>
+                                    </select>
+                                </div>
+                                <div class="setting-item">
+                                    <label for="languageSetting">Idioma</label>
+                                    <select id="languageSetting">
+                                        <option value="pt">Português</option>
+                                        <option value="en">English</option>
+                                    </select>
+                                </div>
+                                <div class="setting-item">
+                                    <label for="notificationsSetting">Notificações</label>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="notificationsSetting" checked>
+                                        <span class="slider"></span>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <label for="autoRefreshSetting">Auto-refresh (segundos)</label>
+                                    <input type="number" id="autoRefreshSetting" min="10" max="300" value="30">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Configurações da API -->
+                    <div class="settings-category">
+                        <div class="category-header">
+                            <h3>🔗 Configurações da API</h3>
+                            <span class="material-symbols-outlined">expand_more</span>
+                        </div>
+                        <div class="category-content">
+                            <div class="settings-grid">
+                                <div class="setting-item full-width">
+                                    <label for="backendUrlSetting">URL do Backend</label>
+                                    <input type="url" id="backendUrlSetting" value="http://localhost:3000" placeholder="http://localhost:3000">
+                                </div>
+                                <div class="setting-item full-width">
+                                    <label for="geminiApiKeySetting">Chave da API Gemini</label>
+                                    <div class="input-with-action">
+                                        <input type="password" id="geminiApiKeySetting" placeholder="Insira a chave da API">
+                                        <button class="btn-icon" id="toggleApiKeyBtn" title="Mostrar/Ocultar">
+                                            <span class="material-symbols-outlined">visibility</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <label for="apiTimeoutSetting">Timeout (ms)</label>
+                                    <input type="number" id="apiTimeoutSetting" min="1000" max="30000" value="10000">
+                                </div>
+                                <div class="setting-item">
+                                    <label for="retryAttemptsSetting">Tentativas de Retry</label>
+                                    <input type="number" id="retryAttemptsSetting" min="1" max="5" value="3">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Configurações de Segurança -->
+                    <div class="settings-category">
+                        <div class="category-header">
+                            <h3>🔒 Configurações de Segurança</h3>
+                            <span class="material-symbols-outlined">expand_more</span>
+                        </div>
+                        <div class="category-content">
+                            <div class="settings-grid">
+                                <div class="setting-item">
+                                    <label for="sessionTimeoutSetting">Timeout da Sessão (min)</label>
+                                    <input type="number" id="sessionTimeoutSetting" min="5" max="480" value="60">
+                                </div>
+                                <div class="setting-item">
+                                    <label for="accessLogsSetting">Logs de Acesso</label>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="accessLogsSetting" checked>
+                                        <span class="slider"></span>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <label for="autoBackupSetting">Backup Automático</label>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="autoBackupSetting">
+                                        <span class="slider"></span>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <label for="encryptionSetting">Criptografia de Dados</label>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="encryptionSetting" checked>
+                                        <span class="slider"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Configurações de Backup -->
+                    <div class="settings-category">
+                        <div class="category-header">
+                            <h3>💾 Configurações de Backup</h3>
+                            <span class="material-symbols-outlined">expand_more</span>
+                        </div>
+                        <div class="category-content">
+                            <div class="settings-grid">
+                                <div class="setting-item">
+                                    <button class="btn btn-primary" id="exportDataBtn">
+                                        <span class="material-symbols-outlined">download</span>
+                                        Exportar Dados
+                                    </button>
+                                </div>
+                                <div class="setting-item">
+                                    <button class="btn btn-secondary" id="importDataBtn">
+                                        <span class="material-symbols-outlined">upload</span>
+                                        Importar Dados
+                                    </button>
+                                </div>
+                                <div class="setting-item">
+                                    <label for="backupFrequencySetting">Frequência de Backup</label>
+                                    <select id="backupFrequencySetting">
+                                        <option value="daily">Diário</option>
+                                        <option value="weekly">Semanal</option>
+                                        <option value="monthly">Mensal</option>
+                                        <option value="manual">Manual</option>
+                                    </select>
+                                </div>
+                                <div class="setting-item">
+                                    <label for="backupRetentionSetting">Retenção (dias)</label>
+                                    <input type="number" id="backupRetentionSetting" min="7" max="365" value="30">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Configurações Avançadas -->
+                    <div class="settings-category">
+                        <div class="category-header">
+                            <h3>🛠️ Configurações Avançadas</h3>
+                            <span class="material-symbols-outlined">expand_more</span>
+                        </div>
+                        <div class="category-content">
+                            <div class="settings-grid">
+                                <div class="setting-item">
+                                    <label for="debugModeSetting">Debug Mode</label>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="debugModeSetting">
+                                        <span class="slider"></span>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <label for="logLevelSetting">Nível de Log</label>
+                                    <select id="logLevelSetting">
+                                        <option value="error">Error</option>
+                                        <option value="warn">Warning</option>
+                                        <option value="info">Info</option>
+                                        <option value="debug">Debug</option>
+                                    </select>
+                                </div>
+                                <div class="setting-item">
+                                    <label for="performanceMonitoringSetting">Monitor de Performance</label>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="performanceMonitoringSetting" checked>
+                                        <span class="slider"></span>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <label for="cacheEnabledSetting">Cache Ativado</label>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="cacheEnabledSetting" checked>
+                                        <span class="slider"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Limpeza de Dados -->
+                    <div class="settings-category danger-zone">
+                        <div class="category-header">
+                            <h3>🗑️ Limpeza de Dados</h3>
+                            <span class="material-symbols-outlined">expand_more</span>
+                        </div>
+                        <div class="category-content">
+                            <div class="danger-warning">
+                                <span class="material-symbols-outlined">warning</span>
+                                <p>⚠️ <strong>Atenção:</strong> Estas ações são irreversíveis. Certifique-se de que tem backup dos dados antes de proceder.</p>
+                            </div>
+                            <div class="settings-grid">
+                                <div class="setting-item">
+                                    <button class="btn btn-danger" id="clearUsersBtn">
+                                        <span class="material-symbols-outlined">person_remove</span>
+                                        Limpar Utilizadores Inativos
+                                    </button>
+                                </div>
+                                <div class="setting-item">
+                                    <button class="btn btn-danger" id="clearSummariesBtn">
+                                        <span class="material-symbols-outlined">description_off</span>
+                                        Limpar Resumos Antigos
+                                    </button>
+                                </div>
+                                <div class="setting-item">
+                                    <button class="btn btn-danger" id="clearLogsBtn">
+                                        <span class="material-symbols-outlined">cleaning_services</span>
+                                        Limpar Logs de Sistema
+                                    </button>
+                                </div>
+                                <div class="setting-item">
+                                    <button class="btn btn-danger" id="clearCacheBtn">
+                                        <span class="material-symbols-outlined">cached</span>
+                                        Limpar Todos os Caches
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Monitor de Performance -->
+                    <div class="settings-category">
+                        <div class="category-header">
+                            <h3>📊 Monitor de Performance</h3>
+                            <span class="material-symbols-outlined">expand_more</span>
+                        </div>
+                        <div class="category-content">
+                            <div class="performance-monitor">
+                                <div class="performance-grid">
+                                    <div class="performance-item">
+                                        <div class="performance-label">CPU Usage</div>
+                                        <div class="performance-value" id="cpuUsage">-</div>
+                                        <div class="performance-bar">
+                                            <div class="performance-fill" id="cpuBar"></div>
+                                        </div>
+                                    </div>
+                                    <div class="performance-item">
+                                        <div class="performance-label">Memory Usage</div>
+                                        <div class="performance-value" id="memoryUsage">-</div>
+                                        <div class="performance-bar">
+                                            <div class="performance-fill" id="memoryBar"></div>
+                                        </div>
+                                    </div>
+                                    <div class="performance-item">
+                                        <div class="performance-label">API Response Time</div>
+                                        <div class="performance-value" id="apiResponseTime">-</div>
+                                        <div class="performance-bar">
+                                            <div class="performance-fill" id="apiBar"></div>
+                                        </div>
+                                    </div>
+                                    <div class="performance-item">
+                                        <div class="performance-label">Cache Hit Rate</div>
+                                        <div class="performance-value" id="cacheHitRate">-</div>
+                                        <div class="performance-bar">
+                                            <div class="performance-fill" id="cacheBar"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="performance-actions">
+                                    <button class="btn btn-secondary" id="refreshPerformanceBtn">
+                                        <span class="material-symbols-outlined">refresh</span>
+                                        Atualizar Métricas
+                                    </button>
+                                    <button class="btn btn-primary" id="exportPerformanceBtn">
+                                        <span class="material-symbols-outlined">download</span>
+                                        Exportar Relatório
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </section>
                 </div>

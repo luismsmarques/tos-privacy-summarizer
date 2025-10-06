@@ -2437,6 +2437,908 @@ document.addEventListener('DOMContentLoaded', () => {
     // Inicializar dashboard
     window.dashboard = new Dashboard();
     
+    // Inicializar configurações
+    initializeSettings();
+    
+    // Inicializar analytics
+    initializeAnalytics();
+    
+    function initializeAnalytics() {
+        console.log('📊 Inicializando área de analytics...');
+        
+        // Botões de controle
+        document.getElementById('refreshAnalyticsBtn')?.addEventListener('click', refreshAnalytics);
+        document.getElementById('exportAnalyticsBtn')?.addEventListener('click', exportAnalyticsReport);
+        document.getElementById('generateInsightsBtn')?.addEventListener('click', generateInsights);
+        
+        // Seletor de período
+        document.getElementById('analyticsTimeRange')?.addEventListener('change', (e) => {
+            updateAnalyticsTimeRange(e.target.value);
+        });
+        
+        // Controles de gráficos
+        document.querySelectorAll('.chart-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const type = e.target.dataset.type;
+                const period = e.target.dataset.period;
+                
+                if (type) {
+                    updateChartType(type);
+                }
+                if (period) {
+                    updateHeatmapPeriod(period);
+                }
+            });
+        });
+        
+        // Carregar dados iniciais
+        loadAnalyticsData();
+        
+        // Iniciar atualizações automáticas
+        startAnalyticsAutoRefresh();
+    }
+    
+    function loadAnalyticsData() {
+        console.log('📊 Carregando dados de analytics...');
+        
+        // Simular carregamento de dados
+        setTimeout(() => {
+            updateAnalyticsMetrics();
+            createAnalyticsCharts();
+            loadTopUrls();
+            generateInsights();
+        }, 1000);
+    }
+    
+    function updateAnalyticsMetrics() {
+        console.log('📊 Atualizando métricas de analytics...');
+        
+        // Simular dados de métricas
+        const metrics = {
+            totalRequests: Math.floor(Math.random() * 10000) + 5000,
+            avgResponseTime: Math.floor(Math.random() * 500) + 200,
+            errorRate: (Math.random() * 5).toFixed(2),
+            cacheHitRate: Math.floor(Math.random() * 30) + 70
+        };
+        
+        // Atualizar UI
+        document.getElementById('analyticsTotalRequests').textContent = metrics.totalRequests.toLocaleString();
+        document.getElementById('analyticsAvgResponseTime').textContent = metrics.avgResponseTime + 'ms';
+        document.getElementById('analyticsErrorRate').textContent = metrics.errorRate + '%';
+        document.getElementById('analyticsCacheHitRate').textContent = metrics.cacheHitRate + '%';
+        
+        // Atualizar mudanças percentuais
+        updateMetricChanges();
+    }
+    
+    function updateMetricChanges() {
+        const changes = {
+            requestsGrowth: Math.floor(Math.random() * 20) + 5,
+            responseTimeChange: -(Math.floor(Math.random() * 15) + 5),
+            errorRateChange: -(Math.floor(Math.random() * 5) + 1),
+            cacheHitChange: Math.floor(Math.random() * 10) + 2
+        };
+        
+        document.getElementById('requestsGrowthValue').textContent = `+${changes.requestsGrowth}%`;
+        document.getElementById('responseTimeValue').textContent = `${changes.responseTimeChange}%`;
+        document.getElementById('errorRateValue').textContent = `${changes.errorRateChange}%`;
+        document.getElementById('cacheHitValue').textContent = `+${changes.cacheHitChange}%`;
+    }
+    
+    function createAnalyticsCharts() {
+        console.log('📊 Criando gráficos de analytics...');
+        
+        // Gráfico de Requests ao Longo do Tempo
+        createRequestsOverTimeChart();
+        
+        // Gráfico de Distribuição por Tipo
+        createDocumentTypesChart();
+        
+        // Gráfico de Performance
+        createPerformanceChart();
+        
+        // Gráfico de Utilizadores Ativos
+        createActiveUsersChart();
+        
+        // Heatmap de Atividade
+        createActivityHeatmap();
+    }
+    
+    function createRequestsOverTimeChart() {
+        const ctx = document.getElementById('requestsOverTimeChart');
+        if (!ctx) return;
+        
+        const labels = generateTimeLabels(30);
+        const requestsData = generateRandomData(30, 100, 1000);
+        const usersData = generateRandomData(30, 10, 100);
+        const summariesData = generateRandomData(30, 50, 500);
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Requests',
+                    data: requestsData,
+                    borderColor: 'rgb(103, 80, 164)',
+                    backgroundColor: 'rgba(103, 80, 164, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }, {
+                    label: 'Utilizadores',
+                    data: usersData,
+                    borderColor: 'rgb(125, 82, 96)',
+                    backgroundColor: 'rgba(125, 82, 96, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }, {
+                    label: 'Resumos',
+                    data: summariesData,
+                    borderColor: 'rgb(98, 91, 113)',
+                    backgroundColor: 'rgba(98, 91, 113, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+    
+    function createDocumentTypesChart() {
+        const ctx = document.getElementById('documentTypesChart');
+        if (!ctx) return;
+        
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Política de Privacidade', 'Termos de Serviço', 'Outros'],
+                datasets: [{
+                    data: [45, 35, 20],
+                    backgroundColor: [
+                        'rgb(103, 80, 164)',
+                        'rgb(125, 82, 96)',
+                        'rgb(98, 91, 113)'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    }
+                }
+            }
+        });
+    }
+    
+    function createPerformanceChart() {
+        const ctx = document.getElementById('performanceChart');
+        if (!ctx) return;
+        
+        const labels = ['CPU', 'Memória', 'Rede', 'Disco'];
+        const data = [75, 60, 85, 45];
+        
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Performance (%)',
+                    data: data,
+                    borderColor: 'rgb(103, 80, 164)',
+                    backgroundColor: 'rgba(103, 80, 164, 0.2)',
+                    pointBackgroundColor: 'rgb(103, 80, 164)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgb(103, 80, 164)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+    }
+    
+    function createActiveUsersChart() {
+        const ctx = document.getElementById('activeUsersChart');
+        if (!ctx) return;
+        
+        const labels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+        const data = [120, 150, 180, 200, 160, 90, 70];
+        
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Utilizadores Ativos',
+                    data: data,
+                    backgroundColor: 'rgba(103, 80, 164, 0.8)',
+                    borderColor: 'rgb(103, 80, 164)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+    
+    function createActivityHeatmap() {
+        const container = document.getElementById('activityHeatmap');
+        if (!container) return;
+        
+        // Simular heatmap de atividade
+        const days = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+        const hours = Array.from({length: 24}, (_, i) => i);
+        
+        let heatmapHTML = '<div class="heatmap-grid">';
+        
+        // Cabeçalho com horas
+        heatmapHTML += '<div class="heatmap-header"></div>';
+        hours.forEach(hour => {
+            heatmapHTML += `<div class="heatmap-hour">${hour}h</div>`;
+        });
+        
+        // Linhas para cada dia
+        days.forEach(day => {
+            heatmapHTML += `<div class="heatmap-day">${day}</div>`;
+            hours.forEach(hour => {
+                const intensity = Math.random();
+                const level = intensity > 0.7 ? 'high' : intensity > 0.4 ? 'medium' : 'low';
+                heatmapHTML += `<div class="heatmap-cell ${level}" title="${day} ${hour}h: ${Math.floor(intensity * 100)}% atividade"></div>`;
+            });
+        });
+        
+        heatmapHTML += '</div>';
+        container.innerHTML = heatmapHTML;
+        
+        // Adicionar estilos do heatmap
+        if (!document.getElementById('heatmap-styles')) {
+            const styles = document.createElement('style');
+            styles.id = 'heatmap-styles';
+            styles.textContent = `
+                .heatmap-grid {
+                    display: grid;
+                    grid-template-columns: 60px repeat(24, 20px);
+                    gap: 2px;
+                    font-size: 12px;
+                }
+                .heatmap-header {
+                    grid-column: 1;
+                }
+                .heatmap-hour {
+                    text-align: center;
+                    font-size: 10px;
+                    color: var(--md-sys-color-on-surface-variant);
+                }
+                .heatmap-day {
+                    text-align: right;
+                    padding-right: 8px;
+                    color: var(--md-sys-color-on-surface);
+                }
+                .heatmap-cell {
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 2px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+                .heatmap-cell.low {
+                    background: var(--md-sys-color-outline-variant);
+                }
+                .heatmap-cell.medium {
+                    background: var(--md-sys-color-tertiary-container);
+                }
+                .heatmap-cell.high {
+                    background: var(--md-sys-color-primary);
+                }
+                .heatmap-cell:hover {
+                    transform: scale(1.2);
+                    z-index: 10;
+                }
+            `;
+            document.head.appendChild(styles);
+        }
+    }
+    
+    function loadTopUrls() {
+        const container = document.getElementById('topUrlsList');
+        if (!container) return;
+        
+        const topUrls = [
+            { domain: 'google.com', path: '/privacy-policy', count: 1250 },
+            { domain: 'facebook.com', path: '/privacy', count: 980 },
+            { domain: 'microsoft.com', path: '/privacy', count: 750 },
+            { domain: 'apple.com', path: '/privacy', count: 650 },
+            { domain: 'amazon.com', path: '/privacy', count: 580 },
+            { domain: 'netflix.com', path: '/privacy', count: 520 },
+            { domain: 'spotify.com', path: '/privacy', count: 480 },
+            { domain: 'twitter.com', path: '/privacy', count: 420 }
+        ];
+        
+        let html = '';
+        topUrls.forEach(url => {
+            html += `
+                <div class="url-item">
+                    <div class="url-info">
+                        <div class="url-domain">${url.domain}</div>
+                        <div class="url-path">${url.path}</div>
+                    </div>
+                    <div class="url-count">${url.count.toLocaleString()}</div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
+    
+    function generateInsights() {
+        console.log('🔍 Gerando insights...');
+        
+        const insights = [
+            {
+                id: 'usersGrowthInsight',
+                text: `O número de utilizadores ativos cresceu ${Math.floor(Math.random() * 20) + 10}% este mês comparado ao mês anterior.`
+            },
+            {
+                id: 'peakTimeInsight',
+                text: `O horário de maior atividade é entre ${Math.floor(Math.random() * 4) + 14}h-${Math.floor(Math.random() * 4) + 16}h, com ${Math.floor(Math.random() * 20) + 30}% dos requests totais.`
+            },
+            {
+                id: 'performanceAlertInsight',
+                text: `Tempo de resposta ${Math.random() > 0.5 ? 'aumentou' : 'diminuiu'} ${Math.floor(Math.random() * 30) + 10}% nas últimas 2 horas. ${Math.random() > 0.5 ? 'Recomenda-se verificar o servidor.' : 'Performance está otimizada.'}`
+            },
+            {
+                id: 'recommendationsInsight',
+                text: `Considere implementar ${Math.random() > 0.5 ? 'cache adicional' : 'otimizações de rede'} para ${Math.random() > 0.5 ? 'URLs mais populares' : 'melhorar performance geral'}.`
+            }
+        ];
+        
+        insights.forEach(insight => {
+            const element = document.getElementById(insight.id);
+            if (element) {
+                element.textContent = insight.text;
+            }
+        });
+        
+        showNotification('🔍 Insights atualizados com sucesso!', 'success');
+    }
+    
+    function updateChartType(type) {
+        console.log(`📊 Atualizando tipo de gráfico: ${type}`);
+        
+        // Atualizar botões ativos
+        document.querySelectorAll('.chart-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        // Aqui você pode atualizar o gráfico baseado no tipo selecionado
+        showNotification(`📊 Gráfico atualizado para: ${type}`, 'info');
+    }
+    
+    function updateHeatmapPeriod(period) {
+        console.log(`🔥 Atualizando período do heatmap: ${period}`);
+        
+        // Atualizar botões ativos
+        document.querySelectorAll('.heatmap-controls .chart-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        // Recriar heatmap com novo período
+        createActivityHeatmap();
+        
+        showNotification(`🔥 Heatmap atualizado para: ${period}`, 'info');
+    }
+    
+    function updateAnalyticsTimeRange(range) {
+        console.log(`📊 Atualizando período de analytics: ${range}`);
+        
+        // Recarregar dados com novo período
+        loadAnalyticsData();
+        
+        showNotification(`📊 Período atualizado para: ${range}`, 'info');
+    }
+    
+    function refreshAnalytics() {
+        console.log('🔄 Atualizando analytics...');
+        
+        showNotification('🔄 Atualizando dados de analytics...', 'info');
+        
+        setTimeout(() => {
+            loadAnalyticsData();
+            showNotification('✅ Analytics atualizados com sucesso!', 'success');
+        }, 1500);
+    }
+    
+    function exportAnalyticsReport() {
+        console.log('📊 Exportando relatório de analytics...');
+        
+        const report = {
+            timestamp: new Date().toISOString(),
+            timeRange: document.getElementById('analyticsTimeRange')?.value || '30d',
+            metrics: {
+                totalRequests: document.getElementById('analyticsTotalRequests')?.textContent || '-',
+                avgResponseTime: document.getElementById('analyticsAvgResponseTime')?.textContent || '-',
+                errorRate: document.getElementById('analyticsErrorRate')?.textContent || '-',
+                cacheHitRate: document.getElementById('analyticsCacheHitRate')?.textContent || '-'
+            },
+            insights: {
+                usersGrowth: document.getElementById('usersGrowthInsight')?.textContent || '',
+                peakTime: document.getElementById('peakTimeInsight')?.textContent || '',
+                performanceAlert: document.getElementById('performanceAlertInsight')?.textContent || '',
+                recommendations: document.getElementById('recommendationsInsight')?.textContent || ''
+            }
+        };
+        
+        const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `analytics-report-${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        showNotification('📊 Relatório de analytics exportado!', 'success');
+    }
+    
+    function startAnalyticsAutoRefresh() {
+        console.log('🔄 Iniciando atualização automática de analytics...');
+        
+        // Atualizar analytics a cada 5 minutos
+        setInterval(() => {
+            if (window.dashboard && !window.dashboard.isLoading) {
+                updateAnalyticsMetrics();
+                generateInsights();
+            }
+        }, 300000); // 5 minutos
+    }
+    
+    // Funções auxiliares
+    function generateTimeLabels(days) {
+        const labels = [];
+        const now = new Date();
+        
+        for (let i = days - 1; i >= 0; i--) {
+            const date = new Date(now);
+            date.setDate(date.getDate() - i);
+            labels.push(date.toLocaleDateString('pt-PT', { month: 'short', day: 'numeric' }));
+        }
+        
+        return labels;
+    }
+    
+    function generateRandomData(count, min, max) {
+        const data = [];
+        for (let i = 0; i < count; i++) {
+            data.push(Math.floor(Math.random() * (max - min + 1)) + min);
+        }
+        return data;
+    }
+    
+    function initializeSettings() {
+        console.log('⚙️ Inicializando área de configurações...');
+        
+        // Expandir/collapsar categorias
+        document.querySelectorAll('.category-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const content = header.nextElementSibling;
+                const isExpanded = content.classList.contains('expanded');
+                
+                // Fechar todas as outras categorias
+                document.querySelectorAll('.category-content').forEach(cat => {
+                    cat.classList.remove('expanded');
+                });
+                document.querySelectorAll('.category-header').forEach(h => {
+                    h.classList.remove('expanded');
+                });
+                
+                // Abrir/fechar a categoria clicada
+                if (!isExpanded) {
+                    content.classList.add('expanded');
+                    header.classList.add('expanded');
+                }
+            });
+        });
+        
+        // Toggle para mostrar/ocultar chave da API
+        const toggleApiKeyBtn = document.getElementById('toggleApiKeyBtn');
+        const apiKeyInput = document.getElementById('geminiApiKeySetting');
+        
+        if (toggleApiKeyBtn && apiKeyInput) {
+            toggleApiKeyBtn.addEventListener('click', () => {
+                const isPassword = apiKeyInput.type === 'password';
+                apiKeyInput.type = isPassword ? 'text' : 'password';
+                toggleApiKeyBtn.querySelector('.material-symbols-outlined').textContent = 
+                    isPassword ? 'visibility_off' : 'visibility';
+            });
+        }
+        
+        // Guardar configurações
+        const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+        if (saveSettingsBtn) {
+            saveSettingsBtn.addEventListener('click', saveSettings);
+        }
+        
+        // Restaurar configurações padrão
+        const resetSettingsBtn = document.getElementById('resetSettingsBtn');
+        if (resetSettingsBtn) {
+            resetSettingsBtn.addEventListener('click', resetSettings);
+        }
+        
+        // Botões de limpeza de dados
+        document.getElementById('clearUsersBtn')?.addEventListener('click', () => clearData('users'));
+        document.getElementById('clearSummariesBtn')?.addEventListener('click', () => clearData('summaries'));
+        document.getElementById('clearLogsBtn')?.addEventListener('click', () => clearData('logs'));
+        document.getElementById('clearCacheBtn')?.addEventListener('click', () => clearData('cache'));
+        
+        // Botões de backup
+        document.getElementById('exportDataBtn')?.addEventListener('click', exportData);
+        document.getElementById('importDataBtn')?.addEventListener('click', importData);
+        
+        // Monitor de performance
+        document.getElementById('refreshPerformanceBtn')?.addEventListener('click', refreshPerformanceMetrics);
+        document.getElementById('exportPerformanceBtn')?.addEventListener('click', exportPerformanceReport);
+        
+        // Carregar configurações salvas
+        loadSettings();
+        
+        // Iniciar monitor de performance
+        startPerformanceMonitoring();
+    }
+    
+    function saveSettings() {
+        console.log('💾 Guardando configurações...');
+        
+        const settings = {
+            theme: document.getElementById('themeSetting')?.value || 'light',
+            language: document.getElementById('languageSetting')?.value || 'pt',
+            notifications: document.getElementById('notificationsSetting')?.checked || false,
+            autoRefresh: parseInt(document.getElementById('autoRefreshSetting')?.value) || 30,
+            backendUrl: document.getElementById('backendUrlSetting')?.value || 'http://localhost:3000',
+            geminiApiKey: document.getElementById('geminiApiKeySetting')?.value || '',
+            apiTimeout: parseInt(document.getElementById('apiTimeoutSetting')?.value) || 10000,
+            retryAttempts: parseInt(document.getElementById('retryAttemptsSetting')?.value) || 3,
+            sessionTimeout: parseInt(document.getElementById('sessionTimeoutSetting')?.value) || 60,
+            accessLogs: document.getElementById('accessLogsSetting')?.checked || false,
+            autoBackup: document.getElementById('autoBackupSetting')?.checked || false,
+            encryption: document.getElementById('encryptionSetting')?.checked || false,
+            backupFrequency: document.getElementById('backupFrequencySetting')?.value || 'daily',
+            backupRetention: parseInt(document.getElementById('backupRetentionSetting')?.value) || 30,
+            debugMode: document.getElementById('debugModeSetting')?.checked || false,
+            logLevel: document.getElementById('logLevelSetting')?.value || 'info',
+            performanceMonitoring: document.getElementById('performanceMonitoringSetting')?.checked || false,
+            cacheEnabled: document.getElementById('cacheEnabledSetting')?.checked || false
+        };
+        
+        // Guardar no localStorage
+        localStorage.setItem('dashboardSettings', JSON.stringify(settings));
+        
+        // Aplicar configurações
+        applySettings(settings);
+        
+        // Mostrar notificação de sucesso
+        showNotification('✅ Configurações guardadas com sucesso!', 'success');
+        
+        console.log('✅ Configurações guardadas:', settings);
+    }
+    
+    function loadSettings() {
+        console.log('📂 Carregando configurações...');
+        
+        const savedSettings = localStorage.getItem('dashboardSettings');
+        if (savedSettings) {
+            const settings = JSON.parse(savedSettings);
+            
+            // Aplicar valores aos campos
+            Object.keys(settings).forEach(key => {
+                const element = document.getElementById(key + 'Setting');
+                if (element) {
+                    if (element.type === 'checkbox') {
+                        element.checked = settings[key];
+                    } else {
+                        element.value = settings[key];
+                    }
+                }
+            });
+            
+            // Aplicar configurações
+            applySettings(settings);
+            
+            console.log('✅ Configurações carregadas:', settings);
+        } else {
+            console.log('ℹ️ Nenhuma configuração salva encontrada, usando padrões');
+        }
+    }
+    
+    function applySettings(settings) {
+        // Aplicar tema
+        if (settings.theme) {
+            document.documentElement.setAttribute('data-theme', settings.theme);
+        }
+        
+        // Aplicar configurações de debug
+        if (settings.debugMode) {
+            console.log('🐛 Debug mode ativado');
+            window.debugMode = true;
+        } else {
+            window.debugMode = false;
+        }
+        
+        // Aplicar configurações de performance
+        if (settings.performanceMonitoring) {
+            console.log('📊 Monitor de performance ativado');
+            window.performanceMonitoring = true;
+        } else {
+            window.performanceMonitoring = false;
+        }
+        
+        // Aplicar configurações de cache
+        if (settings.cacheEnabled) {
+            console.log('💾 Cache ativado');
+            window.cacheEnabled = true;
+        } else {
+            window.cacheEnabled = false;
+        }
+    }
+    
+    function resetSettings() {
+        console.log('🔄 Restaurando configurações padrão...');
+        
+        if (confirm('Tem a certeza que deseja restaurar as configurações padrão? Esta ação não pode ser desfeita.')) {
+            // Limpar configurações salvas
+            localStorage.removeItem('dashboardSettings');
+            
+            // Recarregar página para aplicar padrões
+            location.reload();
+        }
+    }
+    
+    function clearData(type) {
+        const confirmMessage = {
+            users: 'Tem a certeza que deseja limpar todos os utilizadores inativos? Esta ação é irreversível!',
+            summaries: 'Tem a certeza que deseja limpar todos os resumos antigos? Esta ação é irreversível!',
+            logs: 'Tem a certeza que deseja limpar todos os logs de sistema? Esta ação é irreversível!',
+            cache: 'Tem a certeza que deseja limpar todos os caches? Esta ação é irreversível!'
+        };
+        
+        if (confirm(confirmMessage[type])) {
+            console.log(`🗑️ Limpando dados: ${type}`);
+            
+            // Simular limpeza (em produção, fazer chamada à API)
+            showNotification(`🧹 Limpando ${type}...`, 'info');
+            
+            setTimeout(() => {
+                showNotification(`✅ ${type} limpos com sucesso!`, 'success');
+            }, 2000);
+        }
+    }
+    
+    function exportData() {
+        console.log('📤 Exportando dados...');
+        
+        // Simular exportação (em produção, fazer chamada à API)
+        showNotification('📤 Preparando exportação de dados...', 'info');
+        
+        setTimeout(() => {
+            // Criar arquivo de exemplo
+            const data = {
+                timestamp: new Date().toISOString(),
+                users: window.dashboard?.data?.users || [],
+                summaries: window.dashboard?.data?.summaries || [],
+                settings: JSON.parse(localStorage.getItem('dashboardSettings') || '{}')
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `dashboard-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showNotification('✅ Dados exportados com sucesso!', 'success');
+        }, 1000);
+    }
+    
+    function importData() {
+        console.log('📥 Importando dados...');
+        
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        
+                        // Aplicar configurações importadas
+                        if (data.settings) {
+                            localStorage.setItem('dashboardSettings', JSON.stringify(data.settings));
+                            applySettings(data.settings);
+                        }
+                        
+                        showNotification('✅ Dados importados com sucesso!', 'success');
+                        console.log('✅ Dados importados:', data);
+                    } catch (error) {
+                        showNotification('❌ Erro ao importar dados: ' + error.message, 'error');
+                        console.error('❌ Erro ao importar dados:', error);
+                    }
+                };
+                reader.readAsText(file);
+            }
+        };
+        input.click();
+    }
+    
+    function refreshPerformanceMetrics() {
+        console.log('📊 Atualizando métricas de performance...');
+        
+        // Simular métricas de performance
+        const metrics = {
+            cpuUsage: Math.floor(Math.random() * 100),
+            memoryUsage: Math.floor(Math.random() * 100),
+            apiResponseTime: Math.floor(Math.random() * 1000) + 100,
+            cacheHitRate: Math.floor(Math.random() * 100)
+        };
+        
+        // Atualizar UI
+        document.getElementById('cpuUsage').textContent = metrics.cpuUsage + '%';
+        document.getElementById('memoryUsage').textContent = metrics.memoryUsage + '%';
+        document.getElementById('apiResponseTime').textContent = metrics.apiResponseTime + 'ms';
+        document.getElementById('cacheHitRate').textContent = metrics.cacheHitRate + '%';
+        
+        // Atualizar barras de progresso
+        document.getElementById('cpuBar').style.width = metrics.cpuUsage + '%';
+        document.getElementById('memoryBar').style.width = metrics.memoryUsage + '%';
+        document.getElementById('apiBar').style.width = Math.min(metrics.apiResponseTime / 10, 100) + '%';
+        document.getElementById('cacheBar').style.width = metrics.cacheHitRate + '%';
+        
+        showNotification('📊 Métricas de performance atualizadas!', 'success');
+    }
+    
+    function exportPerformanceReport() {
+        console.log('📊 Exportando relatório de performance...');
+        
+        const report = {
+            timestamp: new Date().toISOString(),
+            metrics: {
+                cpuUsage: document.getElementById('cpuUsage').textContent,
+                memoryUsage: document.getElementById('memoryUsage').textContent,
+                apiResponseTime: document.getElementById('apiResponseTime').textContent,
+                cacheHitRate: document.getElementById('cacheHitRate').textContent
+            },
+            settings: JSON.parse(localStorage.getItem('dashboardSettings') || '{}')
+        };
+        
+        const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `performance-report-${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        showNotification('📊 Relatório de performance exportado!', 'success');
+    }
+    
+    function startPerformanceMonitoring() {
+        console.log('📊 Iniciando monitor de performance...');
+        
+        // Atualizar métricas a cada 30 segundos
+        setInterval(() => {
+            if (window.performanceMonitoring) {
+                refreshPerformanceMetrics();
+            }
+        }, 30000);
+        
+        // Atualizar métricas iniciais
+        refreshPerformanceMetrics();
+    }
+    
+    function showNotification(message, type = 'info') {
+        // Criar elemento de notificação
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <span class="material-symbols-outlined">
+                ${type === 'success' ? 'check_circle' : 
+                  type === 'error' ? 'error' : 
+                  type === 'warning' ? 'warning' : 'info'}
+            </span>
+            <span>${message}</span>
+        `;
+        
+        // Adicionar estilos se não existirem
+        if (!document.getElementById('notification-styles')) {
+            const styles = document.createElement('style');
+            styles.id = 'notification-styles';
+            styles.textContent = `
+                .notification {
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    padding: 16px 20px;
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    z-index: 10000;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                    animation: slideIn 0.3s ease-out;
+                }
+                .notification-success {
+                    background: var(--md-sys-color-primary-container);
+                    color: var(--md-sys-color-on-primary-container);
+                }
+                .notification-error {
+                    background: var(--md-sys-color-error-container);
+                    color: var(--md-sys-color-on-error-container);
+                }
+                .notification-warning {
+                    background: var(--md-sys-color-tertiary-container);
+                    color: var(--md-sys-color-on-tertiary-container);
+                }
+                .notification-info {
+                    background: var(--md-sys-color-secondary-container);
+                    color: var(--md-sys-color-on-secondary-container);
+                }
+                @keyframes slideIn {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(styles);
+        }
+        
+        // Adicionar ao DOM
+        document.body.appendChild(notification);
+        
+        // Remover após 3 segundos
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+    
     
     // Atualizar dados a cada 30 segundos (DESABILITADO para evitar loops)
     // setInterval(() => {
