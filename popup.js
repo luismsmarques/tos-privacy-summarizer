@@ -560,8 +560,12 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Mostrar ratings se disponíveis
             if (parsedSummary.ratings) {
-                console.log('Exibindo ratings:', parsedSummary.ratings);
+                console.log('✅ Ratings encontrados no parsedSummary:', parsedSummary.ratings);
+                console.log('🔍 Chamando displayRiskScore...');
                 displayRiskScore(parsedSummary.ratings);
+            } else {
+                console.log('❌ Nenhum rating encontrado no parsedSummary');
+                console.log('📋 Chaves disponíveis:', Object.keys(parsedSummary));
             }
         } else {
             console.log('Nenhum resumo encontrado no objeto');
@@ -578,6 +582,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Mostrar score de risco
     function displayRiskScore(ratings) {
+        console.log('🎯 displayRiskScore chamada com:', ratings);
+        
         const riskScoreDisplay = document.getElementById('riskScoreDisplay');
         const riskScoreNumber = document.getElementById('riskScoreNumber');
         const riskScoreLabel = document.getElementById('riskScoreLabel');
@@ -587,7 +593,21 @@ document.addEventListener('DOMContentLoaded', function() {
         const practicesBar = document.getElementById('practicesBar');
         const practicesText = document.getElementById('practicesText');
         
-        if (!riskScoreDisplay || !ratings) return;
+        console.log('🔍 Elementos encontrados:', {
+            riskScoreDisplay: !!riskScoreDisplay,
+            riskScoreNumber: !!riskScoreNumber,
+            riskScoreLabel: !!riskScoreLabel,
+            riskScoreMain: !!riskScoreMain,
+            complexityBar: !!complexityBar,
+            complexityText: !!complexityText,
+            practicesBar: !!practicesBar,
+            practicesText: !!practicesText
+        });
+        
+        if (!riskScoreDisplay || !ratings) {
+            console.log('❌ Elementos não encontrados ou ratings inválidos');
+            return;
+        }
         
         const { risk_score, complexidade, boas_praticas } = ratings;
         
@@ -611,7 +631,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Mostrar o display
         riskScoreDisplay.classList.remove('hidden');
         
-        console.log(`📊 Risk score exibido: ${risk_score}/10 (${riskClass})`);
+        console.log(`✅ Risk score exibido: ${risk_score}/10 (${riskClass})`);
+        console.log('👁️ Elemento riskScoreDisplay visível:', !riskScoreDisplay.classList.contains('hidden'));
     }
 
     // Mostrar modal de créditos insuficientes
