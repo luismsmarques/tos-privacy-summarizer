@@ -715,7 +715,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const riskScoreLabel = document.getElementById('riskScoreLabel');
         const riskScoreMain = document.getElementById('riskScoreMain');
         const complexityBar = document.getElementById('complexityBar');
-        const complexityText = document.getElementById('complexityText');
+        const complexityTextMain = document.getElementById('complexityTextMain');
         const practicesBar = document.getElementById('practicesBar');
         const practicesText = document.getElementById('practicesText');
         
@@ -725,7 +725,7 @@ document.addEventListener('DOMContentLoaded', function() {
             riskScoreLabel: !!riskScoreLabel,
             riskScoreMain: !!riskScoreMain,
             complexityBar: !!complexityBar,
-            complexityText: !!complexityText,
+            complexityTextMain: !!complexityTextMain,
             practicesBar: !!practicesBar,
             practicesText: !!practicesText
         });
@@ -750,7 +750,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Atualizar barras de rating
         if (complexityBar) complexityBar.style.width = `${(complexidade / 10) * 100}%`;
-        if (complexityText) complexityText.textContent = `${complexidade}/10`;
+        if (complexityTextMain) complexityTextMain.textContent = `${complexidade}/10`;
         if (practicesBar) practicesBar.style.width = `${(boas_praticas / 10) * 100}%`;
         if (practicesText) practicesText.textContent = `${boas_praticas}/10`;
         
