@@ -27,6 +27,14 @@ router.post('/login', async (req, res) => {
 
         const token = auth.generateToken('admin');
         
+        // Definir cookie com o token
+        res.cookie('adminToken', token, {
+            httpOnly: true,
+            secure: false, // Para desenvolvimento local
+            sameSite: 'lax',
+            maxAge: 24 * 60 * 60 * 1000 // 24 horas
+        });
+        
         res.json({
             success: true,
             token: token,
