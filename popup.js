@@ -63,8 +63,23 @@ document.addEventListener('DOMContentLoaded', function() {
         // Obter aba atual
         await getCurrentTab();
         
+        // Tentar fallback imediatamente se temos a aba
+        if (currentTab) {
+            console.log('Tentando fallback imediato...');
+            updateContextUI(null);
+        }
+        
         // Analisar página atual
         await analyzeCurrentPage();
+        
+        // Se não há análise após 2 segundos, tentar fallback
+        setTimeout(() => {
+            console.log('Timeout de inicialização - tentando fallback...');
+            if (!pageAnalysis || !pageAnalysis.textLength) {
+                console.log('Nenhuma análise disponível após timeout, forçando fallback');
+                updateContextUI(null);
+            }
+        }, 2000);
         
         // Carregar créditos
         await loadCredits();
@@ -80,7 +95,9 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
             currentTab = tab;
-            console.log('Aba atual:', tab.url);
+            console.log('Aba atual obtida:', tab);
+            console.log('URL da aba:', tab.url);
+            console.log('Título da aba:', tab.title);
             
             // Atualizar URL na UI
             if (pageUrl) {
@@ -170,8 +187,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateContextUI(analysis) {
         console.log('updateContextUI chamada com:', analysis);
         
-        if (!analysis) {
-            console.log('Nenhuma análise disponível, tentando fallback...');
+        // Sempre tentar usar fallback se não há análise válida
+        if (!analysis || !analysis.textLength || analysis.textLength === 0) {
+            console.log('Análise inválida ou vazia, tentando fallback...');
             
             // Tentar fallback: estimar baseado na URL atual
             const fallbackAnalysis = createFallbackAnalysis();
@@ -187,7 +205,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        console.log('Atualizando UI com análise:', analysis);
+        console.log('Atualizando UI com análise válida:', analysis);
         updateUIWithAnalysis(analysis);
     }
 
@@ -223,20 +241,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Criar análise de fallback baseada na URL
     function createFallbackAnalysis() {
-        if (!currentTab) return null;
+        console.log('createFallbackAnalysis chamada, currentTab:', currentTab);
+        
+        if (!currentTab) {
+            console.log('currentTab não disponível para fallback');
+            return null;
+        }
         
         try {
             const url = currentTab.url.toLowerCase();
             const title = currentTab.title.toLowerCase();
+            
+            console.log('URL para fallback:', url);
+            console.log('Título para fallback:', title);
             
             // Detectar tipo baseado na URL/título
             let type = 'unknown';
             if (url.includes('termos') || url.includes('terms') || 
                 title.includes('termos') || title.includes('terms')) {
                 type = 'terms_of_service';
+                console.log('Tipo detectado: Termos de Serviço');
             } else if (url.includes('privacidade') || url.includes('privacy') || 
                        title.includes('privacidade') || title.includes('privacy')) {
                 type = 'privacy_policy';
+                console.log('Tipo detectado: Política de Privacidade');
+            } else {
+                console.log('Tipo detectado: Desconhecido');
             }
             
             // Estimar tamanho baseado no tipo (valores típicos)
@@ -247,7 +277,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 estimatedLength = 2500; // Termos são geralmente médios
             }
             
-            return {
+            console.log('Tamanho estimado:', estimatedLength);
+            
+            const fallbackResult = {
                 textLength: estimatedLength,
                 type: type,
                 url: currentTab.url,
@@ -258,6 +290,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 domain: new URL(currentTab.url).hostname,
                 isFallback: true
             };
+            
+            console.log('Análise de fallback criada:', fallbackResult);
+            return fallbackResult;
         } catch (error) {
             console.error('Erro ao criar análise de fallback:', error);
             return null;
