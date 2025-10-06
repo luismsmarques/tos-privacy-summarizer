@@ -5,6 +5,8 @@ npm-debug.log*
 # Variáveis de ambiente
 .env
 .env.local
+.env.*
+config.env
 
 # Logs
 logs
@@ -12,6 +14,11 @@ logs
 
 # OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
 # IDE files
@@ -30,8 +37,41 @@ build/
 # Chrome Store Package (generated from main files)
 chrome-store-package/
 
+# Debug and testing tools
+debug-tools/
+test-*.js
+*-test.js
+test-database.js
+
+# Development documentation
+PROJECT-READY-FOR-STORE.md
+STORE-DESCRIPTION.md
+SUBMISSION-GUIDE.md
+
 # Backup files
 *.bak
+*.backup
+*.old
 
 # Database files
 *.sqlite
+*.db
+*.sqlite3
+
+# Cache and temporary files
+.cache/
+*.cache
+*.tmp
+*.temp
+*.pid
+*.sock
+
+# Coverage reports
+coverage/
+.nyc_output/
+*.lcov
+
+# Runtime files
+*.pid
+*.seed
+*.pid.lock
