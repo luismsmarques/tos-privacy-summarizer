@@ -5,6 +5,32 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.3.0] - 2025-01-27
+
+### ✨ Adicionado
+- **Sistema de Rating Inteligente**: Algoritmo avançado para calcular complexidade, boas práticas e score de risco
+- **Display Visual de Ratings**: Interface com indicadores de risco coloridos (semáforo) e barras de progresso
+- **Modal de Créditos Insuficientes**: Experiência melhorada com explicação transparente dos custos
+- **Marketing Melhorado**: Novo slogan "O Seu Advogado Digital com IA" com foco em "Acionável e Seguro"
+- **Secção "Porquê Pagar?"**: Transparência total sobre custos e qualidade do serviço
+- **Campos de Rating na Base de Dados**: `rating_complexidade`, `rating_boas_praticas`, `risk_score`
+- **Script de Atualização de Schema**: Migração automática da base de dados para novas funcionalidades
+
+### 🔧 Melhorado
+- **UX do Histórico**: Exibição de ratings visuais para cada resumo
+- **UX do Popup**: Display de score de risco após análise
+- **Onboarding**: Explicação clara do valor e custos do serviço
+- **Algoritmo de Rating**: Cálculo inteligente baseado em conteúdo, tamanho e tipo de documento
+- **Interface de Rating**: Design Material com cores semafóricas (verde/amarelo/vermelho)
+
+### 🐛 Corrigido
+- **Integração Completa**: Sistema de ratings totalmente funcional
+- **Compatibilidade**: Schema da base de dados atualizado sem quebrar funcionalidades existentes
+- **Deploy**: Configuração Vercel otimizada para produção
+
+### 🗑️ Removido
+- **Nenhuma funcionalidade removida** - Esta versão é totalmente compatível com versões anteriores
+
 ## [1.2.0] - 2025-10-06
 
 ### ✨ Adicionado
@@ -74,13 +100,13 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## 🔮 Próximas Versões
 
-### [1.3.0] - Planejado
+### [1.4.0] - Planejado
 - Suporte para mais idiomas
 - Integração com outros modelos de IA
 - API pública para desenvolvedores
 - Modo offline básico
 
-### [1.4.0] - Futuro
+### [1.5.0] - Futuro
 - Extensão para Firefox
 - App mobile
 - Integração com navegadores empresariais
@@ -89,6 +115,17 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ---
 
 ## 📝 Notas de Versão
+
+### Versão 1.3.0
+Esta versão introduz o **Sistema de Rating Inteligente**, uma funcionalidade revolucionária que transforma a extensão num verdadeiro "Advogado Digital". Os utilizadores agora recebem análises quantificadas de risco, complexidade e boas práticas, tornando a tomada de decisões mais informada e segura.
+
+**Principais Conquistas:**
+- ✅ Sistema de rating inteligente implementado
+- ✅ Interface visual com semáforo de risco
+- ✅ Marketing melhorado com foco em valor
+- ✅ UX otimizada para créditos insuficientes
+- ✅ Transparência total sobre custos
+- ✅ Compatibilidade total com versões anteriores
 
 ### Versão 1.2.0
 Esta versão representa uma melhoria significativa na estabilidade e funcionalidade da extensão. O problema crítico dos URLs e summaries null foi completamente resolvido, e a extensão está agora pronta para submissão na Chrome Web Store.

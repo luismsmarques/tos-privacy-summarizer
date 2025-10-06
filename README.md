@@ -1,7 +1,7 @@
 # 🤖 ToS & Privacy Summarizer
 
 [![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-Ready-green)](https://chrome.google.com/webstore)
-[![Version](https://img.shields.io/badge/version-1.2.0-blue)](https://github.com/luismsmarques/tos-privacy-summarizer)
+[![Version](https://img.shields.io/badge/version-1.3.0-blue)](https://github.com/luismsmarques/tos-privacy-summarizer)
 [![License](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
 [![Status](https://img.shields.io/badge/status-Production%20Ready-success)](https://github.com/luismsmarques/tos-privacy-summarizer)
@@ -21,6 +21,13 @@
 - **Pontos-Chave**: 5-7 pontos essenciais destacados
 - **Formatação Markdown** para melhor legibilidade
 - **Alertas de Privacidade**: Riscos importantes identificados automaticamente
+
+### 🎯 **Sistema de Rating Inteligente** ⭐ **NOVO!**
+- **Score de Risco (1-10)**: Avaliação instantânea do nível de risco do documento
+- **Complexidade (1-10)**: Medição da dificuldade de compreensão
+- **Boas Práticas (1-10)**: Avaliação da transparência e ética do documento
+- **Semáforo Visual**: Cores intuitivas (Verde/Amarelo/Vermelho) para identificação rápida
+- **Algoritmo Avançado**: Cálculo baseado em conteúdo, tamanho e tipo de documento
 
 ### 🎯 **Foco Personalizado**
 - **Privacidade**: Concentra-se em questões de dados pessoais e privacidade
@@ -302,13 +309,13 @@ R: A extensão é gratuita com créditos incluídos. Pode comprar créditos adic
 R: Sim, desde a v1.2.0 o dashboard mostra dados reais da base de dados em tempo real.
 ## 📈 Roadmap
 
-### **Versão 1.3.0 (Próxima)**
+### **Versão 1.4.0 (Próxima)**
 - [ ] Suporte para mais idiomas
 - [ ] Integração com outros modelos de IA
 - [ ] API pública para desenvolvedores
 - [ ] Modo offline básico
 
-### **Versão 1.4.0 (Futuro)**
+### **Versão 1.5.0 (Futuro)**
 - [ ] Extensão para Firefox
 - [ ] App mobile
 - [ ] Integração com navegadores empresariais
