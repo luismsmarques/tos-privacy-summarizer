@@ -1977,12 +1977,18 @@ class Dashboard {
         const failedSummariesEl = document.getElementById('failedSummariesCount');
         const avgProcessingTimeEl = document.getElementById('avgProcessingTime');
 
-        // Usar dados da API em vez de calcular localmente
-        if (this.data.overview && this.data.overview.successful_summaries !== undefined) {
-            const overview = this.data.overview;
+        // SEMPRE usar dados do overview quando disponíveis (dados reais da API)
+        if (this.data.overview && this.data.overview.data) {
+            const overview = this.data.overview.data;
             
             // Total de resumos = bem-sucedidos + falhados
             const totalSummaries = parseInt(overview.successful_summaries || 0) + parseInt(overview.failed_summaries || 0);
+            
+            console.log('📊 Atualizando estatísticas de resumos com dados reais:', {
+                total: totalSummaries,
+                successful: overview.successful_summaries,
+                failed: overview.failed_summaries
+            });
             
             if (totalSummariesEl) {
                 totalSummariesEl.textContent = totalSummaries.toLocaleString();
@@ -2002,7 +2008,7 @@ class Dashboard {
             }
         } else {
             // Fallback para cálculo local se não houver dados da API
-            console.warn('⚠️ Usando fallback para estatísticas de resumos');
+            console.warn('⚠️ Usando fallback para estatísticas de resumos - dados do overview não disponíveis');
             
             // Verificar se summariesData é um array válido
             if (!Array.isArray(this.summariesData)) {
