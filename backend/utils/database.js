@@ -150,7 +150,7 @@ class Database {
     }
 
     // Summary operations
-    async createSummary(summaryId, userId, success, duration, textLength, url, summary) {
+    async createSummary(summaryId, userId, success, duration, textLength, url, summary, title = null, focus = 'privacy') {
         try {
             console.log(`🗄️ createSummary chamado: summaryId=${summaryId}, userId=${userId}, success=${success}, duration=${duration}, textLength=${textLength}, url=${url}, summary=${summary ? summary.substring(0, 100) + '...' : 'null'}`);
             console.log(`🗄️ Summary content length: ${summary ? summary.length : 0}`);
@@ -161,32 +161,60 @@ class Database {
             
             console.log(`🗄️ Calculated wordCount: ${wordCount}, processingTime: ${processingTime}`);
             
-            const query = `
-                INSERT INTO summaries (summary_id, user_id, success, duration, text_length, url, summary)
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
-                RETURNING *
-            `;
-            const params = [summaryId, userId, success, duration, textLength, url, summary];
+            // Detectar tipo de documento baseado no conteúdo
+            const documentType = this.detectDocumentType(summary || '');
             
-            console.log(`🗄️ Executando query: ${query}`);
-            console.log(`🗄️ Parâmetros:`, params);
-            
-            const result = await this.query(query, params);
-            console.log(`🗄️ Query executada com sucesso. Resultado:`, result);
-            
-            // Update user summary count
-            if (success) {
-                console.log(`🗄️ Atualizando contador de resumos para userId: ${userId}`);
-                await this.query(`
-                    UPDATE users 
-                    SET summaries_generated = summaries_generated + 1
-                    WHERE user_id = $1
-                `, [userId]);
-                console.log(`🗄️ Contador de resumos atualizado`);
+            // Primeiro, tentar inserir com todas as colunas (schema completo)
+            try {
+                const query = `
+                    INSERT INTO summaries (
+                        summary_id, user_id, success, duration, text_length, 
+                        url, summary, title, document_type, word_count, 
+                        processing_time, focus
+                    )
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                    RETURNING *
+                `;
+                const params = [
+                    summaryId, userId, success, duration, textLength, 
+                    url, summary, title, documentType, wordCount, 
+                    processingTime, focus
+                ];
+                
+                console.log(`🗄️ Tentando inserção completa com todas as colunas`);
+                const result = await this.query(query, params);
+                console.log(`🗄️ Inserção completa bem-sucedida`);
+                
+                // Update user summary count
+                if (success) {
+                    await this.updateUserSummaryCount(userId);
+                }
+                
+                return result.rows[0];
+                
+            } catch (fullInsertError) {
+                console.log(`⚠️ Inserção completa falhou, tentando inserção básica: ${fullInsertError.message}`);
+                
+                // Se falhar, tentar inserção básica (schema mínimo)
+                const basicQuery = `
+                    INSERT INTO summaries (summary_id, user_id, success, duration, text_length)
+                    VALUES ($1, $2, $3, $4, $5)
+                    RETURNING *
+                `;
+                const basicParams = [summaryId, userId, success, duration, textLength];
+                
+                console.log(`🗄️ Tentando inserção básica`);
+                const result = await this.query(basicQuery, basicParams);
+                console.log(`🗄️ Inserção básica bem-sucedida`);
+                
+                // Update user summary count
+                if (success) {
+                    await this.updateUserSummaryCount(userId);
+                }
+                
+                return result.rows[0];
             }
             
-            console.log(`🗄️ createSummary concluído com sucesso. Retornando:`, result.rows[0]);
-            return result.rows[0];
         } catch (error) {
             console.error('❌ Error creating summary:', error);
             console.error('❌ Error details:', {
@@ -194,14 +222,65 @@ class Database {
                 stack: error.stack,
                 summaryId,
                 userId,
-                query: `
-                    INSERT INTO summaries (summary_id, user_id, success, duration, text_length, url, summary)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7)
-                    RETURNING *
-                `,
-                params: [summaryId, userId, success, duration, textLength, url, summary]
+                url,
+                summary: summary ? summary.substring(0, 100) + '...' : 'null'
             });
             throw error;
+        }
+    }
+    
+    // Função auxiliar para detectar tipo de documento
+    detectDocumentType(text) {
+        if (!text) return 'unknown';
+        
+        const lowerText = text.toLowerCase();
+        
+        // Palavras-chave para Política de Privacidade
+        const privacyKeywords = [
+            'privacy policy', 'política de privacidade', 'privacidade',
+            'personal data', 'dados pessoais', 'data protection',
+            'cookie policy', 'política de cookies', 'gdpr'
+        ];
+        
+        // Palavras-chave para Termos de Serviço
+        const termsKeywords = [
+            'terms of service', 'termos de serviço', 'terms and conditions',
+            'user agreement', 'contrato de utilizador', 'service agreement',
+            'terms of use', 'condições de uso'
+        ];
+        
+        const privacyCount = privacyKeywords.reduce((count, keyword) => {
+            const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+            return count + (lowerText.match(regex) || []).length;
+        }, 0);
+        
+        const termsCount = termsKeywords.reduce((count, keyword) => {
+            const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+            return count + (lowerText.match(regex) || []).length;
+        }, 0);
+        
+        if (privacyCount > termsCount && privacyCount > 0) {
+            return 'privacy_policy';
+        } else if (termsCount > privacyCount && termsCount > 0) {
+            return 'terms_of_service';
+        }
+        
+        return 'unknown';
+    }
+    
+    // Função auxiliar para atualizar contador de resumos
+    async updateUserSummaryCount(userId) {
+        try {
+            console.log(`🗄️ Atualizando contador de resumos para userId: ${userId}`);
+            await this.query(`
+                UPDATE users 
+                SET summaries_generated = summaries_generated + 1
+                WHERE user_id = $1
+            `, [userId]);
+            console.log(`🗄️ Contador de resumos atualizado`);
+        } catch (error) {
+            console.error('❌ Erro ao atualizar contador de resumos:', error);
+            // Não falhar o processo principal por causa deste erro
         }
     }
 

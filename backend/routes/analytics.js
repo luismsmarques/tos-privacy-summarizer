@@ -506,7 +506,7 @@ router.get('/summaries-history', async (req, res) => {
       search 
     } = req.query;
     
-    // Construir query base
+    // Construir query base - tentar incluir colunas opcionais se existirem
     let query = `
       SELECT 
         s.id,
@@ -514,9 +514,16 @@ router.get('/summaries-history', async (req, res) => {
         s.user_id,
         s.success,
         s.duration,
-        s.type as document_type,
         s.text_length,
-        s.created_at
+        s.created_at,
+        COALESCE(s.type, s.document_type, 'unknown') as document_type,
+        s.url,
+        s.summary,
+        s.title,
+        s.word_count,
+        s.processing_time,
+        s.focus,
+        s.updated_at
       FROM summaries s
       WHERE 1=1
     `;
@@ -527,7 +534,7 @@ router.get('/summaries-history', async (req, res) => {
     // Aplicar filtros
     if (type) {
       paramCount++;
-      query += ` AND s.type = $${paramCount}`;
+      query += ` AND (s.type = $${paramCount} OR s.document_type = $${paramCount})`;
       queryParams.push(type);
     }
     
@@ -588,7 +595,7 @@ router.get('/summaries-history', async (req, res) => {
     
     if (type) {
       countParamCount++;
-      countQuery += ` AND s.type = $${countParamCount}`;
+      countQuery += ` AND (s.type = $${countParamCount} OR s.document_type = $${countParamCount})`;
       countParams.push(type);
     }
     
@@ -895,7 +902,7 @@ async function registerSummary(userId, success = true, duration = 0, documentTyp
     }
     
     console.log('📝 Chamando db.createSummary...');
-    const result = await db.createSummary(summaryId, userId, success, duration, textLength, url, summary);
+    const result = await db.createSummary(summaryId, userId, success, duration, textLength, url, summary, title, focus);
     console.log(`✅ Resumo criado com sucesso: ${summaryId}`, result);
     return result;
   } catch (error) {
@@ -1154,7 +1161,7 @@ router.get('/summaries-history-temp', async (req, res) => {
     // Aplicar filtros
     if (type) {
       paramCount++;
-      query += ` AND s.type = $${paramCount}`;
+      query += ` AND (s.type = $${paramCount} OR s.document_type = $${paramCount})`;
       queryParams.push(type);
     }
     
@@ -1215,7 +1222,7 @@ router.get('/summaries-history-temp', async (req, res) => {
     
     if (type) {
       countParamCount++;
-      countQuery += ` AND s.type = $${countParamCount}`;
+      countQuery += ` AND (s.type = $${countParamCount} OR s.document_type = $${countParamCount})`;
       countParams.push(type);
     }
     
