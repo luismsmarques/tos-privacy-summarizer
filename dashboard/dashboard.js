@@ -208,7 +208,7 @@ class Dashboard {
     async fetchData(endpoint, options = {}) {
         try {
             // Configurar URL base do backend
-            const backendUrl = 'http://localhost:3000';
+            const backendUrl = window.location.origin;
             const fullUrl = endpoint.startsWith('http') ? endpoint : `${backendUrl}${endpoint}`;
             
             console.log(`📡 Fazendo request para: ${fullUrl}`);
@@ -307,7 +307,9 @@ class Dashboard {
         try {
             console.log('🔐 Tentando login automático...');
             
-            const response = await fetch('http://localhost:3000/api/auth/login', {
+            // Usar URL de produção em vez de localhost
+            const baseUrl = window.location.origin;
+            const response = await fetch(`${baseUrl}/api/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -1279,7 +1281,7 @@ class Dashboard {
         
         try {
             // Fazer request de logout
-            const response = await fetch('http://localhost:3000/api/auth/logout', {
+            const response = await fetch(`${window.location.origin}/api/auth/logout`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -3189,7 +3191,7 @@ document.addEventListener('DOMContentLoaded', () => {
             language: document.getElementById('languageSetting')?.value || 'pt',
             notifications: document.getElementById('notificationsSetting')?.checked || false,
             autoRefresh: parseInt(document.getElementById('autoRefreshSetting')?.value) || 30,
-            backendUrl: document.getElementById('backendUrlSetting')?.value || 'http://localhost:3000',
+            backendUrl: document.getElementById('backendUrlSetting')?.value || window.location.origin,
             geminiApiKey: document.getElementById('geminiApiKeySetting')?.value || '',
             apiTimeout: parseInt(document.getElementById('apiTimeoutSetting')?.value) || 10000,
             retryAttempts: parseInt(document.getElementById('retryAttemptsSetting')?.value) || 3,
