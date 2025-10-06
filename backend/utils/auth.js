@@ -171,12 +171,16 @@ class AuthService {
         // Verificar token diretamente usando JWT
         try {
             console.log('🔍 Verifying token with secret:', this.jwtSecret.substring(0, 10) + '...');
+            console.log('🔍 Token to verify:', token.substring(0, 20) + '...');
             const decoded = jwt.verify(token, this.jwtSecret);
             console.log('✅ Token verified successfully:', decoded);
             req.user = decoded;
             next();
         } catch (error) {
             console.error('❌ Token verification failed:', error.message);
+            console.error('❌ JWT Secret being used:', this.jwtSecret.substring(0, 20) + '...');
+            console.error('❌ Token being verified:', token.substring(0, 20) + '...');
+            
             return res.status(401).send(`
                 <!DOCTYPE html>
                 <html>
@@ -185,10 +189,13 @@ class AuthService {
                     <meta charset="UTF-8">
                     <style>
                         body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f5f5f5; }
-                        .error-box { max-width: 400px; margin: 0 auto; padding: 20px; border: 1px solid #dc3545; border-radius: 8px; background: white; }
+                        .error-box { max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #dc3545; border-radius: 8px; background: white; }
                         .error { color: #dc3545; font-size: 18px; }
+                        .debug { color: #666; font-size: 12px; margin-top: 10px; }
                         button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 20px; }
                         button:hover { background: #0056b3; }
+                        .refresh-btn { background: #28a745; margin-left: 10px; }
+                        .refresh-btn:hover { background: #218838; }
                     </style>
                 </head>
                 <body>
@@ -196,7 +203,12 @@ class AuthService {
                         <h1>❌ Token Inválido</h1>
                         <p class="error">O seu token de acesso expirou ou é inválido.</p>
                         <p>Por favor, faça login novamente.</p>
+                        <div class="debug">
+                            <p>Erro: ${error.message}</p>
+                            <p>Timestamp: ${new Date().toISOString()}</p>
+                        </div>
                         <button onclick="window.location.href='/dashboard/'">Fazer Login</button>
+                        <button class="refresh-btn" onclick="window.location.reload()">Atualizar Página</button>
                     </div>
                 </body>
                 </html>

@@ -14,7 +14,7 @@
   ],
   "env": {
     "NODE_ENV": "production",
-    "JWT_SECRET": "tos-privacy-summarizer-jwt-secret-key-2024-vercel-production",
+    "JWT_SECRET": "5tM2emNMyQBi2WpNapQbt4izhVkR4vcEVo2ZsJc23800hMpCxWNJNzoUufOM2sJlBnTrQzw95ahEBNVkKSgiiIbJSNW1s70PTBa2CCz5QjgI7iQiuVAo90LvOTLIhS2Y34QtQQQ16KcGwSDhCEZJK0DH96uV10Cxxz4y8awK0uUyj97pQ35CyX9GJu9o2XtmXyJI9927InhZ9x1zQntePq6bjqIwYqKZ4QK8gkpi6Mq6eHKvEE1VH7t2acjvfCED",
     "ADMIN_USERNAME": "admin",
     "ADMIN_PASSWORD": "admin123",
     "GEMINI_API_KEY": "your_gemini_api_key_here",

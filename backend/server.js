@@ -173,6 +173,20 @@ app.get('/health', (req, res) => {
     });
 });
 
+// Rota de debug para verificar configurações (apenas em desenvolvimento)
+app.get('/debug/config', (req, res) => {
+    if (process.env.NODE_ENV === 'production') {
+        return res.status(404).json({ error: 'Not found' });
+    }
+    
+    res.json({
+        jwtSecret: process.env.JWT_SECRET ? process.env.JWT_SECRET.substring(0, 20) + '...' : 'NOT_SET',
+        adminUsername: process.env.ADMIN_USERNAME || 'NOT_SET',
+        nodeEnv: process.env.NODE_ENV || 'NOT_SET',
+        timestamp: new Date().toISOString()
+    });
+});
+
 // Rota raiz
 app.get('/', (req, res) => {
     res.json({
