@@ -8,6 +8,8 @@
 
 **O Seu Advogado Digital com IA.** Analise Termos de Serviço e Políticas de Privacidade de forma segura, receba ratings de risco e poupe horas de leitura com o poder do Google Gemini. Acionável e Seguro.
 
+> 🎯 **Projeto Organizado e Limpo** - Código de produção otimizado, sem ficheiros de teste desnecessários
+
 ## ✨ Funcionalidades Principais
 
 ### 🤖 **Análise com IA**
@@ -127,6 +129,8 @@ tos-privacy-summarizer/
 │
 ├── 📁 Backend (Vercel)
 │   ├── server.js                  # Servidor principal
+│   ├── package.json               # Dependências do backend
+│   ├── vercel.json                # Configuração Vercel
 │   ├── routes/
 │   │   ├── gemini.js             # API Gemini
 │   │   ├── analytics.js          # Analytics e dados
@@ -134,10 +138,12 @@ tos-privacy-summarizer/
 │   │   ├── users.js              # Gestão de utilizadores
 │   │   ├── credits.js            # Sistema de créditos
 │   │   └── stripe.js             # Pagamentos
-│   └── utils/
-│       ├── database.js           # Conexão à base de dados
-│       ├── auth.js               # Utilitários de autenticação
-│       └── emailService.js       # Serviço de email
+│   ├── utils/
+│   │   ├── database.js           # Conexão à base de dados
+│   │   ├── auth.js               # Utilitários de autenticação
+│   │   └── emailService.js       # Serviço de email
+│   └── database/
+│       └── schema.sql            # Schema da base de dados
 │
 ├── 📁 Dashboard Administrativo
 │   ├── index.html                # Dashboard principal
@@ -145,10 +151,23 @@ tos-privacy-summarizer/
 │   ├── dashboard.css             # Estilos do dashboard
 │   └── chart.min.js             # Gráficos
 │
-└── 📁 Documentação
-    ├── README.md                 # Este arquivo
-    ├── STORE-DESCRIPTION.md      # Descrição para Chrome Web Store
-    └── SUBMISSION-GUIDE.md       # Guia de submissão
+├── 📁 Documentação
+│   ├── README.md                 # Este arquivo
+│   ├── PROJECT-TODO.md           # Lista de tarefas do projeto
+│   └── docs/                     # Documentação adicional
+│       ├── STORE-DESCRIPTION.md  # Descrição para Chrome Web Store
+│       ├── SUBMISSION-GUIDE.md    # Guia de submissão
+│       ├── CHANGELOG.md           # Histórico de mudanças
+│       ├── RELEASE-NOTES-v1.3.0.md # Notas da versão atual
+│       ├── PRIVACY-POLICY.md      # Política de privacidade
+│       ├── CONTRIBUTING.md        # Guia de contribuição
+│       └── ENVIRONMENT-GUIDE.md   # Guia de ambiente
+│
+└── 📁 Scripts de Gestão
+    ├── scripts/                  # Scripts de automação
+    │   ├── manage-environments.sh # Gestão de ambientes
+    │   └── test-environments.sh   # Testes de ambiente
+    └── debug-tools/              # Ferramentas de debug (desenvolvimento)
 ```
 
 ### **Tecnologias Utilizadas**
@@ -234,13 +253,20 @@ npm run dev         # Modo desenvolvimento com nodemon
 ```
 
 
-## 🆕 Últimas Atualizações (v1.2.0)
+## 🆕 Últimas Atualizações (v1.3.0)
+
+### **✅ Organização e Limpeza do Projeto**
+- **Código Limpo**: Removidos todos os ficheiros de teste e debug desnecessários
+- **Estrutura Otimizada**: Projeto organizado para produção
+- **Documentação Atualizada**: README reorganizado com informações claras
+- **Ficheiros ZIP Removidos**: Limpeza de versões antigas compactadas
+- **Cookies de Debug Removidos**: Limpeza de ficheiros sensíveis
 
 ### **✅ Melhorias Implementadas**
 - **Dashboard Corrigido**: Estatísticas agora mostram dados reais em vez de fallback
 - **Conexão Backend**: Problemas de CORS e URL resolvidos
 - **Segurança Aprimorada**: `.gitignore` melhorado com arquivos sensíveis
-- **Organização**: Pasta `chrome-store-package` otimizada para distribuição
+- **Organização**: Estrutura de pastas otimizada para distribuição
 - **Documentação**: README atualizado com todas as funcionalidades
 
 ### **🔧 Correções Técnicas**
