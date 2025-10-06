@@ -121,6 +121,17 @@ class AuthService {
             cookies: Object.keys(cookies),
             headers: Object.keys(req.headers)
         });
+        
+        // Debug: Check instance state
+        console.log('🔍 AuthService instance state:', {
+            hasThis: !!this,
+            thisType: typeof this,
+            hasJwtSecret: !!this.jwtSecret,
+            jwtSecretType: typeof this.jwtSecret,
+            jwtSecretValue: this.jwtSecret ? this.jwtSecret.substring(0, 20) + '...' : 'UNDEFINED',
+            processEnvJwtSecret: process.env.JWT_SECRET ? process.env.JWT_SECRET.substring(0, 20) + '...' : 'UNDEFINED',
+            allProperties: Object.keys(this)
+        });
 
         if (!token) {
             console.log('❌ No token found, showing login page');
