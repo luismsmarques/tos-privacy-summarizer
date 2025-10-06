@@ -2,7 +2,7 @@ import express from 'express';
 import db from '../utils/database.js';
 import authService from '../utils/auth.js';
 
-const router = express.Router();
+const router = express.Router(); 
 
 // Middleware para logging de requests (desabilitado temporariamente)
 router.use(async (req, res, next) => {
