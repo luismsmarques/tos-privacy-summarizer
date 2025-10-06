@@ -910,6 +910,72 @@ async function registerSummary(userId, success = true, duration = 0, documentTyp
   }
 }
 
+// Endpoint para testar conexão à base de dados
+router.post('/test-db-connection', async (req, res) => {
+  try {
+    console.log('🧪 Testando conexão à base de dados...');
+    
+    if (!db.isConnected) {
+      console.log('🔌 Conectando à base de dados...');
+      const connected = await db.connect();
+      if (!connected) {
+        return res.status(500).json({
+          success: false,
+          error: 'Não foi possível conectar à base de dados'
+        });
+      }
+    }
+    
+    // Testar query simples
+    console.log('🧪 Executando query de teste...');
+    const result = await db.query('SELECT NOW() as current_time, COUNT(*) as total_summaries FROM summaries');
+    console.log('🧪 Query de teste executada com sucesso:', result.rows[0]);
+    
+    // Testar inserção de resumo de teste
+    console.log('🧪 Testando inserção de resumo...');
+    const testSummaryId = `test_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const testResult = await db.createSummary(
+      testSummaryId,
+      'test_user',
+      true,
+      1000,
+      'test',
+      100,
+      'https://test.com',
+      'Teste de conexão',
+      'Teste',
+      'privacy'
+    );
+    console.log('🧪 Resumo de teste criado:', testResult);
+    
+    // Verificar se o resumo foi criado
+    const verifyResult = await db.query('SELECT * FROM summaries WHERE summary_id = $1', [testSummaryId]);
+    console.log('🧪 Verificação do resumo criado:', verifyResult.rows[0]);
+    
+    res.json({
+      success: true,
+      message: 'Conexão à base de dados funcionando corretamente',
+      testResults: {
+        connection: 'OK',
+        query: result.rows[0],
+        insert: testResult,
+        verify: verifyResult.rows[0]
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro no teste de conexão:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro no teste de conexão: ' + error.message,
+      details: {
+        message: error.message,
+        stack: error.stack
+      }
+    });
+  }
+});
+
 // Endpoint para obter histórico de resumos de um utilizador
 router.get('/user-history/:userId', async (req, res) => {
   try {
