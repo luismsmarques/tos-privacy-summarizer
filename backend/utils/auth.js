@@ -80,8 +80,16 @@ class AuthService {
     protectDashboard(req, res, next) {
         const cookies = req.cookies || {};
         const token = cookies.adminToken || req.headers['x-admin-token'];
+        
+        console.log('🔐 Dashboard protection check:', {
+            hasToken: !!token,
+            tokenLength: token ? token.length : 0,
+            cookies: Object.keys(cookies),
+            headers: Object.keys(req.headers)
+        });
 
         if (!token) {
+            console.log('❌ No token found, showing login page');
             return res.status(401).send(`
                 <!DOCTYPE html>
                 <html>
@@ -141,11 +149,13 @@ class AuthService {
 
         // Verificar token diretamente usando JWT
         try {
+            console.log('🔍 Verifying token with secret:', this.jwtSecret.substring(0, 10) + '...');
             const decoded = jwt.verify(token, this.jwtSecret);
+            console.log('✅ Token verified successfully:', decoded);
             req.user = decoded;
             next();
         } catch (error) {
-            console.error('Token verification failed:', error);
+            console.error('❌ Token verification failed:', error.message);
             return res.status(401).send('Token inválido');
         }
     }
