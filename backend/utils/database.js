@@ -150,9 +150,9 @@ class Database {
     }
 
     // Summary operations
-    async createSummary(summaryId, userId, success, duration, documentType = 'unknown', textLength = 0, url = null, summary = null, title = null, focus = 'privacy') {
+    async createSummary(summaryId, userId, success, duration, textLength, url, summary) {
         try {
-            console.log(`🗄️ createSummary chamado: summaryId=${summaryId}, userId=${userId}, success=${success}, duration=${duration}, documentType=${documentType}, textLength=${textLength}, url=${url}, title=${title}, focus=${focus}`);
+            console.log(`🗄️ createSummary chamado: summaryId=${summaryId}, userId=${userId}, success=${success}, duration=${duration}, textLength=${textLength}, url=${url}, summary=${summary ? summary.substring(0, 100) + '...' : 'null'}`);
             console.log(`🗄️ Summary content length: ${summary ? summary.length : 0}`);
             
             // Calcular word_count baseado no summary
@@ -195,11 +195,11 @@ class Database {
                 summaryId,
                 userId,
                 query: `
-                    INSERT INTO summaries (summary_id, user_id, success, duration, document_type, text_length, url, summary, title, word_count, processing_time, focus)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                    INSERT INTO summaries (summary_id, user_id, success, duration, text_length, url, summary)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7)
                     RETURNING *
                 `,
-                params: [summaryId, userId, success, duration, documentType, textLength, url, summary, title, (summary ? summary.split(/\s+/).length : 0), Math.round(duration / 1000.0 * 100) / 100, focus]
+                params: [summaryId, userId, success, duration, textLength, url, summary]
             });
             throw error;
         }
