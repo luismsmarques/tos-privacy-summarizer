@@ -27,6 +27,9 @@ build/
 *.pem
 *.zip
 
+# Chrome Store Package (generated from main files)
+chrome-store-package/
+
 # Backup files
 *.bak
 
