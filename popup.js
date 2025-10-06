@@ -49,6 +49,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const apiDescriptionText = document.getElementById('apiDescriptionText');
     const apiBadge = document.getElementById('apiBadge');
     const creditsStatus = document.getElementById('creditsStatus');
+    
+    // Quick Actions elements
+    const quickActionsServer = document.getElementById('quickActionsServer');
+    const quickActionsOwn = document.getElementById('quickActionsOwn');
 
     // Estado da aplicação
     let isProcessing = false;
@@ -409,9 +413,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Carregar créditos e atualizar status da API
     async function loadCredits() {
         try {
-            const result = await chrome.storage.local.get(['sharedCredits', 'apiKey']);
+            const result = await chrome.storage.local.get(['sharedCredits', 'geminiApiKey', 'apiType']);
             const credits = result.sharedCredits || 5;
-            const hasApiKey = !!result.apiKey;
+            const hasApiKey = !!result.geminiApiKey && result.geminiApiKey !== 'SHARED_API';
             
             // Atualizar status da API
             updateApiStatus(hasApiKey, credits);
@@ -452,6 +456,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 apiBadge.textContent = 'SUA API';
                 apiBadge.className = 'api-badge own-api';
             }
+            
+            // Mostrar botões para API própria
+            if (quickActionsServer) quickActionsServer.style.display = 'none';
+            if (quickActionsOwn) quickActionsOwn.style.display = 'flex';
         } else {
             // Usando API da extensão (Vercel)
             if (apiStatusIcon) apiStatusIcon.textContent = 'cloud';
@@ -461,6 +469,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 apiBadge.textContent = 'SERVIDOR';
                 apiBadge.className = 'api-badge server-api';
             }
+            
+            // Mostrar botões para API do servidor
+            if (quickActionsServer) quickActionsServer.style.display = 'flex';
+            if (quickActionsOwn) quickActionsOwn.style.display = 'none';
         }
     }
 
@@ -546,6 +558,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 chrome.runtime.openOptionsPage();
             });
         }
+        
+        // Botão para alternar para API do servidor
+        const switchToServerApiLink = document.getElementById('switchToServerApiLink');
+        if (switchToServerApiLink) {
+            switchToServerApiLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                switchToServerApi();
+            });
+        }
+        
+        // Botão para gerir API própria
+        const manageApiLink = document.getElementById('manageApiLink');
+        if (manageApiLink) {
+            manageApiLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                chrome.runtime.openOptionsPage();
+            });
+        }
     }
 
     // Handler para resumir
@@ -554,9 +584,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         try {
             // Verificar créditos antes de iniciar
-            const result = await chrome.storage.local.get(['sharedCredits', 'apiKey']);
+            const result = await chrome.storage.local.get(['sharedCredits', 'geminiApiKey', 'apiType']);
             const credits = result.sharedCredits || 5;
-            const hasApiKey = !!result.apiKey;
+            const hasApiKey = !!result.geminiApiKey && result.geminiApiKey !== 'SHARED_API';
             
             if (!hasApiKey && credits <= 0) {
                 console.log('Créditos insuficientes, mostrando modal');
@@ -1003,6 +1033,53 @@ document.addEventListener('DOMContentLoaded', function() {
     // Abrir histórico
     function openHistory() {
         chrome.tabs.create({ url: chrome.runtime.getURL('history.html') });
+    }
+    
+    // Alternar para API do servidor
+    async function switchToServerApi() {
+        try {
+            // Confirmar ação com o utilizador
+            if (!confirm('Tem a certeza que quer alternar para a API do servidor? A sua chave API pessoal será removida localmente.')) {
+                return;
+            }
+            
+            // Remover a chave API própria de forma segura
+            await chrome.storage.local.remove(['geminiApiKey']);
+            
+            // Configurar para usar API do servidor
+            await chrome.storage.local.set({
+                geminiApiKey: 'SHARED_API',
+                apiType: 'shared',
+                sharedCredits: 5, // Resetar créditos para 5
+                apiKeyRemovedAt: Date.now() // Timestamp para auditoria
+            });
+            
+            // Recarregar status
+            await loadCredits();
+            
+            console.log('Alternado para API do servidor - chave removida com segurança');
+        } catch (error) {
+            console.error('Erro ao alternar para API do servidor:', error);
+        }
+    }
+    
+    // Função para limpar chave API de forma segura
+    async function clearApiKeySecurely() {
+        try {
+            // Sobrescrever com dados aleatórios antes de remover
+            const randomData = Array.from({length: 50}, () => Math.random().toString(36).charAt(2)).join('');
+            await chrome.storage.local.set({ geminiApiKey: randomData });
+            
+            // Aguardar um pouco
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Remover completamente
+            await chrome.storage.local.remove(['geminiApiKey']);
+            
+            console.log('Chave API removida de forma segura');
+        } catch (error) {
+            console.error('Erro ao limpar chave API:', error);
+        }
     }
 
     // Listener para mensagens do background script

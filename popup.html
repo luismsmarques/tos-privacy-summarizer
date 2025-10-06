@@ -1144,15 +1144,30 @@
         </div>
         
         <!-- Quick Actions -->
-        <div class="quick-actions">
-            <a href="#" class="quick-action-link" id="configureApiLink">
-                <span class="material-icons">settings</span>
-                <span>Configurar API</span>
-            </a>
-            <a href="#" class="quick-action-link" id="buyCreditsLink">
-                <span class="material-icons">shopping_cart</span>
-                <span>Comprar Créditos</span>
-            </a>
+        <div class="quick-actions" id="quickActions">
+            <!-- Botões para quando usa API do servidor -->
+            <div class="quick-actions-server" id="quickActionsServer">
+                <a href="#" class="quick-action-link" id="configureApiLink">
+                    <span class="material-icons">settings</span>
+                    <span>Configurar API</span>
+                </a>
+                <a href="#" class="quick-action-link" id="buyCreditsLink">
+                    <span class="material-icons">shopping_cart</span>
+                    <span>Comprar Créditos</span>
+                </a>
+            </div>
+            
+            <!-- Botões para quando usa API própria -->
+            <div class="quick-actions-own" id="quickActionsOwn" style="display: none;">
+                <a href="#" class="quick-action-link" id="switchToServerApiLink">
+                    <span class="material-icons">cloud</span>
+                    <span>Usar API Servidor</span>
+                </a>
+                <a href="#" class="quick-action-link" id="manageApiLink">
+                    <span class="material-icons">settings</span>
+                    <span>Gerir API</span>
+                </a>
+            </div>
         </div>
         
         <!-- Risk Score Display (Hidden by default, shown after analysis) -->

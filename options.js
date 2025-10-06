@@ -157,16 +157,54 @@ document.addEventListener('DOMContentLoaded', function() {
     // Função para repor configurações
     function resetSettings() {
         if (confirm('Tem a certeza que quer repor todas as configurações? Esta ação não pode ser desfeita.')) {
-            chrome.storage.local.clear(function() {
-                showStatus('🔄 Configurações repostas com sucesso!', 'success');
-                
-                // Limpar campos
-                apiKeyInput.value = '';
-                setToggleState(autoDetectToggle, true);
-                setToggleState(notificationsToggle, true);
-                
-                console.log('Configurações repostas');
+            // Limpar chave API de forma segura primeiro
+            clearApiKeySecurely().then(() => {
+                // Limpar resto das configurações
+                chrome.storage.local.clear(function() {
+                    showStatus('🔄 Configurações repostas com sucesso! Chave API removida com segurança.', 'success');
+                    
+                    // Limpar campos
+                    apiKeyInput.value = '';
+                    setToggleState(autoDetectToggle, true);
+                    setToggleState(notificationsToggle, true);
+                    
+                    console.log('Configurações repostas - chave API removida com segurança');
+                });
+            }).catch(error => {
+                console.error('Erro ao limpar chave API:', error);
+                showStatus('❌ Erro ao limpar chave API. Tente novamente.', 'error');
             });
+        }
+    }
+    
+    // Função para limpar chave API de forma segura
+    async function clearApiKeySecurely() {
+        try {
+            // Obter chave atual
+            const result = await new Promise((resolve) => {
+                chrome.storage.local.get(['geminiApiKey'], resolve);
+            });
+            
+            if (result.geminiApiKey && result.geminiApiKey !== 'SHARED_API') {
+                // Sobrescrever com dados aleatórios antes de remover
+                const randomData = Array.from({length: 50}, () => Math.random().toString(36).charAt(2)).join('');
+                await new Promise((resolve) => {
+                    chrome.storage.local.set({ geminiApiKey: randomData }, resolve);
+                });
+                
+                // Aguardar um pouco
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                // Remover completamente
+                await new Promise((resolve) => {
+                    chrome.storage.local.remove(['geminiApiKey'], resolve);
+                });
+                
+                console.log('Chave API removida de forma segura');
+            }
+        } catch (error) {
+            console.error('Erro ao limpar chave API:', error);
+            throw error;
         }
     }
     
