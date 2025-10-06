@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações - ToS & Privacy Summarizer</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        input[type="text"]:focus, input[type="password"]:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        .help-text {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 5px;
+            line-height: 1.4;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .status-message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            text-align: center;
+        }
+        
+        .status-success {
+            background: rgba(39, 174, 96, 0.2);
+            color: #2ecc71;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+        
+        .status-error {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+        
+        .status-warning {
+            background: rgba(243, 156, 18, 0.2);
+            color: #f39c12;
+            border: 1px solid rgba(243, 156, 18, 0.3);
+        }
+        
+        .link {
+            color: #3498db;
+            text-decoration: none;
+        }
+        
+        .link:hover {
+            text-decoration: underline;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .section:last-child {
+            border-bottom: none;
+        }
+        
+        .section h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #ecf0f1;
+        }
+        
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .toggle {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .toggle.active {
+            background: #27ae60;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+        }
+        
+        .toggle.active .toggle-slider {
+            transform: translateX(26px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚙️ Configurações</h1>
+        
+        <div class="section">
+            <h2>🔑 Chave da API Gemini</h2>
+            <div class="form-group">
+                <label for="apiKey">Chave da API:</label>
+                <input type="password" id="apiKey" placeholder="Cole aqui a sua chave da API Gemini">
+                <div class="help-text">
+                    Obtenha a sua chave gratuita em <a href="https://makersuite.google.com/app/apikey" target="_blank" class="link">Google AI Studio</a>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button id="saveApiKey" class="btn-primary">💾 Guardar Chave</button>
+                <button id="testApiKey" class="btn-secondary">🧪 Testar Chave</button>
+            </div>
+            
+            <div id="apiKeyStatus" class="status-message" style="display: none;"></div>
+        </div>
+        
+        <div class="section">
+            <h2>🎨 Preferências</h2>
+            
+            <div class="toggle-container">
+                <div>
+                    <label for="autoDetect">Detecção Automática de Páginas Legais</label>
+                    <div class="help-text">Detecta automaticamente se a página contém Termos de Serviço</div>
+                </div>
+                <div class="toggle" id="autoDetectToggle">
+                    <div class="toggle-slider"></div>
+                </div>
+            </div>
+            
+            <div class="toggle-container">
+                <div>
+                    <label for="showNotifications">Notificações de Sucesso</label>
+                    <div class="help-text">Mostra notificações quando o resumo é gerado</div>
+                </div>
+                <div class="toggle" id="notificationsToggle">
+                    <div class="toggle-slider"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>📊 Informações</h2>
+            <div class="help-text">
+                <strong>Versão:</strong> 1.0<br>
+                <strong>Desenvolvido por:</strong> ToS & Privacy Summarizer Team<br>
+                <strong>Última atualização:</strong> <span id="lastUpdate"></span>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>📋 Documentos Legais</h2>
+            <div class="button-group">
+                <button id="viewPrivacyPolicy" class="btn-secondary">🔒 Política de Privacidade</button>
+                <button id="viewTermsOfService" class="btn-secondary">📄 Termos de Serviço</button>
+            </div>
+        </div>
+        
+        <div class="button-group">
+            <button id="resetSettings" class="btn-secondary">🔄 Repor Configurações</button>
+            <button id="exportSettings" class="btn-secondary">📤 Exportar Configurações</button>
+        </div>
+        
+        <div class="button-group">
+            <button id="showOnboarding" class="btn-secondary">👋 Ver Guia de Início</button>
+        </div>
+    </div>
+    
+    <script src="options.js"></script>
+</body>
+</html>

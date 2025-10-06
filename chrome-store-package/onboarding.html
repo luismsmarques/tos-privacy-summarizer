@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bem-vindo - ToS & Privacy Summarizer</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+        }
+        
+        .onboarding-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .step {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 40px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 20px;
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        .step.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .step-icon {
+            font-size: 48px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .step-title {
+            font-size: 28px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 15px;
+            color: #ecf0f1;
+        }
+        
+        .step-description {
+            font-size: 16px;
+            line-height: 1.6;
+            text-align: center;
+            margin-bottom: 30px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .step-content {
+            margin-bottom: 30px;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+        
+        .feature-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+        }
+        
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .feature-icon {
+            font-size: 20px;
+            margin-right: 15px;
+            width: 30px;
+            text-align: center;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        .help-text {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 5px;
+            line-height: 1.4;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .step-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .step-dot.active {
+            background: #27ae60;
+            transform: scale(1.2);
+        }
+        
+        .step-dot.completed {
+            background: #2ecc71;
+        }
+        
+        .demo-section {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .demo-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #ecf0f1;
+        }
+        
+        .demo-steps {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .demo-steps li {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .demo-steps li::before {
+            content: counter(step-counter);
+            counter-increment: step-counter;
+            background: #3498db;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        
+        .demo-steps {
+            counter-reset: step-counter;
+        }
+        
+        .success-message {
+            background: rgba(39, 174, 96, 0.2);
+            color: #2ecc71;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .error-message {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .skip-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .skip-link a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        .skip-link a:hover {
+            color: white;
+            text-decoration: underline;
+        }
+
+        /* Estilos para opções de API */
+        .api-option {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .api-option:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .api-option.selected {
+            border-color: #3498db;
+            background: rgba(52, 152, 219, 0.1);
+        }
+
+        .option-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 15px;
+        }
+
+        .option-icon {
+            font-size: 32px;
+            flex-shrink: 0;
+        }
+
+        .option-title {
+            flex: 1;
+        }
+
+        .option-title h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #ecf0f1;
+            margin: 0 0 5px 0;
+        }
+
+        .option-subtitle {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            margin: 0;
+        }
+
+        .option-badge {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .option-badge.advanced {
+            background: linear-gradient(45deg, #e67e22, #f39c12);
+        }
+
+        .option-features {
+            margin-bottom: 20px;
+        }
+
+        .credits-info {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .credits-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .credits-label {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .credits-count {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2ecc71;
+        }
+
+        .credits-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .credits-actions .btn {
+            flex: 1;
+            padding: 10px 16px;
+            font-size: 14px;
+        }
+
+        .api-key-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .option-actions {
+            margin-top: 15px;
+        }
+
+        .option-actions .btn {
+            width: 100%;
+            padding: 12px 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="onboarding-container">
+        <!-- Barra de Progresso -->
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        
+        <!-- Indicadores de Passo -->
+        <div class="step-indicator">
+            <div class="step-dot active" data-step="0"></div>
+            <div class="step-dot" data-step="1"></div>
+            <div class="step-dot" data-step="2"></div>
+            <div class="step-dot" data-step="3"></div>
+            <div class="step-dot" data-step="4"></div>
+        </div>
+        
+        <!-- Passo 1: Boas-vindas -->
+        <div class="step active" id="step1">
+            <div class="step-icon">🎉</div>
+            <h2 class="step-title">Bem-vindo ao ToS & Privacy Summarizer!</h2>
+            <p class="step-description">
+                A sua nova ferramenta para entender rapidamente Termos de Serviço e Políticas de Privacidade. 
+                Vamos configurar tudo em poucos passos simples.
+            </p>
+            
+            <div class="step-content">
+                <h3 style="text-align: center; margin-bottom: 20px;">O que pode fazer:</h3>
+                <ul class="feature-list">
+                    <li>
+                        <span class="feature-icon">📄</span>
+                        <span>Analisar Termos de Serviço e Políticas de Privacidade</span>
+                    </li>
+                    <li>
+                        <span class="feature-icon">🤖</span>
+                        <span>Obter resumos inteligentes usando IA</span>
+                    </li>
+                    <li>
+                        <span class="feature-icon">⚠️</span>
+                        <span>Identificar alertas de privacidade importantes</span>
+                    </li>
+                    <li>
+                        <span class="feature-icon">⚡</span>
+                        <span>Economizar tempo na leitura de documentos legais</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="button-group">
+                <button class="btn btn-primary" id="startConfigBtn">Começar Configuração</button>
+            </div>
+            
+            <div class="skip-link">
+                <a href="#" id="skipOnboardingLink">Saltar configuração</a>
+            </div>
+        </div>
+        
+        <!-- Passo 2: Configuração da API -->
+        <div class="step" id="step2">
+            <div class="step-icon">🔑</div>
+            <h2 class="step-title">Escolher Método de API</h2>
+            <p class="step-description">
+                Escolha como quer usar a extensão. Recomendamos começar com os créditos gratuitos!
+            </p>
+            
+            <div class="step-content">
+                <!-- Opção 1: Chave Compartilhada -->
+                <div class="api-option" id="sharedApiOption">
+                    <div class="option-header">
+                        <div class="option-icon">🎁</div>
+                        <div class="option-title">
+                            <h3>Créditos Gratuitos (Recomendado)</h3>
+                            <p class="option-subtitle">Comece imediatamente sem configuração</p>
+                        </div>
+                        <div class="option-badge">GRÁTIS</div>
+                    </div>
+                    
+                    <div class="option-features">
+                        <ul class="feature-list">
+                            <li>
+                                <span class="feature-icon">✅</span>
+                                <span>5 análises gratuitas incluídas</span>
+                            </li>
+                            <li>
+                                <span class="feature-icon">⚡</span>
+                                <span>Começar a usar imediatamente</span>
+                            </li>
+                            <li>
+                                <span class="feature-icon">🛡️</span>
+                                <span>Sem necessidade de conta Google</span>
+                            </li>
+                            <li>
+                                <span class="feature-icon">💳</span>
+                                <span>Comprar mais créditos quando necessário</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="credits-info">
+                        <div class="credits-display">
+                            <span class="credits-label">Créditos disponíveis:</span>
+                            <span class="credits-count" id="sharedCreditsCount">5</span>
+                        </div>
+                        <div class="credits-actions">
+                            <button class="btn btn-primary" id="useSharedApiBtn">Usar Créditos Gratuitos</button>
+                            <button class="btn btn-secondary" id="buyCreditsBtn">Comprar Mais Créditos</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Opção 2: Chave Própria -->
+                <div class="api-option" id="ownApiOption">
+                    <div class="option-header">
+                        <div class="option-icon">🔧</div>
+                        <div class="option-title">
+                            <h3>Sua Própria Chave da API</h3>
+                            <p class="option-subtitle">Para utilizadores avançados</p>
+                        </div>
+                        <div class="option-badge">AVANÇADO</div>
+                    </div>
+                    
+                    <div class="option-features">
+                        <ul class="feature-list">
+                            <li>
+                                <span class="feature-icon">♾️</span>
+                                <span>Uso ilimitado (conforme limites da sua conta)</span>
+                            </li>
+                            <li>
+                                <span class="feature-icon">🔒</span>
+                                <span>Controlo total sobre os seus dados</span>
+                            </li>
+                            <li>
+                                <span class="feature-icon">⚙️</span>
+                                <span>Configuração personalizada</span>
+                            </li>
+                            <li>
+                                <span class="feature-icon">📊</span>
+                                <span>Acesso aos seus próprios limites de API</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="api-key-section" id="apiKeySection" style="display: none;">
+                        <div class="demo-section">
+                            <h3 class="demo-title">Como obter a sua chave:</h3>
+                            <ol class="demo-steps">
+                                <li>Vá para <a href="https://makersuite.google.com/app/apikey" target="_blank" style="color: #3498db;">Google AI Studio</a></li>
+                                <li>Faça login com a sua conta Google</li>
+                                <li>Clique em "Create API Key"</li>
+                                <li>Copie a chave gerada</li>
+                                <li>Cole-a no campo abaixo</li>
+                            </ol>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="apiKey">Chave da API Gemini:</label>
+                            <input type="password" id="apiKey" placeholder="Cole aqui a sua chave da API">
+                            <div class="help-text">
+                                A chave será guardada localmente no seu navegador e nunca partilhada.
+                            </div>
+                        </div>
+                        
+                        <div id="apiKeyStatus"></div>
+                    </div>
+                    
+                    <div class="option-actions">
+                        <button class="btn btn-secondary" id="useOwnApiBtn">Usar Minha Chave</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button class="btn btn-secondary" id="prevStep2Btn">Anterior</button>
+                <button class="btn btn-primary" id="testAndNextBtn" style="display: none;">Testar e Continuar</button>
+            </div>
+        </div>
+        
+        <!-- Passo 3: Demonstração -->
+        <div class="step" id="step3">
+            <div class="step-icon">🎯</div>
+            <h2 class="step-title">Como Usar a Extensão</h2>
+            <p class="step-description">
+                Agora que está configurado, vamos mostrar-lhe como usar a extensão de forma eficaz.
+            </p>
+            
+            <div class="step-content">
+                <div class="demo-section">
+                    <h3 class="demo-title">Passos para analisar uma página:</h3>
+                    <ol class="demo-steps">
+                        <li>Navegue para uma página com Termos de Serviço ou Política de Privacidade</li>
+                        <li>Clique no ícone da extensão na barra de ferramentas</li>
+                        <li>Clique em "🔍 Extrair & Resumir"</li>
+                        <li>Aguarde alguns segundos para o processamento</li>
+                        <li>Leia o resumo estruturado com alertas de privacidade</li>
+                    </ol>
+                </div>
+                
+                <div class="demo-section">
+                    <h3 class="demo-title">Tipos de alertas que encontrará:</h3>
+                    <ul class="feature-list">
+                        <li>
+                            <span class="feature-icon">👥</span>
+                            <span>Partilha de dados com terceiros</span>
+                        </li>
+                        <li>
+                            <span class="feature-icon">🖼️</span>
+                            <span>Propriedade do seu conteúdo</span>
+                        </li>
+                        <li>
+                            <span class="feature-icon">🔄</span>
+                            <span>Alterações unilaterais dos termos</span>
+                        </li>
+                        <li>
+                            <span class="feature-icon">🏛️</span>
+                            <span>Limitações legais e jurisdição</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button class="btn btn-secondary" id="prevStep3Btn">Anterior</button>
+                <button class="btn btn-primary" id="nextStep3Btn">Continuar</button>
+            </div>
+        </div>
+        
+        <!-- Passo 4: Configurações Avançadas -->
+        <div class="step" id="step4">
+            <div class="step-icon">⚙️</div>
+            <h2 class="step-title">Configurações Avançadas</h2>
+            <p class="step-description">
+                Personalize a sua experiência com algumas configurações opcionais.
+            </p>
+            
+            <div class="step-content">
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="autoDetect" checked> 
+                        Detecção Automática de Páginas Legais
+                    </label>
+                    <div class="help-text">
+                        Detecta automaticamente se a página contém Termos de Serviço ou Política de Privacidade.
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="notifications" checked> 
+                        Notificações de Sucesso
+                    </label>
+                    <div class="help-text">
+                        Mostra notificações quando o resumo é gerado com sucesso.
+                    </div>
+                </div>
+                
+                <div class="demo-section">
+                    <h3 class="demo-title">Acesso às Configurações:</h3>
+                    <p>Pode sempre alterar estas configurações clicando no ícone da extensão e depois em "⚙️ Configurações".</p>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button class="btn btn-secondary" id="prevStep4Btn">Anterior</button>
+                <button class="btn btn-primary" id="nextStep4Btn">Continuar</button>
+            </div>
+        </div>
+        
+        <!-- Passo 5: Conclusão -->
+        <div class="step" id="step5">
+            <div class="step-icon">🎉</div>
+            <h2 class="step-title">Configuração Concluída!</h2>
+            <p class="step-description">
+                Parabéns! A sua extensão está configurada e pronta para usar. 
+                Agora pode começar a analisar Termos de Serviço e Políticas de Privacidade.
+            </p>
+            
+            <div class="step-content">
+                <div class="success-message">
+                    ✅ Extensão configurada com sucesso!<br>
+                    ✅ Chave da API validada<br>
+                    ✅ Configurações personalizadas aplicadas
+                </div>
+                
+                <div class="demo-section">
+                    <h3 class="demo-title">Próximos passos:</h3>
+                    <ol class="demo-steps">
+                        <li>Experimente a extensão numa página com Termos de Serviço</li>
+                        <li>Explore os diferentes tipos de alertas de privacidade</li>
+                        <li>Configure preferências adicionais se necessário</li>
+                        <li>Partilhe a extensão com amigos e colegas</li>
+                    </ol>
+                </div>
+                
+                <div class="demo-section">
+                    <h3 class="demo-title">Precisa de ajuda?</h3>
+                    <p>Consulte a nossa <a href="privacy-policy.html" style="color: #3498db;">Política de Privacidade</a> e <a href="TERMS-OF-SERVICE.md" style="color: #3498db;">Termos de Serviço</a> para mais informações.</p>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button class="btn btn-primary" id="completeOnboardingBtn">Começar a Usar</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="onboarding.js"></script>
+</body>
+</html>
