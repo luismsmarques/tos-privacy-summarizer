@@ -141,8 +141,7 @@ class AuthService {
 
         // Verificar token diretamente usando JWT
         try {
-            const jwtSecret = process.env.JWT_SECRET || 'your-secret-key';
-            const decoded = jwt.verify(token, jwtSecret);
+            const decoded = jwt.verify(token, this.jwtSecret);
             req.user = decoded;
             next();
         } catch (error) {
