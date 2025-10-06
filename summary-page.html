@@ -346,6 +346,242 @@
         .hidden {
             display: none !important;
         }
+
+        /* Feedback Button */
+        .feedback-button {
+            background: var(--md-sys-color-surface-container-high);
+            border: 1px solid var(--md-sys-color-outline-variant);
+            color: var(--md-sys-color-on-surface-variant);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 16px;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .feedback-button:hover {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+            border-color: var(--md-sys-color-primary);
+        }
+
+        .feedback-button .material-symbols-outlined {
+            font-size: 18px;
+        }
+
+        /* Feedback Modal */
+        .feedback-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .feedback-modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .feedback-modal-content {
+            background: var(--md-sys-color-surface-container-lowest);
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .feedback-modal.show .feedback-modal-content {
+            transform: scale(1);
+        }
+
+        .feedback-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .feedback-modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--md-sys-color-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .feedback-modal-close {
+            background: none;
+            border: none;
+            color: var(--md-sys-color-on-surface-variant);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 20px;
+            transition: background-color 0.2s;
+        }
+
+        .feedback-modal-close:hover {
+            background: var(--md-sys-color-surface-container-high);
+        }
+
+        .feedback-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .feedback-form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .feedback-form-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--md-sys-color-on-surface);
+        }
+
+        .feedback-form-select {
+            padding: 12px 16px;
+            border: 1px solid var(--md-sys-color-outline-variant);
+            border-radius: 8px;
+            background: var(--md-sys-color-surface-container-lowest);
+            color: var(--md-sys-color-on-surface);
+            font-size: 16px;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .feedback-form-select:focus {
+            outline: none;
+            border-color: var(--md-sys-color-primary);
+        }
+
+        .feedback-form-textarea {
+            padding: 12px 16px;
+            border: 1px solid var(--md-sys-color-outline-variant);
+            border-radius: 8px;
+            background: var(--md-sys-color-surface-container-lowest);
+            color: var(--md-sys-color-on-surface);
+            font-size: 16px;
+            font-family: 'Roboto', sans-serif;
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .feedback-form-textarea:focus {
+            outline: none;
+            border-color: var(--md-sys-color-primary);
+        }
+
+        .feedback-form-textarea::placeholder {
+            color: var(--md-sys-color-on-surface-variant);
+        }
+
+        .feedback-form-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 8px;
+        }
+
+        .feedback-form-button {
+            padding: 12px 24px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .feedback-form-button.cancel {
+            background: var(--md-sys-color-surface-container-high);
+            color: var(--md-sys-color-on-surface);
+            border: 1px solid var(--md-sys-color-outline-variant);
+        }
+
+        .feedback-form-button.cancel:hover {
+            background: var(--md-sys-color-surface-container);
+        }
+
+        .feedback-form-button.submit {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            border: none;
+        }
+
+        .feedback-form-button.submit:hover {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+        }
+
+        .feedback-form-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Success Message */
+        .feedback-success {
+            background: var(--md-sys-color-success);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        /* Section-specific feedback */
+        .summary-section {
+            position: relative;
+        }
+
+        .section-feedback {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+        }
+
+        .section-feedback .feedback-button {
+            margin-top: 0;
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .feedback-modal-content {
+                padding: 24px;
+                margin: 16px;
+            }
+            
+            .section-feedback {
+                position: static;
+                margin-top: 16px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -391,6 +627,81 @@
         <!-- Summary Content -->
         <div id="summaryContent" class="summary-content hidden">
             <!-- Content will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Feedback Modal -->
+    <div id="feedbackModal" class="feedback-modal">
+        <div class="feedback-modal-content">
+            <div class="feedback-modal-header">
+                <h3 class="feedback-modal-title">
+                    <span class="material-symbols-outlined">feedback</span>
+                    Reportar Problema no Resumo
+                </h3>
+                <button class="feedback-modal-close" id="feedbackModalClose">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            
+            <div id="feedbackSuccess" class="feedback-success hidden">
+                <span class="material-symbols-outlined">check_circle</span>
+                Obrigado pelo seu feedback! A sua contribuição ajuda-nos a melhorar o serviço.
+            </div>
+            
+            <form id="feedbackForm" class="feedback-form">
+                <div class="feedback-form-group">
+                    <label for="feedbackType" class="feedback-form-label">Tipo de Problema</label>
+                    <select id="feedbackType" class="feedback-form-select" required>
+                        <option value="">Selecione o tipo de problema</option>
+                        <option value="inaccurate">Informação incorreta ou imprecisa</option>
+                        <option value="missing">Informação importante em falta</option>
+                        <option value="unclear">Resumo pouco claro ou confuso</option>
+                        <option value="irrelevant">Informação irrelevante incluída</option>
+                        <option value="format">Problema de formatação</option>
+                        <option value="other">Outro problema</option>
+                    </select>
+                </div>
+                
+                <div class="feedback-form-group">
+                    <label for="feedbackSection" class="feedback-form-label">Secção do Resumo</label>
+                    <select id="feedbackSection" class="feedback-form-select" required>
+                        <option value="">Selecione a secção</option>
+                        <option value="resumo_conciso">Resumo Conciso</option>
+                        <option value="pontos_chave">Pontos Chave</option>
+                        <option value="alertas_privacidade">Alertas de Privacidade</option>
+                        <option value="geral">Resumo Geral</option>
+                    </select>
+                </div>
+                
+                <div class="feedback-form-group">
+                    <label for="feedbackDescription" class="feedback-form-label">Descrição do Problema</label>
+                    <textarea 
+                        id="feedbackDescription" 
+                        class="feedback-form-textarea" 
+                        placeholder="Descreva o problema encontrado e como podemos melhorar o resumo..."
+                        required
+                    ></textarea>
+                </div>
+                
+                <div class="feedback-form-group">
+                    <label for="feedbackSuggestion" class="feedback-form-label">Sugestão de Melhoria (opcional)</label>
+                    <textarea 
+                        id="feedbackSuggestion" 
+                        class="feedback-form-textarea" 
+                        placeholder="Se tiver sugestões específicas sobre como melhorar o resumo, partilhe-as aqui..."
+                    ></textarea>
+                </div>
+                
+                <div class="feedback-form-actions">
+                    <button type="button" class="feedback-form-button cancel" id="feedbackCancel">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="feedback-form-button submit" id="feedbackSubmit">
+                        <span class="material-symbols-outlined">send</span>
+                        Enviar Feedback
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 

@@ -78,6 +78,22 @@ CREATE TABLE IF NOT EXISTS credits_history (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
+-- Tabela de feedback
+CREATE TABLE IF NOT EXISTS feedback (
+    id SERIAL PRIMARY KEY,
+    type VARCHAR(50) NOT NULL, -- 'inaccurate', 'missing', 'unclear', 'irrelevant', 'format', 'other'
+    section VARCHAR(50) NOT NULL, -- 'resumo_conciso', 'pontos_chave', 'alertas_privacidade', 'geral'
+    description TEXT NOT NULL,
+    suggestion TEXT,
+    page_url TEXT,
+    page_title TEXT,
+    summary_id VARCHAR(255),
+    user_agent TEXT,
+    ip_address VARCHAR(45),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (summary_id) REFERENCES summaries(summary_id) ON DELETE SET NULL
+);
+
 -- Índices para performance
 CREATE INDEX IF NOT EXISTS idx_users_user_id ON users(user_id);
 CREATE INDEX IF NOT EXISTS idx_users_last_seen ON users(last_seen);
@@ -89,6 +105,10 @@ CREATE INDEX IF NOT EXISTS idx_requests_user_id ON requests(user_id);
 CREATE INDEX IF NOT EXISTS idx_performance_hourly_date ON performance_hourly(date);
 CREATE INDEX IF NOT EXISTS idx_credits_history_user_id ON credits_history(user_id);
 CREATE INDEX IF NOT EXISTS idx_credits_history_created_at ON credits_history(created_at);
+CREATE INDEX IF NOT EXISTS idx_feedback_type ON feedback(type);
+CREATE INDEX IF NOT EXISTS idx_feedback_section ON feedback(section);
+CREATE INDEX IF NOT EXISTS idx_feedback_created_at ON feedback(created_at);
+CREATE INDEX IF NOT EXISTS idx_feedback_summary_id ON feedback(summary_id);
 
 -- Função para atualizar updated_at automaticamente
 CREATE OR REPLACE FUNCTION update_updated_at_column()

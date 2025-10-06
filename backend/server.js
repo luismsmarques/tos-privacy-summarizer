@@ -145,6 +145,7 @@ import creditsRoutes from './routes/credits.js';
 import stripeRoutes from './routes/stripe.js';
 import { router as analyticsRoutes } from './routes/analytics.js';
 import authRoutes from './routes/auth.js';
+import feedbackRoutes from './routes/feedback.js';
 import db from './utils/database.js';
 import auth from './utils/auth.js';
 
@@ -155,6 +156,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/credits', creditsRoutes);
 app.use('/api/stripe', stripeRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 // Middleware para proteger todas as rotas do dashboard
 app.use('/dashboard', auth.protectDashboard);
