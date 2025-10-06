@@ -199,7 +199,7 @@ class Database {
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
                     RETURNING *
                 `,
-                params: [summaryId, userId, success, duration, documentType, textLength, url, summary, title, wordCount, processingTime, focus]
+                params: [summaryId, userId, success, duration, documentType, textLength, url, summary, title, (summary ? summary.split(/\s+/).length : 0), Math.round(duration / 1000.0 * 100) / 100, focus]
             });
             throw error;
         }
