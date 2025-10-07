@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste i18n - ToS & Privacy Summarizer</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #555;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+        }
+        .test-result.error {
+            background: #ffeaea;
+            border-color: #f44336;
+        }
+        #testLogs {
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌍 Teste de Internacionalização</h1>
+        
+        <div class="status success">
+            ✅ Sistema i18n carregado com sucesso!
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Configuração de Idioma</h3>
+            <div class="form-group">
+                <label for="languageSelect">Idioma da Interface:</label>
+                <select id="languageSelect">
+                    <option value="pt">🇵🇹 Português</option>
+                    <option value="en">🇬🇧 English</option>
+                    <option value="es">🇪🇸 Español</option>
+                    <option value="fr">🇫🇷 Français</option>
+                </select>
+            </div>
+            <button onclick="testLanguageChange()">Testar Mudança de Idioma</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 Teste de Tradução</h3>
+            <p><strong>Texto Original:</strong> <span id="originalText">Extrair & Resumir</span></p>
+            <p><strong>Texto Traduzido:</strong> <span id="translatedText">-</span></p>
+            <button onclick="testTranslation()">Testar Tradução</button>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 Teste de Detecção de Idioma</h3>
+            <div class="form-group">
+                <label for="testText">Texto para Detectar:</label>
+                <textarea id="testText" placeholder="Digite um texto para detectar o idioma...">Este é um texto em português que contém termos de serviço e política de privacidade.</textarea>
+            </div>
+            <button onclick="testLanguageDetection()">Detectar Idioma</button>
+            <div id="detectionResult" class="test-result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📄 Teste de Documentos Multi-idioma</h3>
+            <div id="documentTest">
+                <button onclick="testDocument('pt')">Testar Documento PT</button>
+                <button onclick="testDocument('en')">Testar Documento EN</button>
+                <button onclick="testDocument('es')">Testar Documento ES</button>
+                <button onclick="testDocument('fr')">Testar Documento FR</button>
+                <div id="documentResult" class="test-result" style="display: none;"></div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Logs de Teste</h3>
+            <div id="testLogs">
+                <div>Logs aparecerão aqui...</div>
+            </div>
+            <button onclick="clearLogs()">Limpar Logs</button>
+        </div>
+    </div>
+
+    <script>
+        // Sistema i18n simplificado para teste
+        class TestI18n {
+            constructor() {
+                this.currentLanguage = 'pt';
+                this.translations = {
+                    pt: {
+                        ui: { analyze: 'Analisar', summary: 'Resumo', history: 'Histórico', settings: 'Configurações' },
+                        analysis: { extract_summarize: 'Extrair & Resumir' },
+                        errors: { insufficient_text: 'Texto insuficiente para análise' },
+                        messages: { api_key_saved: 'Chave da API guardada com sucesso!' },
+                        document_types: { terms_of_service: 'Termos de Serviço', privacy_policy: 'Política de Privacidade', unknown: 'Outros', analyzing: 'A analisar...' }
+                    },
+                    en: {
+                        ui: { analyze: 'Analyze', summary: 'Summary', history: 'History', settings: 'Settings' },
+                        analysis: { extract_summarize: 'Extract & Summarize' },
+                        errors: { insufficient_text: 'Insufficient text for analysis' },
+                        messages: { api_key_saved: 'API key saved successfully!' },
+                        document_types: { terms_of_service: 'Terms of Service', privacy_policy: 'Privacy Policy', unknown: 'Others', analyzing: 'Analyzing...' }
+                    },
+                    es: {
+                        ui: { analyze: 'Analizar', summary: 'Resumen', history: 'Historial', settings: 'Configuración' },
+                        analysis: { extract_summarize: 'Extraer y Resumir' },
+                        errors: { insufficient_text: 'Texto insuficiente para análisis' },
+                        messages: { api_key_saved: 'Clave API guardada con éxito!' },
+                        document_types: { terms_of_service: 'Términos de Servicio', privacy_policy: 'Política de Privacidad', unknown: 'Otros', analyzing: 'Analizando...' }
+                    },
+                    fr: {
+                        ui: { analyze: 'Analyser', summary: 'Résumé', history: 'Historique', settings: 'Paramètres' },
+                        analysis: { extract_summarize: 'Extraire et Résumer' },
+                        errors: { insufficient_text: 'Texte insuffisant pour l\'analyse' },
+                        messages: { api_key_saved: 'Clé API sauvegardée avec succès!' },
+                        document_types: { terms_of_service: 'Conditions de Service', privacy_policy: 'Politique de Confidentialité', unknown: 'Autres', analyzing: 'Analyse en cours...' }
+                    }
+                };
+                this.isInitialized = true;
+                console.log('[TestI18n] Initialized with language:', this.currentLanguage);
+            }
+
+            t(key, params = {}) {
+                const keys = key.split('.');
+                let translation = this.translations[this.currentLanguage];
+                
+                for (const k of keys) {
+                    if (translation && typeof translation === 'object') {
+                        translation = translation[k];
+                    } else {
+                        console.warn(`[TestI18n] Translation not found for key: ${key}`);
+                        return key;
+                    }
+                }
+
+                if (typeof translation !== 'string') {
+                    console.warn(`[TestI18n] Translation is not a string for key: ${key}`);
+                    return key;
+                }
+
+                return this.interpolate(translation, params);
+            }
+
+            interpolate(text, params) {
+                return text.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+                    return params[key] !== undefined ? params[key] : match;
+                });
+            }
+
+            setLanguage(lang) {
+                if (this.currentLanguage === lang) return;
+                
+                this.currentLanguage = lang;
+                console.log(`[TestI18n] Language changed to: ${lang}`);
+                
+                // Notificar mudança de idioma
+                const event = new CustomEvent('languageChanged', {
+                    detail: { language: this.currentLanguage }
+                });
+                document.dispatchEvent(event);
+            }
+
+            updateUI() {
+                document.querySelectorAll('[data-i18n]').forEach(element => {
+                    const key = element.getAttribute('data-i18n');
+                    element.textContent = this.t(key);
+                });
+                document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
+                    const key = element.getAttribute('data-i18n-placeholder');
+                    element.placeholder = this.t(key);
+                });
+                document.querySelectorAll('[data-i18n-title]').forEach(element => {
+                    const key = element.getAttribute('data-i18n-title');
+                    element.title = this.t(key);
+                });
+            }
+        }
+
+        // Inicializar sistema de teste
+        const testI18n = new TestI18n();
+        window.i18n = testI18n;
+
+        // Função de log
+        function log(message) {
+            const logsDiv = document.getElementById('testLogs');
+            const timestamp = new Date().toLocaleTimeString();
+            logsDiv.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        // Testar mudança de idioma
+        function testLanguageChange() {
+            const select = document.getElementById('languageSelect');
+            const newLanguage = select.value;
+            window.i18n.setLanguage(newLanguage);
+            updateUI();
+            log(`Teste de mudança de idioma: ${newLanguage}`);
+        }
+
+        // Testar tradução
+        function testTranslation() {
+            const testKey = 'analysis.extract_summarize';
+            const translation = window.i18n.t(testKey);
+            document.getElementById('translatedText').textContent = translation;
+            log(`Tradução testada: "${translation}" → "${testKey}"`);
+            
+            // Testar outras traduções importantes
+            const testKeys = [
+                'ui.analyze',
+                'ui.summary', 
+                'ui.history',
+                'ui.settings',
+                'document_types.terms_of_service',
+                'document_types.privacy_policy',
+                'errors.insufficient_text',
+                'messages.api_key_saved'
+            ];
+            
+            testKeys.forEach(key => {
+                const result = window.i18n.t(key);
+                log(`Tradução ${key}: "${result}"`);
+            });
+        }
+
+        // Testar detecção de idioma
+        function testLanguageDetection() {
+            const testText = document.getElementById('testText').value;
+            const detectedLanguage = detectLanguageFromText(testText);
+            const resultDiv = document.getElementById('detectionResult');
+            resultDiv.innerHTML = `<strong>Idioma detectado:</strong> ${detectedLanguage}`;
+            resultDiv.style.display = 'block';
+            log(`Detecção de idioma: "${testText.substring(0, 50)}..." → ${detectedLanguage}`);
+        }
+        
+        // Função simulada de detecção de idioma (baseada no content.js)
+        function detectLanguageFromText(text) {
+            if (!text || typeof text !== 'string') {
+                return 'pt';
+            }
+
+            const lowerText = text.toLowerCase();
+            
+            // Padrões mais específicos para evitar falsos positivos
+            const patterns = {
+                pt: [
+                    // Palavras específicas do português
+                    /\b(termos de serviço|política de privacidade|dados pessoais|utilizador|serviço|aceitar|contrato|condições)\b/i,
+                    /\b(obrigações|responsabilidade|limitação|direitos|utilizador|recolha|processamento)\b/i,
+                    /\b(compartilhamento|retenção|privacidade|proteção|informações|coletamos)\b/i,
+                    // Artigos e preposições específicas do português
+                    /\b(da|do|das|dos|na|no|nas|nos|para|com|sem|sobre|entre)\b/i,
+                    // Verbos específicos
+                    /\b(aceitar|concordar|utilizar|fornecer|coletar|processar)\b/i
+                ],
+                en: [
+                    // Palavras específicas do inglês
+                    /\b(terms of service|privacy policy|personal data|user|service|accept|agreement|conditions)\b/i,
+                    /\b(obligations|liability|limitation|rights|user|collection|processing)\b/i,
+                    /\b(sharing|retention|privacy|protection|information|we collect)\b/i,
+                    // Artigos específicos do inglês
+                    /\b(the|a|an|and|or|but|in|on|at|to|for|of|with|by)\b/i,
+                    // Verbos específicos
+                    /\b(accept|agree|use|provide|collect|process|share|retain)\b/i
+                ],
+                es: [
+                    // Palavras específicas do espanhol
+                    /\b(términos de servicio|política de privacidad|datos personales|usuario|servicio|aceptar|contrato|condiciones)\b/i,
+                    /\b(obligaciones|responsabilidad|limitación|derechos|usuario|recopilación|procesamiento)\b/i,
+                    /\b(compartir|retención|privacidad|protección|información|recopilamos)\b/i,
+                    // Artigos específicos do espanhol
+                    /\b(el|la|los|las|un|una|de|del|en|con|sin|sobre|entre)\b/i,
+                    // Verbos específicos
+                    /\b(aceptar|acordar|utilizar|proporcionar|recopilar|procesar)\b/i
+                ],
+                fr: [
+                    // Palavras específicas do francês
+                    /\b(termes de service|politique de confidentialité|données personnelles|utilisateur|service|accepter|contrat|conditions)\b/i,
+                    /\b(obligations|responsabilité|limitation|droits|utilisateur|collecte|traitement)\b/i,
+                    /\b(partage|rétention|confidentialité|protection|information|nous collectons)\b/i,
+                    // Artigos específicos do francês
+                    /\b(le|la|les|un|une|de|du|des|en|avec|sans|sur|entre)\b/i,
+                    // Verbos específicos
+                    /\b(accepter|convenir|utiliser|fournir|collecter|traiter)\b/i
+                ]
+            };
+
+            const scores = {};
+            
+            for (const [lang, langPatterns] of Object.entries(patterns)) {
+                scores[lang] = 0;
+                for (const pattern of langPatterns) {
+                    const matches = (lowerText.match(pattern) || []).length;
+                    scores[lang] += matches;
+                }
+            }
+
+            // Encontrar idioma com maior score
+            const bestMatch = Object.entries(scores).reduce((a, b) => 
+                scores[a[0]] > scores[b[0]] ? a : b
+            );
+
+            // Se não há matches suficientes, usar português como padrão
+            if (bestMatch[1] < 3) {
+                return 'pt';
+            }
+
+            return bestMatch[0];
+        }
+
+        // Atualizar interface
+        function updateUI() {
+            window.i18n.updateUI();
+            log('Interface atualizada com traduções');
+        }
+
+        // Testar documentos multi-idioma
+        function testDocument(language) {
+            const documents = {
+                pt: 'Este documento contém os termos de serviço e política de privacidade da nossa empresa. Ao aceitar estes termos, o utilizador concorda com as condições estabelecidas.',
+                en: 'This document contains the terms of service and privacy policy of our company. By accepting these terms, the user agrees to the established conditions.',
+                es: 'Este documento contiene los términos de servicio y política de privacidad de nuestra empresa. Al aceptar estos términos, el usuario acepta las condiciones establecidas.',
+                fr: 'Ce document contient les conditions de service et la politique de confidentialité de notre entreprise. En acceptant ces conditions, l\'utilisateur accepte les conditions établies.'
+            };
+            
+            const text = documents[language];
+            const detectedLanguage = detectLanguageFromText(text);
+            const resultDiv = document.getElementById('documentResult');
+            
+            const isCorrect = detectedLanguage === language;
+            resultDiv.innerHTML = `
+                <strong>Documento ${language.toUpperCase()}:</strong><br>
+                <em>"${text}"</em><br>
+                <strong>Idioma detectado:</strong> ${detectedLanguage}<br>
+                <strong>Resultado:</strong> ${isCorrect ? '✅ SUCESSO' : '❌ FALHA'}
+            `;
+            resultDiv.className = `test-result ${isCorrect ? '' : 'error'}`;
+            resultDiv.style.display = 'block';
+            
+            log(`Teste de documento ${language}: ${isCorrect ? 'SUCESSO' : 'FALHA'} (detectado: ${detectedLanguage})`);
+        }
+
+        // Limpar logs
+        function clearLogs() {
+            document.getElementById('testLogs').innerHTML = '<div>Logs limpos...</div>';
+        }
+
+        // Configurar seletor de idioma
+        document.addEventListener('DOMContentLoaded', () => {
+            const languageSelect = document.getElementById('languageSelect');
+            languageSelect.addEventListener('change', (e) => {
+                window.i18n.setLanguage(e.target.value);
+                updateUI();
+                log(`Idioma alterado para: ${e.target.value}`);
+            });
+            
+            log('Sistema de teste inicializado');
+        });
+    </script>
+</body>
+</html>

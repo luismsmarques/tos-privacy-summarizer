@@ -5,6 +5,10 @@ const totalSteps = 5;
 // Inicializar quando a página carrega
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Onboarding carregado');
+    
+    // Inicializar tema
+    initializeTheme();
+    
     updateProgress();
     updateStepIndicators();
     setupEventListeners();
@@ -94,6 +98,12 @@ function setupEventListeners() {
         notificationsCheckbox.addEventListener('change', function() {
             console.log('Notifications:', this.checked);
         });
+    }
+    
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        themeToggle.addEventListener('click', toggleTheme);
     }
     
     console.log('Event listeners configurados');
@@ -195,11 +205,12 @@ async function useSharedApi() {
 function buyCredits() {
     console.log('Utilizador quer comprar créditos');
     
-    // Abrir página de compra (Stripe ou similar)
-    const buyUrl = 'https://your-stripe-checkout-url.com'; // Substituir pela URL real
-    window.open(buyUrl, '_blank');
+    // Abrir página de checkout da extensão
+    chrome.tabs.create({
+        url: chrome.runtime.getURL('checkout.html')
+    });
     
-    showStatus('Redirecionando para compra de créditos...', 'info', document.getElementById('apiKeyStatus'));
+    showStatus('Redirecionando para página de compra...', 'info', document.getElementById('apiKeyStatus'));
 }
 
 // Função para usar chave própria
@@ -384,6 +395,36 @@ function showStatus(message, type, element) {
             element.innerHTML = '';
             element.className = '';
         }, 3000);
+    }
+}
+
+// Funções de tema
+function initializeTheme() {
+    chrome.storage.local.get(['theme'], (result) => {
+        const theme = result.theme || 'light';
+        document.documentElement.setAttribute('data-theme', theme);
+        
+        // Atualizar ícone do botão
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+                const icon = themeToggle.querySelector('.material-icons');
+                icon.textContent = theme === 'dark' ? 'light_mode' : 'dark_mode';
+        }
+    });
+}
+
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    
+    document.documentElement.setAttribute('data-theme', newTheme);
+    chrome.storage.local.set({ theme: newTheme });
+    
+    // Atualizar ícone do botão
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        const icon = themeToggle.querySelector('.material-icons');
+        icon.textContent = newTheme === 'dark' ? 'light_mode' : 'dark_mode';
     }
 }
 

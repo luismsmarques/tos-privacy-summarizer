@@ -1,18 +1,97 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bem-vindo - ToS & Privacy Summarizer</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
     <style>
+        :root {
+            /* Light theme colors */
+            --md-sys-color-primary: #6750A4;
+            --md-sys-color-on-primary: #FFFFFF;
+            --md-sys-color-primary-container: #EADDFF;
+            --md-sys-color-on-primary-container: #21005D;
+            --md-sys-color-secondary: #625B71;
+            --md-sys-color-on-secondary: #FFFFFF;
+            --md-sys-color-secondary-container: #E8DEF8;
+            --md-sys-color-on-secondary-container: #1D192B;
+            --md-sys-color-tertiary: #7D5260;
+            --md-sys-color-on-tertiary: #FFFFFF;
+            --md-sys-color-tertiary-container: #FFD8E4;
+            --md-sys-color-on-tertiary-container: #31111D;
+            --md-sys-color-error: #BA1A1A;
+            --md-sys-color-on-error: #FFFFFF;
+            --md-sys-color-error-container: #FFDAD6;
+            --md-sys-color-on-error-container: #410002;
+            --md-sys-color-surface: #FFFBFE;
+            --md-sys-color-on-surface: #1C1B1F;
+            --md-sys-color-surface-variant: #E7E0EC;
+            --md-sys-color-on-surface-variant: #49454F;
+            --md-sys-color-outline: #79747E;
+            --md-sys-color-outline-variant: #CAC4D0;
+            --md-sys-color-shadow: #000000;
+            --md-sys-color-scrim: #000000;
+            --md-sys-color-inverse-surface: #313033;
+            --md-sys-color-inverse-on-surface: #F4EFF4;
+            --md-sys-color-inverse-primary: #D0BCFF;
+            --md-sys-color-surface-container-lowest: #FFFFFF;
+            --md-sys-color-surface-container-low: #F7F2FA;
+            --md-sys-color-surface-container: #F3EDF7;
+            --md-sys-color-surface-container-high: #ECE6F0;
+            --md-sys-color-surface-container-highest: #E6E0E9;
+            --md-sys-color-success: #4CAF50;
+            --md-sys-color-warning: #FF9800;
+        }
+
+        /* Dark theme */
+        [data-theme="dark"] {
+            --md-sys-color-primary: #D0BCFF;
+            --md-sys-color-on-primary: #381E72;
+            --md-sys-color-primary-container: #4F378B;
+            --md-sys-color-on-primary-container: #EADDFF;
+            --md-sys-color-secondary: #CCC2DC;
+            --md-sys-color-on-secondary: #332D41;
+            --md-sys-color-secondary-container: #4A4458;
+            --md-sys-color-on-secondary-container: #E8DEF8;
+            --md-sys-color-tertiary: #EFB8C8;
+            --md-sys-color-on-tertiary: #492532;
+            --md-sys-color-tertiary-container: #633B48;
+            --md-sys-color-on-tertiary-container: #FFD8E4;
+            --md-sys-color-error: #FFB4AB;
+            --md-sys-color-on-error: #690005;
+            --md-sys-color-error-container: #93000A;
+            --md-sys-color-on-error-container: #FFDAD6;
+            --md-sys-color-surface: #1C1B1F;
+            --md-sys-color-on-surface: #E6E0E9;
+            --md-sys-color-surface-variant: #49454F;
+            --md-sys-color-on-surface-variant: #CAC4D0;
+            --md-sys-color-outline: #938F99;
+            --md-sys-color-outline-variant: #49454F;
+            --md-sys-color-shadow: #000000;
+            --md-sys-color-scrim: #000000;
+            --md-sys-color-inverse-surface: #E6E0E9;
+            --md-sys-color-inverse-on-surface: #313033;
+            --md-sys-color-inverse-primary: #6750A4;
+            --md-sys-color-surface-container-lowest: #0F0D13;
+            --md-sys-color-surface-container-low: #1C1B1F;
+            --md-sys-color-surface-container: #211F26;
+            --md-sys-color-surface-container-high: #2B2930;
+            --md-sys-color-surface-container-highest: #36343B;
+            --md-sys-color-success: #81C784;
+            --md-sys-color-warning: #FFB74D;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             margin: 0;
             padding: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--md-sys-color-surface);
             min-height: 100vh;
-            color: white;
+            color: var(--md-sys-color-on-surface);
             overflow-x: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         
         .onboarding-container {
@@ -26,14 +105,15 @@
         }
         
         .step {
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--md-sys-color-surface-container);
             border-radius: 16px;
             padding: 40px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid var(--md-sys-color-outline-variant);
             margin-bottom: 20px;
             display: none;
             animation: fadeIn 0.5s ease-in-out;
+            box-shadow: 0 4px 12px var(--md-sys-color-shadow);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
         }
         
         .step.active {
@@ -56,7 +136,8 @@
             font-weight: 700;
             text-align: center;
             margin-bottom: 15px;
-            color: #ecf0f1;
+            color: var(--md-sys-color-on-surface);
+            transition: color 0.3s ease;
         }
         
         .step-description {
@@ -64,7 +145,8 @@
             line-height: 1.6;
             text-align: center;
             margin-bottom: 30px;
-            color: rgba(255, 255, 255, 0.9);
+            color: var(--md-sys-color-on-surface-variant);
+            transition: color 0.3s ease;
         }
         
         .step-content {
@@ -109,25 +191,27 @@
         .form-group input {
             width: 100%;
             padding: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            border: 1px solid var(--md-sys-color-outline);
             border-radius: 8px;
-            background: rgba(255, 255, 255, 0.9);
-            color: #333;
+            background: var(--md-sys-color-surface-container-lowest);
+            color: var(--md-sys-color-on-surface);
             font-size: 14px;
             box-sizing: border-box;
+            transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
         }
         
         .form-group input:focus {
             outline: none;
-            border-color: #3498db;
-            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+            border-color: var(--md-sys-color-primary);
+            box-shadow: 0 0 0 2px var(--md-sys-color-primary-container);
         }
         
         .help-text {
             font-size: 12px;
-            color: rgba(255, 255, 255, 0.8);
+            color: var(--md-sys-color-on-surface-variant);
             margin-top: 5px;
             line-height: 1.4;
+            transition: color 0.3s ease;
         }
         
         .button-group {
@@ -149,23 +233,27 @@
         }
         
         .btn-primary {
-            background: linear-gradient(45deg, #27ae60, #2ecc71);
-            color: white;
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            border: 1px solid var(--md-sys-color-primary);
         }
         
         .btn-primary:hover {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+            box-shadow: 0 4px 15px var(--md-sys-color-shadow);
         }
         
         .btn-secondary {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: var(--md-sys-color-secondary-container);
+            color: var(--md-sys-color-on-secondary-container);
+            border: 1px solid var(--md-sys-color-outline);
         }
         
         .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.3);
+            background: var(--md-sys-color-surface-container-high);
+            border-color: var(--md-sys-color-primary);
         }
         
         .btn:disabled {
@@ -178,10 +266,11 @@
         .progress-bar {
             width: 100%;
             height: 4px;
-            background: rgba(255, 255, 255, 0.2);
+            background: var(--md-sys-color-outline-variant);
             border-radius: 2px;
             margin-bottom: 30px;
             overflow: hidden;
+            transition: background-color 0.3s ease;
         }
         
         .progress-fill {
@@ -203,7 +292,7 @@
             width: 12px;
             height: 12px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.3);
+            background: var(--md-sys-color-outline-variant);
             transition: all 0.3s ease;
         }
         
@@ -217,17 +306,19 @@
         }
         
         .demo-section {
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--md-sys-color-surface-container-low);
             padding: 20px;
             border-radius: 8px;
             margin: 20px 0;
+            transition: background-color 0.3s ease;
         }
         
         .demo-title {
             font-size: 18px;
             font-weight: 600;
             margin-bottom: 15px;
-            color: #ecf0f1;
+            color: var(--md-sys-color-on-surface);
+            transition: color 0.3s ease;
         }
         
         .demo-steps {
@@ -288,34 +379,35 @@
         }
         
         .skip-link a {
-            color: rgba(255, 255, 255, 0.7);
+            color: var(--md-sys-color-on-surface-variant);
             text-decoration: none;
             font-size: 14px;
+            transition: color 0.3s ease;
         }
         
         .skip-link a:hover {
-            color: white;
+            color: var(--md-sys-color-primary);
             text-decoration: underline;
         }
 
         /* Estilos para opções de API */
         .api-option {
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--md-sys-color-surface-container-low);
             border-radius: 12px;
             padding: 20px;
             margin-bottom: 20px;
-            border: 2px solid rgba(255, 255, 255, 0.1);
+            border: 2px solid var(--md-sys-color-outline-variant);
             transition: all 0.3s ease;
         }
 
         .api-option:hover {
-            border-color: rgba(255, 255, 255, 0.2);
+            border-color: var(--md-sys-color-outline);
             transform: translateY(-2px);
         }
 
         .api-option.selected {
-            border-color: #3498db;
-            background: rgba(52, 152, 219, 0.1);
+            border-color: var(--md-sys-color-primary);
+            background: var(--md-sys-color-primary-container);
         }
 
         .option-header {
@@ -337,14 +429,16 @@
         .option-title h3 {
             font-size: 18px;
             font-weight: 600;
-            color: #ecf0f1;
+            color: var(--md-sys-color-on-surface);
             margin: 0 0 5px 0;
+            transition: color 0.3s ease;
         }
 
         .option-subtitle {
             font-size: 14px;
-            color: rgba(255, 255, 255, 0.7);
+            color: var(--md-sys-color-on-surface-variant);
             margin: 0;
+            transition: color 0.3s ease;
         }
 
         .option-badge {
@@ -380,9 +474,12 @@
             margin-bottom: 15px;
         }
 
-        .credits-label {
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.8);
+        .credits-explanation-text {
+            font-size: 12px;
+            color: var(--md-sys-color-on-surface-variant);
+            margin-top: 10px;
+            line-height: 1.4;
+            transition: color 0.3s ease;
         }
 
         .credits-count {
@@ -416,9 +513,90 @@
             width: 100%;
             padding: 12px 20px;
         }
+
+        /* Theme toggle button */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px var(--md-sys-color-shadow);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .theme-toggle:hover {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            transform: scale(1.1);
+        }
+
+        .theme-toggle .material-symbols-outlined,
+        .theme-toggle .material-icons {
+            font-size: 24px;
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        /* Header with theme toggle integrated */
+        .page-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: var(--md-sys-color-surface-container);
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 999;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .page-header .theme-toggle {
+            position: static;
+            width: 40px;
+            height: 40px;
+            margin: 0;
+        }
+
+        .page-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--md-sys-color-on-surface);
+            margin: 0;
+        }
+
+        .onboarding-container {
+            max-width: 600px;
+            margin: 80px auto 20px;
+            padding: 20px;
+            min-height: calc(100vh - 100px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">ToS & Privacy Summarizer</h1>
+        <button class="theme-toggle" id="themeToggle" title="Alternar tema">
+            <span class="material-icons">dark_mode</span>
+        </button>
+    </div>
+
     <div class="onboarding-container">
         <!-- Barra de Progresso -->
         <div class="progress-bar">
@@ -525,7 +703,7 @@
                             <button class="btn btn-secondary" id="buyCreditsBtn">Comprar Mais Créditos</button>
                         </div>
                         <div class="credits-explanation">
-                            <p style="font-size: 12px; color: rgba(255, 255, 255, 0.7); margin-top: 10px; line-height: 1.4;">
+                            <p class="credits-explanation-text">
                                 <strong>Porquê Pagar?</strong> Cada resumo de alta precisão requer o uso do modelo avançado Google Gemini, processamento em backend seguro (Vercel) e gestão de base de dados. O nosso sistema de créditos cobre estes custos, garantindo a mais alta qualidade, velocidade e privacidade.
                             </p>
                         </div>

@@ -17,6 +17,111 @@ const Logger = {
     }
 };
 
+// Função para detectar idioma da página
+function detectPageLanguage() {
+    // Método 1: Verificar atributo lang do HTML
+    const htmlLang = document.documentElement.lang;
+    if (htmlLang) {
+        return mapLanguageCode(htmlLang);
+    }
+    
+    // Método 2: Verificar meta tag
+    const metaLang = document.querySelector('meta[http-equiv="content-language"]');
+    if (metaLang) {
+        return mapLanguageCode(metaLang.content);
+    }
+    
+    // Método 3: Analisar conteúdo da página
+    const pageText = document.body.innerText.toLowerCase();
+    return detectLanguageFromText(pageText);
+}
+
+function mapLanguageCode(code) {
+    const mapping = {
+        'pt': 'pt', 'pt-BR': 'pt', 'pt-PT': 'pt',
+        'en': 'en', 'en-US': 'en', 'en-GB': 'en',
+        'es': 'es', 'es-ES': 'es', 'es-MX': 'es',
+        'fr': 'fr', 'fr-FR': 'fr', 'fr-CA': 'fr'
+    };
+    return mapping[code] || 'pt';
+}
+
+function detectLanguageFromText(text) {
+    if (!text || typeof text !== 'string') {
+        return 'pt';
+    }
+
+    const lowerText = text.toLowerCase();
+    
+    // Padrões mais específicos para evitar falsos positivos
+    const patterns = {
+        pt: [
+            // Palavras específicas do português
+            /\b(termos de serviço|política de privacidade|dados pessoais|utilizador|serviço|aceitar|contrato|condições)\b/i,
+            /\b(obrigações|responsabilidade|limitação|direitos|utilizador|recolha|processamento)\b/i,
+            /\b(compartilhamento|retenção|privacidade|proteção|informações|coletamos)\b/i,
+            // Artigos e preposições específicas do português
+            /\b(da|do|das|dos|na|no|nas|nos|para|com|sem|sobre|entre)\b/i,
+            // Verbos específicos
+            /\b(aceitar|concordar|utilizar|fornecer|coletar|processar)\b/i
+        ],
+        en: [
+            // Palavras específicas do inglês
+            /\b(terms of service|privacy policy|personal data|user|service|accept|agreement|conditions)\b/i,
+            /\b(obligations|liability|limitation|rights|user|collection|processing)\b/i,
+            /\b(sharing|retention|privacy|protection|information|we collect)\b/i,
+            // Artigos específicos do inglês
+            /\b(the|a|an|and|or|but|in|on|at|to|for|of|with|by)\b/i,
+            // Verbos específicos
+            /\b(accept|agree|use|provide|collect|process|share|retain)\b/i
+        ],
+        es: [
+            // Palavras específicas do espanhol
+            /\b(términos de servicio|política de privacidad|datos personales|usuario|servicio|aceptar|contrato|condiciones)\b/i,
+            /\b(obligaciones|responsabilidad|limitación|derechos|usuario|recopilación|procesamiento)\b/i,
+            /\b(compartir|retención|privacidad|protección|información|recopilamos)\b/i,
+            // Artigos específicos do espanhol
+            /\b(el|la|los|las|un|una|de|del|en|con|sin|sobre|entre)\b/i,
+            // Verbos específicos
+            /\b(aceptar|acordar|utilizar|proporcionar|recopilar|procesar)\b/i
+        ],
+        fr: [
+            // Palavras específicas do francês
+            /\b(termes de service|politique de confidentialité|données personnelles|utilisateur|service|accepter|contrat|conditions)\b/i,
+            /\b(obligations|responsabilité|limitation|droits|utilisateur|collecte|traitement)\b/i,
+            /\b(partage|rétention|confidentialité|protection|information|nous collectons)\b/i,
+            // Artigos específicos do francês
+            /\b(le|la|les|un|une|de|du|des|en|avec|sans|sur|entre)\b/i,
+            // Verbos específicos
+            /\b(accepter|convenir|utiliser|fournir|collecter|traiter)\b/i
+        ]
+    };
+
+    const scores = {};
+    
+    for (const [lang, langPatterns] of Object.entries(patterns)) {
+        scores[lang] = 0;
+        for (const pattern of langPatterns) {
+            const matches = (lowerText.match(pattern) || []).length;
+            scores[lang] += matches;
+        }
+    }
+
+    // Encontrar idioma com maior score
+    const bestMatch = Object.entries(scores).reduce((a, b) => 
+        scores[a[0]] > scores[b[0]] ? a : b
+    );
+
+    // Se não há matches suficientes, usar português como padrão
+    if (bestMatch[1] < 3) {
+        console.log(`[Content] Insufficient language matches, defaulting to PT (best: ${bestMatch[0]} with ${bestMatch[1]} matches)`);
+        return 'pt';
+    }
+
+    console.log(`[Content] Detected language: ${bestMatch[0]} (score: ${bestMatch[1]})`);
+    return bestMatch[0];
+}
+
 // Listener para mensagens do popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     Logger.log('Content script recebeu mensagem:', request.action);
@@ -65,7 +170,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         action: 'summarizeText',
                         text: text,
                         url: window.location.href,
-                        title: document.title
+                        title: document.title,
+                        language: detectPageLanguage()
                     }, (response) => {
                         if (chrome.runtime.lastError) {
                             Logger.error('Erro ao enviar para background:', chrome.runtime.lastError);
@@ -125,6 +231,9 @@ function analyzePage() {
         const complexity = calculateTextComplexity(text);
         console.log('Content script: Complexidade calculada:', complexity);
         
+        const pageLanguage = detectPageLanguage();
+        console.log('Content script: Idioma detectado:', pageLanguage);
+        
         const analysis = {
             textLength: text.length,
             type: type,
@@ -133,7 +242,8 @@ function analyzePage() {
             isLegalPage: isLegal,
             complexity: complexity,
             timestamp: new Date().toISOString(),
-            domain: window.location.hostname
+            domain: window.location.hostname,
+            language: pageLanguage
         };
         
         console.log('Content script: Análise concluída:', analysis);

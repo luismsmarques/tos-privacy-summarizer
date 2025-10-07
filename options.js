@@ -12,6 +12,48 @@ document.addEventListener('DOMContentLoaded', function() {
     const viewTermsOfServiceBtn = document.getElementById('viewTermsOfService');
     const showOnboardingBtn = document.getElementById('showOnboarding');
     const lastUpdateSpan = document.getElementById('lastUpdate');
+    const themeToggle = document.getElementById('themeToggle');
+    
+    // Elementos de idioma
+    const languageSelect = document.getElementById('languageSelect');
+    const autoDetectLanguageToggle = document.getElementById('autoDetectLanguageToggle');
+    
+    // Aguardar inicialização do i18n
+    const initI18n = async () => {
+        // Aguardar o i18n estar pronto
+        while (!window.i18n || !window.i18n.isInitialized) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        // Configurar event listeners de idioma
+        if (languageSelect) {
+            languageSelect.addEventListener('change', (e) => {
+                window.i18n.setLanguage(e.target.value);
+                window.i18n.updateUI();
+                showStatus(window.i18n.t('messages.language_changed') + ' ' + e.target.options[e.target.selectedIndex].text, 'success');
+            });
+        }
+        
+        if (autoDetectLanguageToggle) {
+            autoDetectLanguageToggle.addEventListener('click', () => {
+                const enabled = autoDetectLanguageToggle.classList.contains('active');
+                window.i18n.setAutoDetect(!enabled);
+                setToggleState(autoDetectLanguageToggle, !enabled);
+            });
+        }
+        
+        // Atualizar UI com traduções
+        window.i18n.updateUI();
+        
+        // Carregar configurações de idioma
+        loadLanguageSettings();
+    };
+    
+    // Inicializar i18n
+    initI18n();
+    
+    // Inicializar tema
+    initializeTheme();
     
     // Carregar configurações existentes
     loadSettings();
@@ -24,11 +66,31 @@ document.addEventListener('DOMContentLoaded', function() {
     resetSettingsBtn.addEventListener('click', resetSettings);
     exportSettingsBtn.addEventListener('click', exportSettings);
     viewPrivacyPolicyBtn.addEventListener('click', () => openDocument('privacy-policy.html'));
-    viewTermsOfServiceBtn.addEventListener('click', () => openDocument('TERMS-OF-SERVICE.md'));
+    viewTermsOfServiceBtn.addEventListener('click', () => openDocument('terms-of-service.html'));
     showOnboardingBtn.addEventListener('click', () => openDocument('onboarding.html'));
+    
+    // Event listener para o botão de tema
+    if (themeToggle) {
+        themeToggle.addEventListener('click', toggleTheme);
+        console.log('Theme toggle event listener added');
+    } else {
+        console.error('Theme toggle button not found');
+    }
     
     // Definir data de atualização
     lastUpdateSpan.textContent = new Date().toLocaleDateString('pt-PT');
+    
+    // Função para carregar configurações de idioma
+    function loadLanguageSettings() {
+        chrome.storage.local.get(['language', 'autoDetectLanguage'], function(result) {
+            if (languageSelect) {
+                languageSelect.value = result.language || 'pt';
+            }
+            if (autoDetectLanguageToggle) {
+                setToggleState(autoDetectLanguageToggle, result.autoDetectLanguage !== false);
+            }
+        });
+    }
     
     // Função para carregar configurações
     function loadSettings() {
@@ -48,7 +110,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const apiKey = apiKeyInput.value.trim();
         
         if (!apiKey) {
-            showStatus('Por favor, introduza uma chave da API válida.', 'error');
+            showStatus(window.i18n.t('errors.invalid_api_key'), 'error');
             return;
         }
         
@@ -61,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function() {
             geminiApiKey: apiKey,
             onboardingCompleted: true // Marcar onboarding como completado
         }, function() {
-            showStatus('✅ Chave da API guardada com sucesso!', 'success');
+            showStatus(window.i18n.t('messages.api_key_saved'), 'success');
             console.log('API Key guardada:', apiKey.substring(0, 10) + '...');
         });
     }
@@ -81,7 +143,7 @@ document.addEventListener('DOMContentLoaded', function() {
         testGeminiApi(apiKey)
             .then(result => {
                 if (result.success) {
-                    showStatus('✅ Chave da API válida! Conectado com sucesso.', 'success');
+                    showStatus(window.i18n.t('messages.api_key_tested'), 'success');
                 } else {
                     showStatus(`❌ Erro na chave da API: ${result.error}`, 'error');
                 }
@@ -259,5 +321,39 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Funções de tema
+    function initializeTheme() {
+        chrome.storage.local.get(['theme'], (result) => {
+            const theme = result.theme || 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+            
+            // Atualizar ícone do botão
+            if (themeToggle) {
+                const icon = themeToggle.querySelector('.material-icons');
+                if (icon) {
+                    icon.textContent = theme === 'dark' ? 'light_mode' : 'dark_mode';
+                }
+            }
+        });
+    }
+    
+    function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        document.documentElement.setAttribute('data-theme', newTheme);
+        chrome.storage.local.set({ theme: newTheme });
+        
+        // Atualizar ícone do botão
+        if (themeToggle) {
+            const icon = themeToggle.querySelector('.material-icons');
+            if (icon) {
+                icon.textContent = newTheme === 'dark' ? 'light_mode' : 'dark_mode';
+            }
+        }
+    }
+    
     console.log('Página de configurações carregada');
+    console.log('Theme toggle button:', themeToggle);
+    console.log('Theme toggle button found:', !!themeToggle);
 });

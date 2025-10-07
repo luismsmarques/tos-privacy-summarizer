@@ -1,27 +1,171 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Configurações - ToS & Privacy Summarizer</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
     <style>
+        :root {
+            /* Light theme colors */
+            --md-sys-color-primary: #6750A4;
+            --md-sys-color-on-primary: #FFFFFF;
+            --md-sys-color-primary-container: #EADDFF;
+            --md-sys-color-on-primary-container: #21005D;
+            --md-sys-color-secondary: #625B71;
+            --md-sys-color-on-secondary: #FFFFFF;
+            --md-sys-color-secondary-container: #E8DEF8;
+            --md-sys-color-on-secondary-container: #1D192B;
+            --md-sys-color-tertiary: #7D5260;
+            --md-sys-color-on-tertiary: #FFFFFF;
+            --md-sys-color-tertiary-container: #FFD8E4;
+            --md-sys-color-on-tertiary-container: #31111D;
+            --md-sys-color-error: #BA1A1A;
+            --md-sys-color-on-error: #FFFFFF;
+            --md-sys-color-error-container: #FFDAD6;
+            --md-sys-color-on-error-container: #410002;
+            --md-sys-color-surface: #FFFBFE;
+            --md-sys-color-on-surface: #1C1B1F;
+            --md-sys-color-surface-variant: #E7E0EC;
+            --md-sys-color-on-surface-variant: #49454F;
+            --md-sys-color-outline: #79747E;
+            --md-sys-color-outline-variant: #CAC4D0;
+            --md-sys-color-shadow: #000000;
+            --md-sys-color-scrim: #000000;
+            --md-sys-color-inverse-surface: #313033;
+            --md-sys-color-inverse-on-surface: #F4EFF4;
+            --md-sys-color-inverse-primary: #D0BCFF;
+            --md-sys-color-surface-container-lowest: #FFFFFF;
+            --md-sys-color-surface-container-low: #F7F2FA;
+            --md-sys-color-surface-container: #F3EDF7;
+            --md-sys-color-surface-container-high: #ECE6F0;
+            --md-sys-color-surface-container-highest: #E6E0E9;
+            --md-sys-color-success: #4CAF50;
+            --md-sys-color-warning: #FF9800;
+        }
+
+        /* Dark theme */
+        [data-theme="dark"] {
+            --md-sys-color-primary: #D0BCFF;
+            --md-sys-color-on-primary: #381E72;
+            --md-sys-color-primary-container: #4F378B;
+            --md-sys-color-on-primary-container: #EADDFF;
+            --md-sys-color-secondary: #CCC2DC;
+            --md-sys-color-on-secondary: #332D41;
+            --md-sys-color-secondary-container: #4A4458;
+            --md-sys-color-on-secondary-container: #E8DEF8;
+            --md-sys-color-tertiary: #EFB8C8;
+            --md-sys-color-on-tertiary: #492532;
+            --md-sys-color-tertiary-container: #633B48;
+            --md-sys-color-on-tertiary-container: #FFD8E4;
+            --md-sys-color-error: #FFB4AB;
+            --md-sys-color-on-error: #690005;
+            --md-sys-color-error-container: #93000A;
+            --md-sys-color-on-error-container: #FFDAD6;
+            --md-sys-color-surface: #1C1B1F;
+            --md-sys-color-on-surface: #E6E0E9;
+            --md-sys-color-surface-variant: #49454F;
+            --md-sys-color-on-surface-variant: #CAC4D0;
+            --md-sys-color-outline: #938F99;
+            --md-sys-color-outline-variant: #49454F;
+            --md-sys-color-shadow: #000000;
+            --md-sys-color-scrim: #000000;
+            --md-sys-color-inverse-surface: #E6E0E9;
+            --md-sys-color-inverse-on-surface: #313033;
+            --md-sys-color-inverse-primary: #6750A4;
+            --md-sys-color-surface-container-lowest: #0F0D13;
+            --md-sys-color-surface-container-low: #1C1B1F;
+            --md-sys-color-surface-container: #211F26;
+            --md-sys-color-surface-container-high: #2B2930;
+            --md-sys-color-surface-container-highest: #36343B;
+            --md-sys-color-success: #81C784;
+            --md-sys-color-warning: #FFB74D;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             margin: 0;
             padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--md-sys-color-surface);
             min-height: 100vh;
-            color: white;
+            color: var(--md-sys-color-on-surface);
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         
+        /* Theme toggle button */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px var(--md-sys-color-shadow);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .theme-toggle:hover {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            transform: scale(1.1);
+        }
+
+        .theme-toggle .material-symbols-outlined,
+        .theme-toggle .material-icons {
+            font-size: 24px;
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        /* Header with theme toggle integrated */
+        .page-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: var(--md-sys-color-surface-container);
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 999;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .page-header .theme-toggle {
+            position: static;
+            width: 40px;
+            height: 40px;
+            margin: 0;
+            box-shadow: 0 1px 4px var(--md-sys-color-shadow);
+        }
+
+        .page-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--md-sys-color-on-surface);
+            margin: 0;
+        }
+
         .container {
             max-width: 600px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.1);
+            margin: 80px auto 20px;
+            background: var(--md-sys-color-surface-container);
             border-radius: 12px;
             padding: 30px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid var(--md-sys-color-outline-variant);
+            box-shadow: 0 4px 12px var(--md-sys-color-shadow);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
         }
         
         h1 {
@@ -45,25 +189,27 @@
         input[type="text"], input[type="password"] {
             width: 100%;
             padding: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            border: 1px solid var(--md-sys-color-outline);
             border-radius: 8px;
-            background: rgba(255, 255, 255, 0.9);
-            color: #333;
+            background: var(--md-sys-color-surface-container-lowest);
+            color: var(--md-sys-color-on-surface);
             font-size: 14px;
             box-sizing: border-box;
+            transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
         }
         
         input[type="text"]:focus, input[type="password"]:focus {
             outline: none;
-            border-color: #3498db;
-            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+            border-color: var(--md-sys-color-primary);
+            box-shadow: 0 0 0 2px var(--md-sys-color-primary-container);
         }
         
         .help-text {
             font-size: 12px;
-            color: rgba(255, 255, 255, 0.8);
+            color: var(--md-sys-color-on-surface-variant);
             margin-top: 5px;
             line-height: 1.4;
+            transition: color 0.3s ease;
         }
         
         .button-group {
@@ -84,23 +230,27 @@
         }
         
         .btn-primary {
-            background: linear-gradient(45deg, #27ae60, #2ecc71);
-            color: white;
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            border: 1px solid var(--md-sys-color-primary);
         }
         
         .btn-primary:hover {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+            box-shadow: 0 4px 15px var(--md-sys-color-shadow);
         }
         
         .btn-secondary {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: var(--md-sys-color-secondary-container);
+            color: var(--md-sys-color-on-secondary-container);
+            border: 1px solid var(--md-sys-color-outline);
         }
         
         .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.3);
+            background: var(--md-sys-color-surface-container-high);
+            border-color: var(--md-sys-color-primary);
         }
         
         .status-message {
@@ -112,36 +262,39 @@
         }
         
         .status-success {
-            background: rgba(39, 174, 96, 0.2);
-            color: #2ecc71;
-            border: 1px solid rgba(46, 204, 113, 0.3);
+            background: var(--md-sys-color-success);
+            color: var(--md-sys-color-surface);
+            border: 1px solid var(--md-sys-color-success);
         }
         
         .status-error {
-            background: rgba(231, 76, 60, 0.2);
-            color: #e74c3c;
-            border: 1px solid rgba(231, 76, 60, 0.3);
+            background: var(--md-sys-color-error-container);
+            color: var(--md-sys-color-on-error-container);
+            border: 1px solid var(--md-sys-color-error);
         }
         
         .status-warning {
-            background: rgba(243, 156, 18, 0.2);
-            color: #f39c12;
-            border: 1px solid rgba(243, 156, 18, 0.3);
+            background: var(--md-sys-color-warning);
+            color: var(--md-sys-color-surface);
+            border: 1px solid var(--md-sys-color-warning);
         }
         
         .link {
-            color: #3498db;
+            color: var(--md-sys-color-primary);
             text-decoration: none;
+            transition: color 0.3s ease;
         }
         
         .link:hover {
             text-decoration: underline;
+            color: var(--md-sys-color-primary-container);
         }
         
         .section {
             margin-bottom: 30px;
             padding-bottom: 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+            transition: border-color 0.3s ease;
         }
         
         .section:last-child {
@@ -151,7 +304,8 @@
         .section h2 {
             font-size: 18px;
             margin-bottom: 15px;
-            color: #ecf0f1;
+            color: var(--md-sys-color-on-surface);
+            transition: color 0.3s ease;
         }
         
         .toggle-container {
@@ -165,14 +319,14 @@
             position: relative;
             width: 50px;
             height: 24px;
-            background: rgba(255, 255, 255, 0.3);
+            background: var(--md-sys-color-outline-variant);
             border-radius: 12px;
             cursor: pointer;
             transition: background 0.3s ease;
         }
         
         .toggle.active {
-            background: #27ae60;
+            background: var(--md-sys-color-primary);
         }
         
         .toggle-slider {
@@ -181,7 +335,7 @@
             left: 2px;
             width: 20px;
             height: 20px;
-            background: white;
+            background: var(--md-sys-color-surface-container-lowest);
             border-radius: 50%;
             transition: transform 0.3s ease;
         }
@@ -189,25 +343,65 @@
         .toggle.active .toggle-slider {
             transform: translateX(26px);
         }
+
+        /* Theme toggle button */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px var(--md-sys-color-shadow);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .theme-toggle:hover {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            transform: scale(1.1);
+        }
+
+        .theme-toggle .material-symbols-outlined,
+        .theme-toggle .material-icons {
+            font-size: 24px;
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
     </style>
 </head>
 <body>
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">Configurações</h1>
+        <button class="theme-toggle" id="themeToggle" title="Alternar tema" style="display: flex;flex:0; align-items: center; justify-content: center;">
+            <span class="material-icons" style="font-size: 24px;">dark_mode</span>
+        </button>
+    </div>
+
     <div class="container">
         <h1>⚙️ Configurações</h1>
         
         <div class="section">
             <h2>🔑 Chave da API Gemini</h2>
             <div class="form-group">
-                <label for="apiKey">Chave da API:</label>
-                <input type="password" id="apiKey" placeholder="Cole aqui a sua chave da API Gemini">
+                <label for="apiKey" data-i18n="settings.api_key">Chave da API:</label>
+                <input type="password" id="apiKey" data-i18n-placeholder="settings.api_key_placeholder" placeholder="Cole aqui a sua chave da API Gemini">
                 <div class="help-text">
-                    Obtenha a sua chave gratuita em <a href="https://makersuite.google.com/app/apikey" target="_blank" class="link">Google AI Studio</a>
+                    <span data-i18n="settings.get_api_key">Obtenha a sua chave gratuita em</span> <a href="https://makersuite.google.com/app/apikey" target="_blank" class="link">Google AI Studio</a>
                 </div>
             </div>
             
             <div class="button-group">
-                <button id="saveApiKey" class="btn-primary">💾 Guardar Chave</button>
-                <button id="testApiKey" class="btn-secondary">🧪 Testar Chave</button>
+                <button id="saveApiKey" class="btn-primary" data-i18n="settings.save_key">💾 Guardar Chave</button>
+                <button id="testApiKey" class="btn-secondary" data-i18n="settings.test_key">🧪 Testar Chave</button>
             </div>
             
             <div id="apiKeyStatus" class="status-message" style="display: none;"></div>
@@ -218,8 +412,8 @@
             
             <div class="toggle-container">
                 <div>
-                    <label for="autoDetect">Detecção Automática de Páginas Legais</label>
-                    <div class="help-text">Detecta automaticamente se a página contém Termos de Serviço</div>
+                    <label for="autoDetect" data-i18n="settings.auto_detect">Detecção Automática de Páginas Legais</label>
+                    <div class="help-text" data-i18n="settings.auto_detect_help">Detecta automaticamente se a página contém Termos de Serviço</div>
                 </div>
                 <div class="toggle" id="autoDetectToggle">
                     <div class="toggle-slider"></div>
@@ -228,10 +422,34 @@
             
             <div class="toggle-container">
                 <div>
-                    <label for="showNotifications">Notificações de Sucesso</label>
-                    <div class="help-text">Mostra notificações quando o resumo é gerado</div>
+                    <label for="showNotifications" data-i18n="settings.notifications">Notificações de Sucesso</label>
+                    <div class="help-text" data-i18n="settings.notifications_help">Mostra notificações quando o resumo é gerado</div>
                 </div>
                 <div class="toggle" id="notificationsToggle">
+                    <div class="toggle-slider"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>🌍 Idioma / Language</h2>
+            
+            <div class="form-group">
+                <label for="languageSelect" data-i18n="settings.language">Idioma da Interface:</label>
+                <select id="languageSelect" class="form-control">
+                    <option value="pt">🇵🇹 Português</option>
+                    <option value="en">🇬🇧 English</option>
+                    <option value="es">🇪🇸 Español</option>
+                    <option value="fr">🇫🇷 Français</option>
+                </select>
+            </div>
+            
+            <div class="toggle-container">
+                <div>
+                    <label for="autoDetectLanguage" data-i18n="settings.auto_detect_language">Detectar idioma automaticamente</label>
+                    <div class="help-text">Detecta automaticamente o idioma da página e ajusta a análise</div>
+                </div>
+                <div class="toggle" id="autoDetectLanguageToggle">
                     <div class="toggle-slider"></div>
                 </div>
             </div>
@@ -264,6 +482,7 @@
         </div>
     </div>
     
+    <script src="i18n.js"></script>
     <script src="options.js"></script>
 </body>
 </html>

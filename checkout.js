@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const errorMessage = document.getElementById('errorMessage');
     const successMessage = document.getElementById('successMessage');
     const loading = document.getElementById('loading');
+    const themeToggle = document.getElementById('themeToggle');
 
     // Estado da aplicação
     let selectedPackage = null;
@@ -20,6 +21,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Função de inicialização
     async function initializeCheckout() {
         console.log('Inicializando checkout...');
+        
+        // Inicializar tema
+        initializeTheme();
         
         // Carregar créditos atuais
         await loadCurrentCredits();
@@ -63,6 +67,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Botão de checkout
         checkoutButton.addEventListener('click', handleCheckout);
+        
+        // Theme toggle
+        themeToggle.addEventListener('click', toggleTheme);
     }
 
     // Selecionar pacote
@@ -234,6 +241,30 @@ document.addEventListener('DOMContentLoaded', function() {
     function hideMessages() {
         errorMessage.style.display = 'none';
         successMessage.style.display = 'none';
+    }
+
+    // Funções de tema
+    function initializeTheme() {
+        chrome.storage.local.get(['theme'], (result) => {
+            const theme = result.theme || 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+            
+            // Atualizar ícone do botão
+                const icon = themeToggle.querySelector('.material-icons');
+                icon.textContent = theme === 'dark' ? 'light_mode' : 'dark_mode';
+        });
+    }
+    
+    function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        document.documentElement.setAttribute('data-theme', newTheme);
+        chrome.storage.local.set({ theme: newTheme });
+        
+        // Atualizar ícone do botão
+        const icon = themeToggle.querySelector('.material-icons');
+        icon.textContent = newTheme === 'dark' ? 'light_mode' : 'dark_mode';
     }
 
     // Verificar status do pagamento quando a página carrega

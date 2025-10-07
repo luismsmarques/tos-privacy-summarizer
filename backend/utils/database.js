@@ -1,6 +1,7 @@
 // Database utilities for Neon Postgres
 import pkg from 'pg';
 const { Pool } = pkg;
+import { cache, CacheStrategies, CacheKeys } from './cache.js';
 
 class Database {
     constructor() {
@@ -123,11 +124,23 @@ class Database {
 
     async getUserCredits(userId) {
         try {
+            // Try cache first
+            const cacheKey = CacheKeys.userCredits(userId);
+            const cached = cache.get(cacheKey);
+            if (cached !== null) {
+                return cached;
+            }
+
             const result = await this.query(
                 'SELECT credits FROM users WHERE user_id = $1',
                 [userId]
             );
-            return result.rows[0]?.credits || 5;
+            const credits = result.rows[0]?.credits || 5;
+            
+            // Cache the result
+            cache.set(cacheKey, credits, CacheStrategies.USER.CREDITS);
+            
+            return credits;
         } catch (error) {
             console.error('Error getting user credits:', error);
             return 5; // Default credits
@@ -142,7 +155,14 @@ class Database {
                 WHERE user_id = $1
                 RETURNING credits
             `, [userId]);
-            return result.rows[0]?.credits || 0;
+            
+            const newCredits = result.rows[0]?.credits || 0;
+            
+            // Invalidate cache
+            const cacheKey = CacheKeys.userCredits(userId);
+            cache.delete(cacheKey);
+            
+            return newCredits;
         } catch (error) {
             console.error('Error decrementing credits:', error);
             throw error;
@@ -303,6 +323,13 @@ class Database {
     // Obter histórico de resumos de um utilizador
     async getUserSummaries(userId, limit = 50, offset = 0) {
         try {
+            // Try cache first
+            const cacheKey = CacheKeys.userSummaries(userId, limit, offset);
+            const cached = cache.get(cacheKey);
+            if (cached !== null) {
+                return cached;
+            }
+
             const result = await this.query(`
                 SELECT 
                     id,
@@ -325,7 +352,12 @@ class Database {
                 LIMIT $2 OFFSET $3
             `, [userId, limit, offset]);
             
-            return result.rows;
+            const summaries = result.rows;
+            
+            // Cache the result
+            cache.set(cacheKey, summaries, CacheStrategies.QUERY.FREQUENT);
+            
+            return summaries;
         } catch (error) {
             console.error('Error getting user summaries:', error);
             throw error;

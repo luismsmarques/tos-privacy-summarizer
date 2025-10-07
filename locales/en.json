@@ -1,0 +1,108 @@
+{
+  "ui": {
+    "analyze": "Analyze",
+    "summary": "Summary",
+    "history": "History",
+    "settings": "Settings",
+    "credits": "Credits",
+    "processing": "Processing...",
+    "error": "Error",
+    "success": "Success",
+    "loading": "Loading...",
+    "back": "Back",
+    "close": "Close",
+    "save": "Save",
+    "cancel": "Cancel",
+    "test": "Test",
+    "buy_credits": "Buy Credits",
+    "use_own_api": "Use My API",
+    "configure_api": "Configure API",
+    "switch_to_server": "Switch to Server"
+  },
+  "analysis": {
+    "summary_conciso": "Concise Summary",
+    "pontos_chave": "Key Points",
+    "alertas_privacidade": "Privacy Alerts",
+    "risk_score": "Risk Score",
+    "complexidade": "Complexity",
+    "boas_praticas": "Best Practices",
+    "low_risk": "Low Risk",
+    "medium_risk": "Medium Risk",
+    "high_risk": "High Risk",
+    "extract_summarize": "Extract & Summarize",
+    "no_credits": "No Credits"
+  },
+  "settings": {
+    "title": "Settings",
+    "api_key": "Gemini API Key",
+    "api_key_placeholder": "Paste your Gemini API key here",
+    "get_api_key": "Get your free key at",
+    "save_key": "Save Key",
+    "test_key": "Test Key",
+    "preferences": "Preferences",
+    "auto_detect": "Automatic Detection of Legal Pages",
+    "auto_detect_help": "Automatically detects if the page contains Terms of Service",
+    "notifications": "Success Notifications",
+    "notifications_help": "Shows notifications when summary is generated",
+    "language": "Interface Language",
+    "auto_detect_language": "Automatically detect language",
+    "theme": "Theme",
+    "light_theme": "Light Theme",
+    "dark_theme": "Dark Theme",
+    "reset_settings": "Reset Settings",
+    "export_settings": "Export Settings",
+    "privacy_policy": "Privacy Policy",
+    "terms_of_service": "Terms of Service",
+    "show_onboarding": "Show Tutorial"
+  },
+  "errors": {
+    "insufficient_text": "Insufficient text for analysis",
+    "api_error": "API Error",
+    "network_error": "Network Error",
+    "invalid_api_key": "Invalid API key",
+    "api_key_not_configured": "API key not configured",
+    "insufficient_credits": "Insufficient credits",
+    "timeout": "Timeout: Summary took too long to process",
+    "communication_error": "Error communicating with page"
+  },
+  "messages": {
+    "api_key_saved": "API key saved successfully!",
+    "api_key_tested": "API key tested successfully!",
+    "settings_reset": "Settings reset",
+    "settings_exported": "Settings exported",
+    "language_changed": "Language changed to",
+    "theme_changed": "Theme changed to"
+  },
+  "document_types": {
+    "terms_of_service": "Terms of Service",
+    "privacy_policy": "Privacy Policy",
+    "unknown": "Other",
+    "analyzing": "Analyzing..."
+  },
+  "complexity": {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "very_high": "Very High",
+    "extreme": "Extreme",
+    "calculating": "Calculating..."
+  },
+  "time_saved": {
+    "minutes": "minutes of reading",
+    "calculating": "Calculating..."
+  },
+  "connection": {
+    "your_gemini_key": "Your Gemini Key",
+    "using_personal_key": "Using your personal API key",
+    "server_api": "Server API",
+    "connected_ready": "Connected and ready for analysis",
+    "active": "ACTIVE"
+  },
+  "credits": {
+    "free_credits_remaining": "Free Credits Remaining",
+    "free": "FREE",
+    "cost": "Credit",
+    "insufficient_credits": "Insufficient credits",
+    "buy_more_credits": "Buy more credits or configure your own API key"
+  }
+}

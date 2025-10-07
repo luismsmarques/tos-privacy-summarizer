@@ -63,6 +63,27 @@ document.addEventListener('DOMContentLoaded', function() {
     let processingStartTime = null;
     let progressInterval = null;
 
+    // Aguardar inicialização do i18n
+    const initI18n = async () => {
+        // Aguardar o i18n estar pronto
+        while (!window.i18n || !window.i18n.isInitialized) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        console.log('[I18n] Popup i18n initialized');
+        
+        // Atualizar UI com traduções
+        window.i18n.updateUI();
+        
+        // Configurar listener para mudanças de idioma
+        document.addEventListener('languageChanged', () => {
+            window.i18n.updateUI();
+        });
+    };
+
+    // Inicializar i18n
+    initI18n();
+
     // Inicializar aplicação
     initializeApp();
 
@@ -242,12 +263,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateUIWithAnalysis(analysis) {
         // Tipo de conteúdo
         const typeMap = {
-            'terms_of_service': 'Termos de Serviço',
-            'privacy_policy': 'Política de Privacidade',
-            'unknown': 'Outros'
+            'terms_of_service': window.i18n.t('document_types.terms_of_service'),
+            'privacy_policy': window.i18n.t('document_types.privacy_policy'),
+            'unknown': window.i18n.t('document_types.unknown')
         };
         if (contentType) {
-            contentType.textContent = typeMap[analysis.type] || 'Outros';
+            contentType.textContent = typeMap[analysis.type] || window.i18n.t('document_types.unknown');
             console.log('Tipo de conteúdo definido como:', contentType.textContent);
         }
 

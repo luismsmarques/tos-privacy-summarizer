@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Internacionalização - ToS & Privacy Summarizer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .language-selector {
+            margin: 20px 0;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 5px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            background: #e8f5e8;
+            border-radius: 3px;
+        }
+        .error {
+            background: #ffe8e8;
+            color: #d00;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            background: #007cba;
+            color: white;
+        }
+        button:hover {
+            background: #005a87;
+        }
+    </style>
+</head>
+<body>
+    <h1>🌍 Teste de Internacionalização</h1>
+    <p>Este arquivo testa o sistema de internacionalização da extensão ToS & Privacy Summarizer.</p>
+
+    <div class="language-selector">
+        <h3>Seletor de Idioma</h3>
+        <label for="languageSelect">Idioma:</label>
+        <select id="languageSelect">
+            <option value="pt">🇵🇹 Português</option>
+            <option value="en">🇬🇧 English</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="fr">🇫🇷 Français</option>
+        </select>
+        <button id="testLanguageBtn">Testar Mudança de Idioma</button>
+    </div>
+
+    <div class="test-section">
+        <h3>Teste de Tradução</h3>
+        <div id="translationTest">
+            <p><strong>Texto Original:</strong> <span id="originalText">Extrair & Resumir</span></p>
+            <p><strong>Traduzido:</strong> <span id="translatedText">Extrair & Resumir</span></p>
+            <button id="testTranslationBtn">Testar Tradução</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>Teste de Detecção de Idioma</h3>
+        <div id="detectionTest">
+            <p><strong>Texto de Teste:</strong></p>
+            <textarea id="testText" rows="4" cols="50" placeholder="Digite um texto em qualquer idioma para testar a detecção...">Este é um texto em português que contém termos de serviço e política de privacidade.</textarea>
+            <br>
+            <button id="testDetectionBtn">Detectar Idioma</button>
+            <div id="detectionResult" class="test-result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>Teste de Elementos da Interface</h3>
+        <div id="uiTest">
+            <button data-i18n="ui.analyze">Analisar</button>
+            <button data-i18n="ui.summary">Resumo</button>
+            <button data-i18n="ui.history">Histórico</button>
+            <button data-i18n="ui.settings">Configurações</button>
+            <br><br>
+            <button id="updateUIBtn">Atualizar Interface</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>Teste de Documentos Multi-idioma</h3>
+        <div id="documentTest">
+            <button id="testDocPTBtn">Testar Documento PT</button>
+            <button id="testDocENBtn">Testar Documento EN</button>
+            <button id="testDocESBtn">Testar Documento ES</button>
+            <button id="testDocFRBtn">Testar Documento FR</button>
+            <div id="documentResult" class="test-result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>Logs de Teste</h3>
+        <div id="testLogs" style="background: #f9f9f9; padding: 10px; border-radius: 3px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto;">
+            <div>Logs aparecerão aqui...</div>
+        </div>
+            <button id="clearLogsBtn">Limpar Logs</button>
+    </div>
+
+    <script src="i18n.js"></script>
+    <script src="test-i18n.js"></script>
+</body>
+</html>

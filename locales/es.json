@@ -1,0 +1,108 @@
+{
+  "ui": {
+    "analyze": "Analizar",
+    "summary": "Resumen",
+    "history": "Historial",
+    "settings": "Configuración",
+    "credits": "Créditos",
+    "processing": "Procesando...",
+    "error": "Error",
+    "success": "Éxito",
+    "loading": "Cargando...",
+    "back": "Atrás",
+    "close": "Cerrar",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "test": "Probar",
+    "buy_credits": "Comprar Créditos",
+    "use_own_api": "Usar Mi API",
+    "configure_api": "Configurar API",
+    "switch_to_server": "Cambiar a Servidor"
+  },
+  "analysis": {
+    "summary_conciso": "Resumen Conciso",
+    "pontos_chave": "Puntos Clave",
+    "alertas_privacidade": "Alertas de Privacidad",
+    "risk_score": "Puntuación de Riesgo",
+    "complexidade": "Complejidad",
+    "boas_praticas": "Buenas Prácticas",
+    "low_risk": "Riesgo Bajo",
+    "medium_risk": "Riesgo Medio",
+    "high_risk": "Riesgo Alto",
+    "extract_summarize": "Extraer y Resumir",
+    "no_credits": "Sin Créditos"
+  },
+  "settings": {
+    "title": "Configuración",
+    "api_key": "Clave de API Gemini",
+    "api_key_placeholder": "Pegue aquí su clave de API Gemini",
+    "get_api_key": "Obtenga su clave gratuita en",
+    "save_key": "Guardar Clave",
+    "test_key": "Probar Clave",
+    "preferences": "Preferencias",
+    "auto_detect": "Detección Automática de Páginas Legales",
+    "auto_detect_help": "Detecta automáticamente si la página contiene Términos de Servicio",
+    "notifications": "Notificaciones de Éxito",
+    "notifications_help": "Muestra notificaciones cuando se genera el resumen",
+    "language": "Idioma de la Interfaz",
+    "auto_detect_language": "Detectar idioma automáticamente",
+    "theme": "Tema",
+    "light_theme": "Tema Claro",
+    "dark_theme": "Tema Oscuro",
+    "reset_settings": "Restablecer Configuración",
+    "export_settings": "Exportar Configuración",
+    "privacy_policy": "Política de Privacidad",
+    "terms_of_service": "Términos de Servicio",
+    "show_onboarding": "Mostrar Tutorial"
+  },
+  "errors": {
+    "insufficient_text": "Texto insuficiente para análisis",
+    "api_error": "Error de API",
+    "network_error": "Error de Red",
+    "invalid_api_key": "Clave de API inválida",
+    "api_key_not_configured": "Clave de API no configurada",
+    "insufficient_credits": "Créditos insuficientes",
+    "timeout": "Timeout: El resumen tardó demasiado en procesarse",
+    "communication_error": "Error al comunicarse con la página"
+  },
+  "messages": {
+    "api_key_saved": "¡Clave de API guardada exitosamente!",
+    "api_key_tested": "¡Clave de API probada exitosamente!",
+    "settings_reset": "Configuración restablecida",
+    "settings_exported": "Configuración exportada",
+    "language_changed": "Idioma cambiado a",
+    "theme_changed": "Tema cambiado a"
+  },
+  "document_types": {
+    "terms_of_service": "Términos de Servicio",
+    "privacy_policy": "Política de Privacidad",
+    "unknown": "Otro",
+    "analyzing": "Analizando..."
+  },
+  "complexity": {
+    "low": "Baja",
+    "medium": "Media",
+    "high": "Alta",
+    "very_high": "Muy Alta",
+    "extreme": "Extrema",
+    "calculating": "Calculando..."
+  },
+  "time_saved": {
+    "minutes": "minutos de lectura",
+    "calculating": "Calculando..."
+  },
+  "connection": {
+    "your_gemini_key": "Su Clave Gemini",
+    "using_personal_key": "Usando su clave API personal",
+    "server_api": "API del Servidor",
+    "connected_ready": "Conectado y listo para análisis",
+    "active": "ACTIVO"
+  },
+  "credits": {
+    "free_credits_remaining": "Créditos Gratuitos Restantes",
+    "free": "GRATIS",
+    "cost": "Crédito",
+    "insufficient_credits": "Créditos insuficientes",
+    "buy_more_credits": "Compre más créditos o configure su propia clave de API"
+  }
+}

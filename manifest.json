@@ -45,7 +45,9 @@
         "checkout.html", 
         "checkout.js", 
         "history.html", 
-        "history.js"
+        "history.js",
+        "locales/*.json",
+        "i18n.js"
       ],
       "matches": ["<all_urls>"]
     }

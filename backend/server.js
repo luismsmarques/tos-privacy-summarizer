@@ -24,6 +24,50 @@ app.use(helmet({
 }));
 app.use(morgan('combined'));
 
+// Inicializar sistema de alertas
+const alertSystem = new AlertSystem();
+alertSystem.addChannel(new ConsoleAlertChannel());
+
+// Middleware para monitorização e alertas
+app.use((req, res, next) => {
+    const startTime = Date.now();
+    
+    // Override res.end para capturar métricas
+    const originalEnd = res.end;
+    res.end = function(...args) {
+        const responseTime = Date.now() - startTime;
+        
+        // Track performance
+        performanceMonitor.trackRequest(
+            req.path,
+            req.method,
+            res.statusCode,
+            responseTime
+        );
+        
+        // Check for alerts (async, não bloqueia resposta)
+        setImmediate(async () => {
+            try {
+                const metrics = performanceMonitor.getMetrics();
+                const cacheStats = cache.getStats();
+                
+                await alertSystem.checkMetrics({
+                    avgResponseTime: metrics.requests.avgResponseTime,
+                    errorRate: metrics.rates.errorRate,
+                    healthScore: 100 - parseFloat(metrics.rates.errorRate),
+                    cacheHitRate: cacheStats.hitRate
+                });
+            } catch (error) {
+                console.error('❌ Alert system error:', error);
+            }
+        });
+        
+        originalEnd.apply(this, args);
+    };
+    
+    next();
+});
+
 // CORS configurado para a extensão e dashboard
 app.use(cors({
     origin: function (origin, callback) {
@@ -147,6 +191,9 @@ import { router as analyticsRoutes } from './routes/analytics.js';
 import authRoutes from './routes/auth.js';
 import db from './utils/database.js';
 import auth from './utils/auth.js';
+import { performanceMonitor, performanceMiddleware } from './utils/performance.js';
+import { cache } from './utils/cache.js';
+import { AlertSystem, ConsoleAlertChannel } from './utils/alerts.js';
 
 // Rotas da API
 app.use('/api/auth', authRoutes);
@@ -164,24 +211,135 @@ app.use('/dashboard', express.static(path.join(__dirname, '../dashboard')));
 
 // Rota de health check
 app.get('/health', (req, res) => {
+    const health = performanceMonitor.getHealthStatus();
     res.json({ 
-        status: 'OK', 
+        status: health.status,
+        score: health.score,
+        issues: health.issues,
         timestamp: new Date().toISOString(),
-        version: '1.0.0'
+        version: '1.4.0'
     });
+});
+
+// Rota de métricas de performance
+app.get('/metrics', (req, res) => {
+    const metrics = performanceMonitor.getMetrics();
+    const cacheStats = cache.getStats();
+    
+    res.json({
+        performance: metrics,
+        cache: cacheStats,
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Rota de status do sistema
+app.get('/status', (req, res) => {
+    const health = performanceMonitor.getHealthStatus();
+    const metrics = performanceMonitor.getMetrics();
+    const cacheStats = cache.getStats();
+    const alertStats = alertSystem.getStats();
+    
+    res.json({
+        health,
+        uptime: metrics.uptime,
+        requests: {
+            total: metrics.requests.total,
+            successRate: metrics.rates.successRate,
+            avgResponseTime: Math.round(metrics.requests.avgResponseTime) + 'ms'
+        },
+        cache: {
+            hitRate: cacheStats.hitRate,
+            size: cacheStats.size
+        },
+        database: {
+            connected: db.isConnected,
+            avgQueryTime: Math.round(metrics.database.avgQueryTime) + 'ms'
+        },
+        alerts: {
+            total: alertStats.total,
+            successRate: alertStats.successRate,
+            channels: alertSystem.alertChannels.length
+        },
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Rota de alertas
+app.get('/alerts', (req, res) => {
+    const limit = parseInt(req.query.limit) || 50;
+    const alerts = alertSystem.getHistory(limit);
+    const stats = alertSystem.getStats();
+    
+    res.json({
+        alerts,
+        stats,
+        channels: alertSystem.alertChannels.map(c => ({
+            name: c.name,
+            type: c.constructor.name
+        })),
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Rota para adicionar canal de alerta
+app.post('/alerts/channels', (req, res) => {
+    try {
+        const { type, config } = req.body;
+        
+        let channel;
+        switch (type) {
+            case 'console':
+                channel = new ConsoleAlertChannel();
+                break;
+            case 'email':
+                channel = new EmailAlertChannel(config);
+                break;
+            case 'webhook':
+                channel = new WebhookAlertChannel(config);
+                break;
+            case 'slack':
+                channel = new SlackAlertChannel(config);
+                break;
+            default:
+                return res.status(400).json({ error: 'Invalid channel type' });
+        }
+        
+        alertSystem.addChannel(channel);
+        
+        res.json({
+            success: true,
+            message: `Channel ${type} added successfully`,
+            channels: alertSystem.alertChannels.length
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // Rota raiz
 app.get('/', (req, res) => {
     res.json({
         message: 'ToS & Privacy Summarizer Backend',
-        version: '1.0.0',
+        version: '1.4.0',
+        status: 'operational',
+        features: [
+            'AI-powered summarization',
+            'Intelligent caching',
+            'Performance monitoring',
+            'Real-time analytics',
+            'Secure authentication'
+        ],
         endpoints: {
             health: '/health',
+            metrics: '/metrics',
+            status: '/status',
+            alerts: '/alerts',
             gemini: '/api/gemini',
             users: '/api/users',
             credits: '/api/credits',
-            stripe: '/api/stripe'
+            stripe: '/api/stripe',
+            analytics: '/api/analytics'
         }
     });
 });
@@ -220,7 +378,12 @@ db.connect().then((connected) => {
 app.listen(PORT, () => {
     console.log(`🚀 Backend seguro rodando na porta ${PORT}`);
     console.log(`📊 Health check: http://localhost:${PORT}/health`);
+    console.log(`📈 Metrics: http://localhost:${PORT}/metrics`);
+    console.log(`🔍 Status: http://localhost:${PORT}/status`);
     console.log(`🔒 Ambiente: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`💾 Cache: Ativo com monitorização`);
+    console.log(`📊 Performance: Monitorização ativa`);
+    console.log(`🚨 Alertas: Sistema ativo com ${alertSystem.alertChannels.length} canais`);
     
     // Verificar se a chave da API Gemini está configurada
     if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'your_gemini_api_key_here') {
@@ -229,6 +392,9 @@ app.listen(PORT, () => {
     } else {
         console.log('✅ Chave da API Gemini configurada');
     }
+    
+    console.log('🎯 Sistema de monitorização ativo');
+    console.log('💡 Versão 1.4.0 - Performance otimizada');
 });
 
 export default app;
