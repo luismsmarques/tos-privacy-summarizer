@@ -1026,6 +1026,31 @@ router.get('/user-history/:userId', async (req, res) => {
   }
 });
 
+// Endpoint para obter estatísticas de um utilizador
+router.get('/user-stats/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    console.log(`📊 Obtendo estatísticas para utilizador: ${userId}`);
+    
+    // Obter estatísticas do utilizador
+    const stats = await db.getUserSummaryStats(userId);
+    
+    res.json({
+      success: true,
+      stats: stats
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro ao obter estatísticas:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao obter estatísticas do utilizador',
+      details: error.message
+    });
+  }
+});
+
 // Endpoint para executar migração SQL direta
 router.post('/migrate-sql', async (req, res) => {
   try {

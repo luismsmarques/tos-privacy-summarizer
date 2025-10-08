@@ -87,7 +87,7 @@ class Database {
         try {
             // Try cache first
             const cacheKey = CacheKeys.userCredits(userId);
-            const cached = cache.get(cacheKey);
+            const cached = advancedCache.get(cacheKey);
             if (cached !== null) {
                 return cached;
             }
@@ -99,7 +99,7 @@ class Database {
             const credits = result.rows[0]?.credits || 5;
             
             // Cache the result
-            cache.set(cacheKey, credits, CacheStrategies.USER.CREDITS);
+            advancedCache.set(cacheKey, credits, CacheStrategies.USER.CREDITS);
             
             return credits;
         } catch (error) {
@@ -121,7 +121,7 @@ class Database {
             
             // Invalidate cache
             const cacheKey = CacheKeys.userCredits(userId);
-            cache.delete(cacheKey);
+            advancedCache.delete(cacheKey);
             
             return newCredits;
         } catch (error) {
