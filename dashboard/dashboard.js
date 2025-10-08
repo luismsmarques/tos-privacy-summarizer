@@ -309,14 +309,24 @@ class Dashboard {
             
             // Usar URL de produção em vez de localhost
             const baseUrl = window.location.origin;
+            
+            // Solicitar credenciais ao utilizador
+            const username = prompt('Utilizador administrativo:');
+            const password = prompt('Palavra-passe:');
+            
+            if (!username || !password) {
+                console.log('❌ Credenciais não fornecidas');
+                return null;
+            }
+            
             const response = await fetch(`${baseUrl}/api/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    username: 'admin',
-                    password: 'admin123'
+                    username: username,
+                    password: password
                 })
             });
 

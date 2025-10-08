@@ -10,7 +10,7 @@ export PORT=3000
 
 # Credenciais de administrador
 export ADMIN_USERNAME="admin"
-export ADMIN_PASSWORD="admin123"
+export ADMIN_PASSWORD="CHANGE_THIS_PASSWORD_IN_PRODUCTION"
 
 # Base de dados
 export DATABASE_URL="postgresql://neondb_owner:npg_1234567890abcdef@ep-cool-darkness-123456.us-east-2.aws.neon.tech/neondb?sslmode=require"

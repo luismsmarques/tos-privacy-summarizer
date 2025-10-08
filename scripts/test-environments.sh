@@ -40,7 +40,7 @@ test_login() {
     
     response=$(curl -s -X POST "$base_url/api/auth/login" \
         -H "Content-Type: application/json" \
-        -d '{"username":"admin","password":"admin123"}')
+        -d '{"username":"admin","password":"CHANGE_THIS_PASSWORD_IN_PRODUCTION"}')
     
     if echo "$response" | grep -q '"success":true'; then
         echo -e "${GREEN}✅ OK${NC}"
@@ -109,7 +109,7 @@ else
 fi
 
 echo ""
-echo "🔑 Credenciais para ambos: admin / admin123"
+echo "🔑 Credenciais para ambos: admin / [configurada no ambiente]"
 echo ""
 
 if [ "$local_ok" = true ] && [ "$vercel_ok" = true ]; then

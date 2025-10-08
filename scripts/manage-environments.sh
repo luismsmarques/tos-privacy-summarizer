@@ -35,7 +35,7 @@ setup_development() {
     
     echo -e "${GREEN}✅ Ambiente de desenvolvimento configurado!${NC}"
     echo "URL: http://localhost:3000/dashboard/"
-    echo "Credenciais: admin / admin123"
+    echo "Credenciais: admin / [configurada no ambiente]"
     echo ""
     echo "Para iniciar o servidor:"
     echo "  ./start-server.sh"
@@ -52,7 +52,7 @@ setup_production() {
     
     echo -e "${BLUE}✅ Ambiente de produção configurado!${NC}"
     echo "URL: https://tos-privacy-summarizer.vercel.app/dashboard/"
-    echo "Credenciais: admin / admin123"
+    echo "Credenciais: admin / [configurada no ambiente]"
     echo ""
     echo "Deploy automático via Vercel quando fizer push para main"
 }

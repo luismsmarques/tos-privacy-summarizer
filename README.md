@@ -74,6 +74,18 @@
 
 ## 🔧 Configuração
 
+### **⚠️ Configuração de Segurança (OBRIGATÓRIO)**
+Antes de usar em produção, configure as variáveis de ambiente no Vercel Dashboard:
+
+1. **Aceder ao Vercel Dashboard**: [vercel.com/dashboard](https://vercel.com/dashboard)
+2. **Selecionar projeto**: `tos-privacy-summarizer`
+3. **Configurar variáveis**:
+   - `JWT_SECRET`: Gere uma chave de 64+ caracteres
+   - `ADMIN_PASSWORD`: Defina uma senha forte
+   - `ADMIN_USERNAME`: admin (opcional)
+
+📖 **Guia completo**: Consulte `SECURITY-SETUP-GUIDE.md`
+
 ### **Configuração Inicial**
 1. Clique no ícone da extensão na barra de ferramentas
 2. Siga o tutorial de onboarding
@@ -255,6 +267,13 @@ npm run dev         # Modo desenvolvimento com nodemon
 
 ## 🆕 Últimas Atualizações (v1.3.0)
 
+### **🔒 Correções Críticas de Segurança**
+- **Credenciais Hardcoded Removidas**: JWT secrets e senhas administrativas removidas do código
+- **Variáveis de Ambiente Seguras**: Configuração obrigatória via Vercel Dashboard
+- **Arquivos ZIP Antigos Removidos**: Limpeza de versões antigas que continham código sensível
+- **Scripts Atualizados**: Todos os scripts agora usam variáveis de ambiente
+- **Documentação de Segurança**: Guias completos para configuração segura
+
 ### **✅ Organização e Limpeza do Projeto**
 - **Código Limpo**: Removidos todos os ficheiros de teste e debug desnecessários
 - **Estrutura Otimizada**: Projeto organizado para produção
@@ -274,6 +293,7 @@ npm run dev         # Modo desenvolvimento com nodemon
 - URLs do backend configuradas corretamente
 - CORS configurado para localhost:8080
 - Arquivos de ambiente protegidos no Git
+- Sistema de autenticação totalmente seguro
 
 ## 📊 Analytics e Monitorização
 

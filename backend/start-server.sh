@@ -49,7 +49,7 @@ fi
 
 echo "🔧 Iniciando servidor..."
 echo "📊 Dashboard disponível em: http://localhost:3000/dashboard/"
-echo "🔑 Credenciais: admin / admin123"
+echo "🔑 Credenciais: admin / [configurada no ambiente]"
 echo ""
 
 # Iniciar o servidor

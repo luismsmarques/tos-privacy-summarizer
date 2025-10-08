@@ -1,8 +1,16 @@
 # 📋 Lista de Tarefas do Projeto - ToS & Privacy Summarizer
 
-## 🎯 Status Atual: v1.3.0 - Projeto Organizado
+## 🎯 Status Atual: v1.3.0 - Correções Críticas de Segurança Implementadas
 
 ### ✅ **Tarefas Concluídas**
+
+#### **🔒 Correções Críticas de Segurança**
+- [x] Remover credenciais hardcoded de todos os arquivos
+- [x] Configurar variáveis de ambiente seguras no Vercel
+- [x] Remover arquivos ZIP antigos com código sensível
+- [x] Atualizar scripts para usar variáveis de ambiente
+- [x] Criar documentação de configuração segura
+- [x] Testar configuração de produção
 
 #### **Organização e Limpeza**
 - [x] Remover ficheiros de teste desnecessários (`test-*.js`, `test-*.html`)

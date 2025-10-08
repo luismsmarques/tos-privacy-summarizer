@@ -156,8 +156,8 @@ class AuthService {
                     <h1>🔐 Acesso Administrativo</h1>
                     <div class="login-form">
                         <form id="loginForm">
-                            <input type="text" id="username" placeholder="Utilizador" required value="admin">
-                            <input type="password" id="password" placeholder="Palavra-passe" required value="admin123">
+                            <input type="text" id="username" placeholder="Utilizador" required>
+                            <input type="password" id="password" placeholder="Palavra-passe" required>
                             <button type="submit">Entrar</button>
                         </form>
                         <div id="error" class="error" style="display: none;"></div>
