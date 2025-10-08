@@ -357,7 +357,7 @@ class HistoryLazyLoader extends LazyLoadingManager {
         const offset = pageNumber * this.options.pageSize;
         
         const response = await fetch(
-            `/api/analytics/user-history/${this.userId}?limit=${this.options.pageSize}&offset=${offset}`,
+            `https://tos-privacy-summarizer.vercel.app/api/analytics/user-history/${this.userId}?limit=${this.options.pageSize}&offset=${offset}`,
             {
                 method: 'GET',
                 headers: {
