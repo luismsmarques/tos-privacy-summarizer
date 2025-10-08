@@ -49,13 +49,13 @@ app.use((req, res, next) => {
         setImmediate(async () => {
             try {
                 const metrics = performanceMonitor.getMetrics();
-                const cacheStats = cache.getStats();
+                const cacheStats = advancedCache.getStats();
                 
                 await alertSystem.checkMetrics({
                     avgResponseTime: metrics.requests.avgResponseTime,
                     errorRate: metrics.rates.errorRate,
                     healthScore: 100 - parseFloat(metrics.rates.errorRate),
-                    cacheHitRate: cacheStats.hitRate
+                    cacheHitRate: cacheStats.overall?.hitRate || '0%'
                 });
             } catch (error) {
                 console.error('❌ Alert system error:', error);
@@ -192,7 +192,11 @@ import authRoutes from './routes/auth.js';
 import db from './utils/database.js';
 import auth from './utils/auth.js';
 import { performanceMonitor, performanceMiddleware } from './utils/performance.js';
-import { cache } from './utils/cache.js';
+import { advancedCache } from './utils/cache-advanced.js';
+import { cacheWarmer } from './utils/cache-warmer.js';
+import { queryOptimizer } from './utils/query-optimizer.js';
+import { resilientPool } from './utils/database-pool.js';
+import { advancedMetrics } from './utils/metrics-advanced.js';
 import { AlertSystem, ConsoleAlertChannel } from './utils/alerts.js';
 
 // Rotas da API
@@ -221,48 +225,55 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Rota de métricas de performance
+// Rota de métricas de performance avançadas
 app.get('/metrics', (req, res) => {
-    const metrics = performanceMonitor.getMetrics();
-    const cacheStats = cache.getStats();
+    const metrics = advancedMetrics.getMetrics();
+    const health = advancedMetrics.getHealthStatus();
+    const performance = advancedMetrics.getPerformanceSummary();
     
     res.json({
-        performance: metrics,
-        cache: cacheStats,
+        metrics: metrics,
+        health: health,
+        performance: performance,
         timestamp: new Date().toISOString()
     });
 });
 
-// Rota de status do sistema
-app.get('/status', (req, res) => {
-    const health = performanceMonitor.getHealthStatus();
-    const metrics = performanceMonitor.getMetrics();
-    const cacheStats = cache.getStats();
-    const alertStats = alertSystem.getStats();
-    
-    res.json({
-        health,
-        uptime: metrics.uptime,
-        requests: {
-            total: metrics.requests.total,
-            successRate: metrics.rates.successRate,
-            avgResponseTime: Math.round(metrics.requests.avgResponseTime) + 'ms'
-        },
-        cache: {
-            hitRate: cacheStats.hitRate,
-            size: cacheStats.size
-        },
-        database: {
-            connected: db.isConnected,
-            avgQueryTime: Math.round(metrics.database.avgQueryTime) + 'ms'
-        },
-        alerts: {
-            total: alertStats.total,
-            successRate: alertStats.successRate,
-            channels: alertSystem.alertChannels.length
-        },
-        timestamp: new Date().toISOString()
-    });
+// Rota de status do sistema avançado
+app.get('/status', async (req, res) => {
+    try {
+        const health = advancedMetrics.getHealthStatus();
+        const performance = advancedMetrics.getPerformanceSummary();
+        const connectionStats = await resilientPool.getConnectionStats();
+        const queryStats = queryOptimizer.getQueryStats();
+        const alertStats = alertSystem.getStats();
+        
+        res.json({
+            health: health,
+            performance: performance,
+            database: {
+                connected: db.isConnected,
+                connectionStats: connectionStats,
+                queryStats: queryStats
+            },
+            cache: {
+                stats: advancedCache.getStats(),
+                warming: cacheWarmer.getStats()
+            },
+            alerts: {
+                total: alertStats.total,
+                successRate: alertStats.successRate,
+                channels: alertSystem.alertChannels.length
+            },
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('Error getting status:', error);
+        res.status(500).json({
+            error: 'Failed to get system status',
+            timestamp: new Date().toISOString()
+        });
+    }
 });
 
 // Rota de alertas
@@ -365,25 +376,52 @@ app.use('*', (req, res) => {
     });
 });
 
-// Inicializar base de dados
-db.connect().then((connected) => {
-    if (connected) {
-        console.log('✅ Database initialized successfully');
-    } else {
-        console.log('⚠️ Database connection failed, using fallback');
+// Inicializar sistemas avançados
+async function initializeAdvancedSystems() {
+    try {
+        // Inicializar base de dados com pool resiliente
+        const dbConnected = await db.connect();
+        if (dbConnected) {
+            console.log('✅ Database initialized successfully with resilient pool');
+        } else {
+            console.log('⚠️ Database connection failed, using fallback');
+        }
+
+        // Inicializar cache warming
+        cacheWarmer.startWarming(30); // 30 minutos
+        console.log('🔥 Cache warming started');
+
+        // Inicializar métricas avançadas
+        console.log('📊 Advanced metrics collection started');
+
+        // Aplicar índices otimizados (se disponível)
+        try {
+            await queryOptimizer.refreshMaterializedViews();
+            console.log('✅ Materialized views refreshed');
+        } catch (error) {
+            console.log('⚠️ Materialized views not available:', error.message);
+        }
+
+    } catch (error) {
+        console.error('❌ Error initializing advanced systems:', error);
     }
-});
+}
+
+// Inicializar sistemas
+initializeAdvancedSystems();
 
 // Inicializar servidor
 app.listen(PORT, () => {
     console.log(`🚀 Backend seguro rodando na porta ${PORT}`);
     console.log(`📊 Health check: http://localhost:${PORT}/health`);
-    console.log(`📈 Metrics: http://localhost:${PORT}/metrics`);
-    console.log(`🔍 Status: http://localhost:${PORT}/status`);
+    console.log(`📈 Advanced Metrics: http://localhost:${PORT}/metrics`);
+    console.log(`🔍 System Status: http://localhost:${PORT}/status`);
     console.log(`🔒 Ambiente: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`💾 Cache: Ativo com monitorização`);
-    console.log(`📊 Performance: Monitorização ativa`);
+    console.log(`💾 Advanced Cache: Multi-layer com warming automático`);
+    console.log(`📊 Performance: Monitorização avançada ativa`);
     console.log(`🚨 Alertas: Sistema ativo com ${alertSystem.alertChannels.length} canais`);
+    console.log(`🔗 Database: Pool resiliente com retry logic`);
+    console.log(`🔍 Queries: Otimizadas com índices compostos`);
     
     // Verificar se a chave da API Gemini está configurada
     if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'your_gemini_api_key_here') {
@@ -393,8 +431,8 @@ app.listen(PORT, () => {
         console.log('✅ Chave da API Gemini configurada');
     }
     
-    console.log('🎯 Sistema de monitorização ativo');
-    console.log('💡 Versão 1.4.0 - Performance otimizada');
+    console.log('🎯 Sistema de monitorização avançada ativo');
+    console.log('💡 Versão 1.5.0 - Performance otimizada com cache inteligente');
 });
 
 export default app;

@@ -115,6 +115,55 @@ class PerformanceMonitor {
         this.metrics.cache.hitRate = total > 0 ? (this.metrics.cache.hits / total) * 100 : 0;
     }
 
+    // Track cache operations with detailed metrics
+    trackCacheOperation(operation, duration, strategy) {
+        if (!this.metrics.cache.operations) {
+            this.metrics.cache.operations = {
+                hits: { l1: 0, l2: 0, total: 0 },
+                misses: 0,
+                sets: 0,
+                deletes: 0,
+                evictions: 0,
+                avgOperationTime: 0,
+                operationCount: 0
+            };
+        }
+
+        const ops = this.metrics.cache.operations;
+        ops.operationCount++;
+        
+        // Update average operation time
+        ops.avgOperationTime = (ops.avgOperationTime * (ops.operationCount - 1) + duration) / ops.operationCount;
+
+        switch (operation) {
+            case 'hit_l1':
+                ops.hits.l1++;
+                ops.hits.total++;
+                break;
+            case 'hit_l2':
+                ops.hits.l2++;
+                ops.hits.total++;
+                break;
+            case 'miss':
+                ops.misses++;
+                break;
+            case 'set':
+                ops.sets++;
+                break;
+            case 'delete':
+                ops.deletes++;
+                break;
+            case 'eviction':
+                ops.evictions++;
+                break;
+        }
+
+        // Log slow cache operations
+        if (duration > 100) { // 100ms threshold
+            console.warn(`🐌 Slow cache operation: ${operation} - ${duration}ms (strategy: ${strategy})`);
+        }
+    }
+
     // Track database performance
     trackDatabaseQuery(queryTime, query = null) {
         this.metrics.database.queries++;

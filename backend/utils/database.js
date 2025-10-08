@@ -1,7 +1,7 @@
-// Database utilities for Neon Postgres
-import pkg from 'pg';
-const { Pool } = pkg;
-import { cache, CacheStrategies, CacheKeys } from './cache.js';
+// Database utilities for Neon Postgres with advanced pooling
+import { resilientPool } from './database-pool.js';
+import { advancedCache, CacheStrategies, CacheKeys } from './cache-advanced.js';
+import { queryOptimizer } from './query-optimizer.js';
 
 class Database {
     constructor() {
@@ -11,33 +11,11 @@ class Database {
 
     async connect() {
         try {
-            // Verificar se as variáveis de ambiente estão configuradas
-            const databaseUrl = process.env.ANALYTICS_URL || process.env.DATABASE_URL;
-            if (!databaseUrl) {
-                console.warn('⚠️ ANALYTICS_URL não configurada - usando fallback');
-                return false;
-            }
-            
-            // Criar pool de conexões
-            this.pool = new Pool({
-                connectionString: databaseUrl,
-                ssl: {
-                    rejectUnauthorized: false
-                },
-                // Configurações para ambientes serverless
-                max: 1, // Máximo 1 conexão por função
-                idleTimeoutMillis: 30000, // 30 segundos
-                connectionTimeoutMillis: 10000, // 10 segundos
-                allowExitOnIdle: true // Permitir sair quando idle
-            });
-            
-            // Test connection
-            const client = await this.pool.connect();
-            const result = await client.query('SELECT 1 as test');
-            client.release();
-            
+            // Use resilient pool for connection
+            await resilientPool.initialize();
+            this.pool = resilientPool;
             this.isConnected = true;
-            console.log('✅ Database connected successfully');
+            console.log('✅ Database connected successfully with resilient pool');
             return true;
         } catch (error) {
             console.error('❌ Database connection failed:', error);
@@ -48,31 +26,14 @@ class Database {
 
     async query(text, params) {
         try {
-            // Verificar se temos uma conexão válida
+            // Use resilient pool for queries
             if (!this.pool || !this.isConnected) {
-                console.log('🔄 Reconectando à base de dados...');
                 await this.connect();
             }
             
-            return await this.pool.query(text, params);
+            return await resilientPool.queryWithRetry(text, params);
         } catch (error) {
-            // Se a conexão foi perdida, tentar reconectar uma vez
-            if (error.message.includes('Connection terminated') || 
-                error.message.includes('connection') ||
-                error.message.includes('ECONNRESET')) {
-                
-                console.log('⚠️ Conexão perdida, tentando reconectar...');
-                this.isConnected = false;
-                
-                try {
-                    await this.connect();
-                    return await this.pool.query(text, params);
-                } catch (retryError) {
-                    console.error('❌ Falha na reconexão:', retryError);
-                    throw retryError;
-                }
-            }
-            
+            console.error('❌ Database query failed:', error);
             throw error;
         }
     }
@@ -320,44 +281,10 @@ class Database {
         }
     }
 
-    // Obter histórico de resumos de um utilizador
+    // Obter histórico de resumos de um utilizador (optimized)
     async getUserSummaries(userId, limit = 50, offset = 0) {
         try {
-            // Try cache first
-            const cacheKey = CacheKeys.userSummaries(userId, limit, offset);
-            const cached = cache.get(cacheKey);
-            if (cached !== null) {
-                return cached;
-            }
-
-            const result = await this.query(`
-                SELECT 
-                    id,
-                    summary_id,
-                    user_id,
-                    url,
-                    title,
-                    document_type,
-                    success,
-                    duration,
-                    text_length,
-                    word_count,
-                    summary,
-                    processing_time,
-                    created_at,
-                    updated_at
-                FROM summaries 
-                WHERE user_id = $1 
-                ORDER BY created_at DESC 
-                LIMIT $2 OFFSET $3
-            `, [userId, limit, offset]);
-            
-            const summaries = result.rows;
-            
-            // Cache the result
-            cache.set(cacheKey, summaries, CacheStrategies.QUERY.FREQUENT);
-            
-            return summaries;
+            return await queryOptimizer.getUserSummariesOptimized(userId, limit, offset);
         } catch (error) {
             console.error('Error getting user summaries:', error);
             throw error;

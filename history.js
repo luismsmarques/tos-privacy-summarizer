@@ -1,6 +1,8 @@
-// History script para gestão do histórico de resumos
+// History script para gestão do histórico de resumos com lazy loading
+import { HistoryLazyLoader } from './history-lazy-loader.js';
+
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('History script carregado');
+    console.log('History script carregado com lazy loading');
 
     // Elementos do DOM
     const loading = document.getElementById('loading');
@@ -14,27 +16,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const userStats = document.getElementById('userStats');
 
     // Estado da aplicação
-    let summaries = [];
-    let filteredSummaries = [];
     let userId = null;
+    let lazyLoader = null;
 
     // Inicializar aplicação
     initializeHistory();
 
     // Função de inicialização
     async function initializeHistory() {
-        console.log('Inicializando histórico...');
+        console.log('Inicializando histórico com lazy loading...');
         
         // Carregar userId
         await loadUserId();
         
-        // Carregar histórico
-        await loadHistory();
+        // Inicializar lazy loader
+        initializeLazyLoader();
         
         // Configurar event listeners
         setupEventListeners();
         
-        console.log('Histórico inicializado');
+        console.log('Histórico inicializado com lazy loading');
     }
 
     // Carregar userId
@@ -55,43 +56,52 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Carregar histórico
-    async function loadHistory() {
-        try {
-            showLoading(true);
-            hideMessages();
+    // Inicializar lazy loader
+    function initializeLazyLoader() {
+        if (!userId) {
+            console.error('UserId não disponível para lazy loader');
+            return;
+        }
 
-            const response = await fetch(`https://tos-privacy-summarizer.vercel.app/api/analytics/user-history/${userId}?limit=100`, {
+        // Criar container para lazy loading se não existir
+        if (!summaryList) {
+            console.error('Container summaryList não encontrado');
+            return;
+        }
+
+        // Inicializar lazy loader
+        lazyLoader = new HistoryLazyLoader('summaryList', userId, {
+            pageSize: 20,
+            threshold: 100,
+            loadingIndicator: true,
+            errorRetry: 3,
+            cachePages: true
+        });
+
+        // Carregar estatísticas do utilizador
+        loadUserStats();
+        
+        console.log('Lazy loader inicializado');
+    }
+
+    // Carregar estatísticas do utilizador
+    async function loadUserStats() {
+        try {
+            const response = await fetch(`https://tos-privacy-summarizer.vercel.app/api/analytics/user-stats/${userId}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
                 }
             });
 
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.stats) {
+                    renderUserStats(data.stats);
+                }
             }
-
-            const data = await response.json();
-            console.log('Histórico carregado:', data);
-
-            if (data.success && data.data) {
-                summaries = data.data;
-                filteredSummaries = [...summaries];
-                renderSummaries();
-                renderUserStats(data.stats);
-            } else {
-                summaries = [];
-                filteredSummaries = [];
-                showEmptyState();
-            }
-
         } catch (error) {
-            console.error('Erro ao carregar histórico:', error);
-            showError('Erro ao carregar histórico: ' + error.message);
-            showEmptyState();
-        } finally {
-            showLoading(false);
+            console.error('Erro ao carregar estatísticas:', error);
         }
     }
 
@@ -109,161 +119,41 @@ document.addEventListener('DOMContentLoaded', function() {
     // Configurar event listeners
     function setupEventListeners() {
         // Filtros
-        typeFilter.addEventListener('change', applyFilters);
-        dateFilter.addEventListener('change', applyFilters);
-        searchInput.addEventListener('input', debounce(applyFilters, 300));
+        if (typeFilter) {
+            typeFilter.addEventListener('change', (e) => {
+                lazyLoader?.setFilter('type', e.target.value);
+            });
+        }
+        
+        if (dateFilter) {
+            dateFilter.addEventListener('change', (e) => {
+                lazyLoader?.setFilter('date', e.target.value);
+            });
+        }
+        
+        if (searchInput) {
+            searchInput.addEventListener('input', debounce((e) => {
+                lazyLoader?.setFilter('search', e.target.value);
+            }, 300));
+        }
         
         // Botão de refresh
         if (refreshBtn) {
             refreshBtn.addEventListener('click', () => {
-                loadHistory();
+                refreshHistory();
             });
         }
     }
 
-    // Aplicar filtros
-    function applyFilters() {
-        const typeValue = typeFilter.value;
-        const dateValue = dateFilter.value;
-        const searchValue = searchInput.value.toLowerCase();
-
-        filteredSummaries = summaries.filter(summary => {
-            // Filtro por tipo
-            if (typeValue && summary.document_type !== typeValue) {
-                return false;
-            }
-
-            // Filtro por data
-            if (dateValue) {
-                const summaryDate = new Date(summary.created_at);
-                const now = new Date();
-                
-                switch (dateValue) {
-                    case 'today':
-                        if (summaryDate.toDateString() !== now.toDateString()) {
-                            return false;
-                        }
-                        break;
-                    case 'week':
-                        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-                        if (summaryDate < weekAgo) {
-                            return false;
-                        }
-                        break;
-                    case 'month':
-                        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-                        if (summaryDate < monthAgo) {
-                            return false;
-                        }
-                        break;
-                }
-            }
-
-            // Filtro por pesquisa
-            if (searchValue) {
-                const urlMatch = summary.url && summary.url.toLowerCase().includes(searchValue);
-                const contentMatch = summary.summary && summary.summary.toLowerCase().includes(searchValue);
-                if (!urlMatch && !contentMatch) {
-                    return false;
-                }
-            }
-
-            return true;
-        });
-
-        renderSummaries();
-    }
-
-    // Renderizar resumos
-    function renderSummaries() {
-        if (filteredSummaries.length === 0) {
-            showEmptyState();
-            return;
+    // Refresh histórico
+    function refreshHistory() {
+        if (lazyLoader) {
+            lazyLoader.reset();
+            // O lazy loader irá automaticamente carregar a primeira página
         }
-
-        summaryList.innerHTML = filteredSummaries.map(summary => {
-            const riskScore = summary.risk_score || 5;
-            const complexity = summary.rating_complexidade || 5;
-            const practices = summary.rating_boas_praticas || 5;
-            
-            const riskClass = riskScore <= 3 ? 'low' : riskScore <= 6 ? 'medium' : 'high';
-            const riskLabel = riskScore <= 3 ? 'Baixo' : riskScore <= 6 ? 'Médio' : 'Alto';
-            
-            return `
-                <div class="summary-item" data-id="${summary.id}">
-                    <div class="risk-score ${riskClass}">
-                        <span class="risk-score-number">${riskScore}/10</span>
-                        <span class="risk-score-label">${riskLabel}</span>
-                    </div>
-                    
-                    <div class="summary-header">
-                        <div>
-                            <div class="summary-title">${summary.title || getDocumentTypeName(summary.document_type)}</div>
-                            <a href="${summary.url}" target="_blank" class="summary-url">${summary.url || 'URL não disponível'}</a>
-                        </div>
-                    </div>
-                    
-                    <div class="rating-indicators">
-                        <div class="rating-item">
-                            <span>Complexidade:</span>
-                            <div class="rating-bar">
-                                <div class="rating-fill complexity" style="width: ${(complexity / 10) * 100}%"></div>
-                            </div>
-                            <span>${complexity}/10</span>
-                        </div>
-                        <div class="rating-item">
-                            <span>Boas Práticas:</span>
-                            <div class="rating-bar">
-                                <div class="rating-fill practices" style="width: ${(practices / 10) * 100}%"></div>
-                            </div>
-                            <span>${practices}/10</span>
-                        </div>
-                    </div>
-                    
-                    <div class="summary-meta">
-                        <div class="meta-item">
-                            <span class="material-icons">schedule</span>
-                            <span>${formatDate(summary.created_at)}</span>
-                        </div>
-                        <div class="meta-item">
-                            <span class="material-icons">description</span>
-                            <span>${summary.word_count || 0} palavras</span>
-                        </div>
-                        <div class="meta-item">
-                            <span class="material-icons">timer</span>
-                            <span>${summary.processing_time || 0}s</span>
-                        </div>
-                        <div class="meta-item">
-                            <span class="material-icons">tune</span>
-                            <span>Geral</span>
-                        </div>
-                    </div>
-                    
-                    <div class="summary-preview">
-                        ${summary.summary ? summary.summary.substring(0, 200) + '...' : 'Resumo não disponível'}
-                    </div>
-                    
-                    <div class="summary-actions">
-                        <button class="action-btn" onclick="viewSummary('${summary.id}')">
-                            <span class="material-icons">visibility</span>
-                            Ver
-                        </button>
-                        <button class="action-btn" onclick="copySummary('${summary.id}')">
-                            <span class="material-icons">content_copy</span>
-                            Copiar
-                        </button>
-                        <button class="action-btn" onclick="exportSummary('${summary.id}')">
-                            <span class="material-icons">download</span>
-                            Exportar
-                        </button>
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        summaryList.style.display = 'block';
-        emptyState.style.display = 'none';
     }
+
+    // Funções auxiliares para compatibilidade
 
     // Obter nome do tipo de documento
     function getDocumentTypeName(type) {
@@ -352,7 +242,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Funções globais para botões
     window.viewSummary = function(summaryId) {
-        const summary = summaries.find(s => s.id === summaryId);
+        const summary = lazyLoader?.summaries.find(s => s.id === summaryId);
         if (summary) {
             // Abrir resumo em nova aba
             const summaryUrl = `data:text/html;charset=utf-8,${encodeURIComponent(`
@@ -386,7 +276,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     window.copySummary = function(summaryId) {
-        const summary = summaries.find(s => s.id === summaryId);
+        const summary = lazyLoader?.summaries.find(s => s.id === summaryId);
         if (summary) {
             const text = `${getDocumentTypeName(summary.document_type)}\n\nURL: ${summary.url}\nData: ${formatDate(summary.created_at)}\n\n${summary.summary || 'Resumo não disponível'}`;
             
@@ -408,7 +298,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     window.exportSummary = function(summaryId) {
-        const summary = summaries.find(s => s.id === summaryId);
+        const summary = lazyLoader?.summaries.find(s => s.id === summaryId);
         if (summary) {
             showExportModal(summary);
         }
@@ -937,7 +827,7 @@ https://tos-privacy-summarizer.vercel.app`;
 
     // Exportação em lote
     window.exportAllSummaries = function(format) {
-        if (filteredSummaries.length === 0) {
+        if (!lazyLoader || lazyLoader.filteredSummaries.length === 0) {
             alert('Nenhum resumo para exportar');
             return;
         }
@@ -946,8 +836,8 @@ https://tos-privacy-summarizer.vercel.app`;
             const allData = {
                 exported_at: new Date().toISOString(),
                 exported_by: 'ToS & Privacy Summarizer',
-                total_summaries: filteredSummaries.length,
-                summaries: filteredSummaries.map(summary => ({
+                total_summaries: lazyLoader.filteredSummaries.length,
+                summaries: lazyLoader.filteredSummaries.map(summary => ({
                     id: summary.id,
                     document_type: summary.document_type,
                     document_type_name: getDocumentTypeName(summary.document_type),
@@ -973,7 +863,7 @@ ${'='.repeat(60)}
 
 `;
 
-            filteredSummaries.forEach((summary, index) => {
+            lazyLoader.filteredSummaries.forEach((summary, index) => {
                 content += `${index + 1}. ${getDocumentTypeName(summary.document_type)}
 ${'='.repeat(40)}
 URL: ${summary.url}
