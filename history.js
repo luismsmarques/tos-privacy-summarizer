@@ -170,6 +170,16 @@ class LazyLoadingManager {
             } else {
                 this.state.hasMoreData = false;
                 this.hideLoadingTrigger();
+                
+                // Se não há dados na primeira página, mostrar estado vazio
+                if (this.state.currentPage === 0) {
+                    const emptyState = document.getElementById('emptyState');
+                    const loading = document.getElementById('loading');
+                    if (emptyState && loading) {
+                        loading.style.display = 'none';
+                        emptyState.style.display = 'block';
+                    }
+                }
             }
             
         } catch (error) {
@@ -359,6 +369,8 @@ class HistoryLazyLoader extends LazyLoadingManager {
 
         const offset = pageNumber * this.options.pageSize;
         
+        console.log(`🔍 Fetching page ${pageNumber} for user ${this.userId}, offset: ${offset}`);
+        
         const response = await fetch(
             `https://tos-privacy-summarizer.vercel.app/api/analytics/user-history/${this.userId}?limit=${this.options.pageSize}&offset=${offset}`,
             {
@@ -369,15 +381,20 @@ class HistoryLazyLoader extends LazyLoadingManager {
             }
         );
 
+        console.log(`📡 Response status: ${response.status}`);
+
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
         const data = await response.json();
+        console.log(`📊 API Response:`, data);
         
         if (data.success && data.data) {
+            console.log(`✅ Returning ${data.data.length} items`);
             return data.data;
         } else {
+            console.log(`⚠️ No data returned, success: ${data.success}`);
             return [];
         }
     }
@@ -403,6 +420,11 @@ class HistoryLazyLoader extends LazyLoadingManager {
         
         // Append to existing content
         summaryList.insertAdjacentHTML('beforeend', newItemsHTML);
+        
+        // Show the summary list and hide loading
+        summaryList.style.display = 'block';
+        const loading = document.getElementById('loading');
+        if (loading) loading.style.display = 'none';
         
         // Update counters
         this.updateCounters();
@@ -683,6 +705,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Carregar estatísticas do utilizador
         loadUserStats();
+        
+        // Carregar primeira página imediatamente
+        lazyLoader.loadMore();
         
         console.log('Lazy loader inicializado');
     }
