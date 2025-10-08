@@ -7,6 +7,16 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
+// Importar novos sistemas avançados
+import { 
+    applyAdvancedRateLimiting,
+    extractUserForRateLimiting,
+    securityEventLogger,
+    suspiciousActivityDetector,
+    setupRateLimitingCleanup
+} from './middleware/rate-limiting.js';
+import { logSystemEvent } from './utils/audit-logger.js';
+
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -23,6 +33,14 @@ app.use(helmet({
     contentSecurityPolicy: false
 }));
 app.use(morgan('combined'));
+
+// Aplicar novos sistemas de segurança e auditoria
+app.use(extractUserForRateLimiting);
+app.use(securityEventLogger);
+app.use(suspiciousActivityDetector);
+
+// Aplicar rate limiting avançado
+applyAdvancedRateLimiting(app);
 
 // Inicializar sistema de alertas
 const alertSystem = new AlertSystem();
@@ -106,60 +124,12 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Admin-Token']
 }));
 
-// Rate limiting - diferentes limites para diferentes endpoints
-const generalLimiter = rateLimit({
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutos
-    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // máximo 100 requests por IP
-    message: {
-        error: 'Muitas tentativas. Tente novamente em alguns minutos.',
-        retryAfter: '15 minutos'
-    },
-    standardHeaders: true,
-    legacyHeaders: false,
+// Rate limiting antigo removido - agora usando sistema avançado
+// Log de sistema para indicar mudança
+logSystemEvent('rate_limiting_upgraded', {
+    message: 'Sistema de rate limiting atualizado para versão avançada',
+    features: ['user_based', 'adaptive', 'endpoint_specific']
 });
-
-// Rate limiting mais restritivo para endpoints de pagamento
-const paymentLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 10, // máximo 10 tentativas de pagamento por IP
-    message: {
-        error: 'Muitas tentativas de pagamento. Tente novamente em 15 minutos.',
-        retryAfter: '15 minutos'
-    },
-    standardHeaders: true,
-    legacyHeaders: false,
-});
-
-// Rate limiting para endpoints de IA (mais restritivo)
-const aiLimiter = rateLimit({
-    windowMs: 60 * 1000, // 1 minuto
-    max: 5, // máximo 5 requests de IA por minuto por IP
-    message: {
-        error: 'Muitas solicitações de IA. Aguarde 1 minuto antes de tentar novamente.',
-        retryAfter: '1 minuto'
-    },
-    standardHeaders: true,
-    legacyHeaders: false,
-});
-
-// Rate limiting para dashboard/admin
-const adminLimiter = rateLimit({
-    windowMs: 5 * 60 * 1000, // 5 minutos
-    max: 50, // máximo 50 requests por IP
-    message: {
-        error: 'Muitas tentativas de acesso ao dashboard. Tente novamente em 5 minutos.',
-        retryAfter: '5 minutos'
-    },
-    standardHeaders: true,
-    legacyHeaders: false,
-});
-
-// Aplicar rate limiting específico
-app.use('/api/gemini/', aiLimiter);
-app.use('/api/stripe/', paymentLimiter);
-app.use('/api/analytics/', adminLimiter);
-app.use('/api/auth/', adminLimiter);
-app.use('/api/', generalLimiter);
 
 // Middleware para parsing JSON
 app.use(express.json({ limit: '10mb' }));
@@ -433,6 +403,18 @@ app.listen(PORT, () => {
     
     console.log('🎯 Sistema de monitorização avançada ativo');
     console.log('💡 Versão 1.5.0 - Performance otimizada com cache inteligente');
+    
+    // Inicializar sistemas de auditoria e rate limiting
+    setupRateLimitingCleanup();
+    
+    // Log de inicialização do sistema
+    logSystemEvent('server_startup', {
+        version: '1.5.0',
+        features: ['advanced_rate_limiting', 'audit_logging', 'security_monitoring'],
+        timestamp: new Date().toISOString()
+    });
+    
+    console.log('🔒 Sistemas de segurança e auditoria inicializados');
 });
 
 export default app;

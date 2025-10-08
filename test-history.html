@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - History.html</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .test-result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Teste do History.html</h1>
+        <p>Este arquivo testa se o <code>history.html</code> funciona corretamente quando aberto diretamente no browser.</p>
+        
+        <h2>Testes Disponíveis:</h2>
+        <button class="test-button" onclick="testUserId()">Testar Geração de UserId</button>
+        <button class="test-button" onclick="testApiCall()">Testar Chamada à API</button>
+        <button class="test-button" onclick="testTheme()">Testar Sistema de Tema</button>
+        <button class="test-button" onclick="openHistory()">Abrir History.html</button>
+        
+        <div id="testResults"></div>
+    </div>
+
+    <script>
+        function addResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('testResults');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        function testUserId() {
+            try {
+                // Simular a função generateTemporaryUserId do history.js
+                const timestamp = Date.now();
+                const random = Math.random().toString(36).substring(2, 15);
+                const userId = `web_user_${timestamp}_${random}`;
+                
+                addResult(`✅ UserId gerado com sucesso: ${userId}`, 'success');
+            } catch (error) {
+                addResult(`❌ Erro ao gerar UserId: ${error.message}`, 'error');
+            }
+        }
+
+        async function testApiCall() {
+            try {
+                const testUserId = `web_user_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+                const url = `https://tos-privacy-summarizer.vercel.app/api/analytics/user-history/${testUserId}?limit=5&offset=0`;
+                
+                addResult(`🔄 Testando chamada à API: ${url}`, 'info');
+                addResult(`🌐 Origin atual: ${window.location.origin}`, 'info');
+                addResult(`📁 Protocolo atual: ${window.location.protocol}`, 'info');
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ API respondeu com sucesso: ${JSON.stringify(data).substring(0, 100)}...`, 'success');
+                } else {
+                    addResult(`⚠️ API respondeu com status ${response.status}: ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Erro na chamada à API: ${error.message}`, 'error');
+                addResult(`🔍 Tipo de erro: ${error.name}`, 'error');
+                addResult(`💡 Possível causa: CORS ou política de segurança do browser`, 'info');
+            }
+        }
+
+        function testTheme() {
+            try {
+                // Testar localStorage
+                const testTheme = 'dark';
+                localStorage.setItem('theme', testTheme);
+                const retrievedTheme = localStorage.getItem('theme');
+                
+                if (retrievedTheme === testTheme) {
+                    addResult(`✅ Sistema de tema funcionando: ${retrievedTheme}`, 'success');
+                } else {
+                    addResult(`❌ Erro no sistema de tema: esperado ${testTheme}, obtido ${retrievedTheme}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Erro no sistema de tema: ${error.message}`, 'error');
+            }
+        }
+
+        function openHistory() {
+            try {
+                // Tentar abrir o history.html
+                window.open('history.html', '_blank');
+                addResult(`✅ History.html aberto em nova aba`, 'success');
+            } catch (error) {
+                addResult(`❌ Erro ao abrir history.html: ${error.message}`, 'error');
+            }
+        }
+
+        // Teste automático ao carregar a página
+        window.addEventListener('load', () => {
+            addResult(`🚀 Página de teste carregada`, 'success');
+            addResult(`🌐 Executando como: ${typeof chrome !== 'undefined' ? 'Extensão Chrome' : 'Página Web'}`, 'info');
+        });
+    </script>
+</body>
+</html>

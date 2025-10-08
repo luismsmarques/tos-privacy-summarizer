@@ -866,72 +866,18 @@ class Dashboard {
                 return;
             }
             
-            // Se ainda não funcionar, usar dados mock
-            this.usersData = this.getMockUsersData();
-            console.log(`✅ ${this.usersData.length} utilizadores mock carregados`);
-            this.updateUsersStats();
-            this.renderUsersTable();
+            // Se ainda não funcionar, mostrar erro
+            console.error('❌ Falha ao carregar dados de utilizadores da API');
+            this.showUsersError('Erro ao carregar dados de utilizadores da API');
+            return;
             
         } catch (error) {
-            console.error('❌ Erro ao carregar dados de teste:', error);
-            // Usar dados mock como último recurso
-            this.usersData = this.getMockUsersData();
-            console.log(`✅ ${this.usersData.length} utilizadores mock carregados`);
-            this.updateUsersStats();
-            this.renderUsersTable();
+            console.error('❌ Erro ao carregar dados de utilizadores:', error);
+            this.showUsersError('Erro ao carregar dados de utilizadores: ' + error.message);
         }
     }
     
-    // Dados mock para utilizadores
-    getMockUsersData() {
-        return [
-            {
-                user_id: 'user_001',
-                created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-                last_used: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-                credits: 3,
-                summaries_count: 12,
-                total_words: 15000,
-                avg_processing_time: 2500
-            },
-            {
-                user_id: 'user_002',
-                created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-                last_used: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-                credits: 4,
-                summaries_count: 6,
-                total_words: 8000,
-                avg_processing_time: 3200
-            },
-            {
-                user_id: 'user_003',
-                created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-                last_used: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-                credits: 0,
-                summaries_count: 20,
-                total_words: 25000,
-                avg_processing_time: 2800
-            },
-            {
-                user_id: 'user_004',
-                created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-                last_used: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-                credits: 5,
-                summaries_count: 2,
-                total_words: 3000,
-                avg_processing_time: 1500
-            },
-            {
-                user_id: 'user_005',
-                created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-                last_used: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-                credits: 2,
-                summaries_count: 15,
-                total_words: 18000,
-                avg_processing_time: 2200
-            }
-        ];
-    }
+    // Função mock removida - dashboard agora usa apenas dados reais da API
 
     // Show error message for users section
     showUsersError(message) {
@@ -1221,32 +1167,7 @@ class Dashboard {
         }
     }
     
-    // Get mock users data
-    getMockUsersData() {
-        return [
-            {
-                user_id: 'user_12345',
-                created_at: '2024-01-15T10:30:00Z',
-                last_used: '2024-01-20T14:22:00Z',
-                credits: 15,
-                summaries_count: 8
-            },
-            {
-                user_id: 'user_67890',
-                created_at: '2024-01-10T09:15:00Z',
-                last_used: '2024-01-18T16:45:00Z',
-                credits: 250,
-                summaries_count: 45
-            },
-            {
-                user_id: 'user_11111',
-                created_at: '2024-01-05T11:20:00Z',
-                last_used: '2024-01-12T13:30:00Z',
-                credits: 3,
-                summaries_count: 2
-            }
-        ];
-    }
+    // Função mock duplicada removida
 
     // View user details
     viewUserDetails(userId) {
@@ -2016,46 +1937,7 @@ class Dashboard {
         }
     }
     
-    // Dados mock para demonstração
-    getMockOverviewData() {
-        console.log('📊 Usando dados mock para overview');
-        return {
-            totalUsers: 1247,
-            totalSummaries: 3892,
-            totalRequests: 15678,
-            successRate: 94.2,
-            usersChange: 12.5,
-            summariesChange: 8.3,
-            requestsChange: 15.7,
-            successChange: 2.1
-        };
-    }
-    
-    getMockRealtimeData() {
-        console.log('📊 Usando dados mock para realtime');
-        return {
-            activity: [
-                { date: 'Seg', summaries: 12, users: 8 },
-                { date: 'Ter', summaries: 19, users: 15 },
-                { date: 'Qua', summaries: 3, users: 7 },
-                { date: 'Qui', summaries: 5, users: 12 },
-                { date: 'Sex', summaries: 2, users: 6 },
-                { date: 'Sáb', summaries: 3, users: 4 },
-                { date: 'Dom', summaries: 8, users: 10 }
-            ]
-        };
-    }
-    
-    getMockSummariesData() {
-        console.log('📊 Usando dados mock para summaries');
-        return {
-            documentTypes: {
-                'Termos de Serviço': 65,
-                'Políticas de Privacidade': 30,
-                'Outros': 5
-            }
-        };
-    }
+    // Funções mock removidas - dashboard agora usa apenas dados reais da API
 
     // ===== FUNCIONALIDADES DE HISTÓRICO DE RESUMOS =====
 
