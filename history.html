@@ -6,7 +6,7 @@
     <title>Histórico de Resumos - ToS & Privacy Summarizer</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght@100..700,GRAD@0..200" />
     <link rel="stylesheet" href="material-design-tokens.css">
     <style>
         * {
@@ -635,36 +635,6 @@
     </div>
 
     <script src="history.js"></script>
-    <script>
-        // Theme functionality
-        const themeToggle = document.getElementById('themeToggle');
-
-        function initializeTheme() {
-            chrome.storage.local.get(['theme'], (result) => {
-                const theme = result.theme || 'light';
-                document.documentElement.setAttribute('data-theme', theme);
-                
-                const icon = themeToggle.querySelector('.material-icons');
-                icon.textContent = theme === 'dark' ? 'light_mode' : 'dark_mode';
-            });
-        }
-
-        function toggleTheme() {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            
-            document.documentElement.setAttribute('data-theme', newTheme);
-            chrome.storage.local.set({ theme: newTheme });
-            
-            const icon = themeToggle.querySelector('.material-icons');
-            icon.textContent = newTheme === 'dark' ? 'light_mode' : 'dark_mode';
-        }
-
-        // Initialize theme on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            initializeTheme();
-            themeToggle.addEventListener('click', toggleTheme);
-        });
-    </script>
+    <script src="history-theme.js"></script>
 </body>
 </html>

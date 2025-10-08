@@ -46,6 +46,7 @@
         "checkout.js", 
         "history.html", 
         "history.js",
+        "history-theme.js",
         "locales/*.json",
         "i18n.js"
       ],
@@ -53,6 +54,6 @@
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://tos-privacy-summarizer.vercel.app https://generativelanguage.googleapis.com"
   }
 }
