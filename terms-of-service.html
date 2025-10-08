@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="pt" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Termos de Serviço - ToS & Privacy Summarizer</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+    <style>
+        :root {
+            /* Light theme colors */
+            --md-sys-color-primary: #6750A4;
+            --md-sys-color-on-primary: #FFFFFF;
+            --md-sys-color-primary-container: #EADDFF;
+            --md-sys-color-on-primary-container: #21005D;
+            --md-sys-color-secondary: #625B71;
+            --md-sys-color-on-secondary: #FFFFFF;
+            --md-sys-color-secondary-container: #E8DEF8;
+            --md-sys-color-on-secondary-container: #1D192B;
+            --md-sys-color-tertiary: #7D5260;
+            --md-sys-color-on-tertiary: #FFFFFF;
+            --md-sys-color-tertiary-container: #FFD8E4;
+            --md-sys-color-on-tertiary-container: #31111D;
+            --md-sys-color-error: #BA1A1A;
+            --md-sys-color-on-error: #FFFFFF;
+            --md-sys-color-error-container: #FFDAD6;
+            --md-sys-color-on-error-container: #410002;
+            --md-sys-color-surface: #FFFBFE;
+            --md-sys-color-on-surface: #1C1B1F;
+            --md-sys-color-surface-variant: #E7E0EC;
+            --md-sys-color-on-surface-variant: #49454F;
+            --md-sys-color-outline: #79747E;
+            --md-sys-color-outline-variant: #CAC4D0;
+            --md-sys-color-shadow: #000000;
+            --md-sys-color-scrim: #000000;
+            --md-sys-color-inverse-surface: #313033;
+            --md-sys-color-inverse-on-surface: #F4EFF4;
+            --md-sys-color-inverse-primary: #D0BCFF;
+            --md-sys-color-surface-container-lowest: #FFFFFF;
+            --md-sys-color-surface-container-low: #F7F2FA;
+            --md-sys-color-surface-container: #F3EDF7;
+            --md-sys-color-surface-container-high: #ECE6F0;
+            --md-sys-color-surface-container-highest: #E6E0E9;
+            --md-sys-color-success: #4CAF50;
+            --md-sys-color-warning: #FF9800;
+        }
+
+        /* Dark theme */
+        [data-theme="dark"] {
+            --md-sys-color-primary: #D0BCFF;
+            --md-sys-color-on-primary: #381E72;
+            --md-sys-color-primary-container: #4F378B;
+            --md-sys-color-on-primary-container: #EADDFF;
+            --md-sys-color-secondary: #CCC2DC;
+            --md-sys-color-on-secondary: #332D41;
+            --md-sys-color-secondary-container: #4A4458;
+            --md-sys-color-on-secondary-container: #E8DEF8;
+            --md-sys-color-tertiary: #EFB8C8;
+            --md-sys-color-on-tertiary: #492532;
+            --md-sys-color-tertiary-container: #633B48;
+            --md-sys-color-on-tertiary-container: #FFD8E4;
+            --md-sys-color-error: #FFB4AB;
+            --md-sys-color-on-error: #690005;
+            --md-sys-color-error-container: #93000A;
+            --md-sys-color-on-error-container: #FFDAD6;
+            --md-sys-color-surface: #1C1B1F;
+            --md-sys-color-on-surface: #E6E0E9;
+            --md-sys-color-surface-variant: #49454F;
+            --md-sys-color-on-surface-variant: #CAC4D0;
+            --md-sys-color-outline: #938F99;
+            --md-sys-color-outline-variant: #49454F;
+            --md-sys-color-shadow: #000000;
+            --md-sys-color-scrim: #000000;
+            --md-sys-color-inverse-surface: #E6E0E9;
+            --md-sys-color-inverse-on-surface: #313033;
+            --md-sys-color-inverse-primary: #6750A4;
+            --md-sys-color-surface-container-lowest: #0F0D13;
+            --md-sys-color-surface-container-low: #1C1B1F;
+            --md-sys-color-surface-container: #211F26;
+            --md-sys-color-surface-container-high: #2B2930;
+            --md-sys-color-surface-container-highest: #36343B;
+            --md-sys-color-success: #81C784;
+            --md-sys-color-warning: #FFB74D;
+        }
+
+        /* Theme toggle button */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px var(--md-sys-color-shadow);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .theme-toggle:hover {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            transform: scale(1.1);
+        }
+
+        .theme-toggle .material-symbols-outlined,
+        .theme-toggle .material-icons {
+            font-size: 24px;
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        /* Header with theme toggle integrated */
+        .page-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: var(--md-sys-color-surface-container);
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 999;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .page-header .theme-toggle {
+            position: static;
+            width: 40px;
+            height: 40px;
+            margin: 0;
+        }
+
+        .page-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--md-sys-color-on-surface);
+            margin: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--md-sys-color-on-surface);
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 80px 20px 20px;
+            background: var(--md-sys-color-surface);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        .container {
+            background: var(--md-sys-color-surface-container);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px var(--md-sys-color-shadow);
+            border: 1px solid var(--md-sys-color-outline-variant);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        
+        h1 {
+            color: var(--md-sys-color-error);
+            border-bottom: 3px solid var(--md-sys-color-error);
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            transition: color 0.3s ease, border-color 0.3s ease;
+        }
+        
+        h2 {
+            color: var(--md-sys-color-on-surface);
+            margin-top: 30px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--md-sys-color-error);
+            padding-left: 15px;
+            transition: color 0.3s ease, border-color 0.3s ease;
+        }
+        
+        h3 {
+            color: var(--md-sys-color-on-surface);
+            margin-top: 20px;
+            margin-bottom: 10px;
+            transition: color 0.3s ease;
+        }
+        
+        .last-updated {
+            background: var(--md-sys-color-error-container);
+            color: var(--md-sys-color-on-error-container);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--md-sys-color-error);
+            margin-bottom: 30px;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+
+        /* Theme toggle button */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px var(--md-sys-color-shadow);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .theme-toggle:hover {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            transform: scale(1.1);
+        }
+
+        .theme-toggle .material-symbols-outlined {
+            font-size: 24px;
+        }
+        
+        .highlight {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+            margin: 15px 0;
+        }
+        
+        .important {
+            background: #f8d7da;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #dc3545;
+            margin: 15px 0;
+        }
+        
+        .contact-info {
+            background: #d4edda;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+            margin-top: 30px;
+        }
+        
+        ul, ol {
+            margin: 10px 0;
+            padding-left: 25px;
+        }
+        
+        li {
+            margin: 5px 0;
+        }
+        
+        .version {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #ecf0f1;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #e74c3c;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        
+        a {
+            color: #e74c3c;
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">Termos de Serviço</h1>
+        <button class="theme-toggle" id="themeToggle" title="Alternar tema">
+            <span class="material-icons">dark_mode</span>
+        </button>
+    </div>
+
+    <div class="container">
+        <a href="options.html" class="back-link">← Voltar às Configurações</a>
+        
+        <h1>⚖️ Termos de Serviço</h1>
+        
+        <div class="last-updated">
+            <strong>Última atualização:</strong> <span id="currentDate"></span>
+            <br><strong>Versão:</strong> 1.3.0 - Correções Críticas de Segurança
+        </div>
+        
+        <div class="highlight">
+            <strong>🔒 Atualização de Segurança:</strong> Esta versão implementa correções críticas de segurança, incluindo remoção de credenciais hardcoded e implementação de variáveis de ambiente seguras. Consulte <a href="SECURITY-SETUP-GUIDE.md">SECURITY-SETUP-GUIDE.md</a> para detalhes completos.
+        </div>
+        
+        <h2>1. Aceitação dos Termos</h2>
+        <p>Ao instalar e utilizar a extensão "ToS & Privacy Summarizer" ("a extensão", "o serviço"), você concorda em cumprir e estar vinculado a estes Termos de Serviço. Se não concordar com qualquer parte destes termos, não deve utilizar a extensão.</p>
+        
+        <div class="highlight">
+            <h3>📋 Resumo dos Termos</h3>
+            <p><strong>Estes termos regem o uso da extensão que utiliza IA para resumir documentos legais.</strong> Ao utilizar o serviço, você concorda com a recolha limitada de dados, o uso da API Gemini da Google, e as limitações de responsabilidade aqui descritas.</p>
+        </div>
+        
+        <h2>2. Descrição do Serviço</h2>
+        
+        <h3>2.1 Funcionalidade Principal</h3>
+        <ul>
+            <li><strong>Análise de documentos legais:</strong> A extensão analisa Termos de Serviço e Políticas de Privacidade</li>
+            <li><strong>Resumos com IA:</strong> Utiliza a API Gemini da Google para gerar resumos estruturados</li>
+            <li><strong>Interface intuitiva:</strong> Apresenta informações de forma clara e acessível</li>
+            <li><strong>Gestão de créditos:</strong> Sistema de créditos para uso da API compartilhada</li>
+        </ul>
+        
+        <h3>2.2 Limitações do Serviço</h3>
+        <ul>
+            <li><strong>Precisão:</strong> Os resumos são gerados por IA e podem conter imprecisões</li>
+            <li><strong>Completude:</strong> Os resumos não substituem a leitura completa dos documentos originais</li>
+            <li><strong>Atualização:</strong> Os resumos podem não refletir alterações recentes nos documentos</li>
+            <li><strong>Disponibilidade:</strong> O serviço depende da disponibilidade de terceiros (Google Gemini API)</li>
+        </ul>
+        
+        <h2>3. Uso Aceitável</h2>
+        
+        <h3>3.1 Uso Permitido</h3>
+        <ul>
+            <li><strong>Uso pessoal:</strong> Para análise pessoal de documentos legais</li>
+            <li><strong>Uso educacional:</strong> Para fins de aprendizagem e pesquisa</li>
+            <li><strong>Uso profissional:</strong> Para análise de documentos no contexto profissional</li>
+        </ul>
+        
+        <h3>3.2 Uso Proibido</h3>
+        <ul>
+            <li><strong>Uso comercial:</strong> Não pode utilizar para serviços comerciais sem autorização</li>
+            <li><strong>Distribuição:</strong> Não pode redistribuir ou revender a extensão</li>
+            <li><strong>Engenharia reversa:</strong> Não pode tentar descompilar ou modificar o código</li>
+            <li><strong>Uso malicioso:</strong> Não pode utilizar para atividades ilegais ou prejudiciais</li>
+        </ul>
+        
+        <div class="important">
+            <h3>⚠️ Aviso Importante</h3>
+            <p><strong>Os resumos gerados são apenas para fins informativos.</strong> Não constituem aconselhamento jurídico e não devem ser utilizados como base para decisões legais importantes. Sempre consulte um advogado qualificado para questões jurídicas específicas.</p>
+        </div>
+        
+        <h2>4. Responsabilidades do Utilizador</h2>
+        
+        <h3>4.1 Uso Responsável</h3>
+        <ul>
+            <li><strong>Verificação:</strong> Deve verificar a precisão dos resumos quando necessário</li>
+            <li><strong>Conformidade:</strong> Deve cumprir todas as leis aplicáveis</li>
+            <li><strong>Segurança:</strong> Deve manter a segurança do seu dispositivo e dados</li>
+            <li><strong>Atualizações:</strong> Deve manter a extensão atualizada</li>
+        </ul>
+        
+        <h3>4.2 Limitações de Responsabilidade</h3>
+        <ul>
+            <li><strong>Precisão:</strong> Não garantimos a precisão absoluta dos resumos</li>
+            <li><strong>Disponibilidade:</strong> Não garantimos disponibilidade contínua do serviço</li>
+            <li><strong>Danos:</strong> Não somos responsáveis por danos resultantes do uso da extensão</li>
+            <li><strong>Terceiros:</strong> Não controlamos serviços de terceiros (Google Gemini API)</li>
+        </ul>
+        
+        <h2>5. Propriedade Intelectual</h2>
+        
+        <h3>5.1 Direitos de Autor</h3>
+        <ul>
+            <li><strong>Extensão:</strong> A extensão é propriedade dos seus desenvolvedores</li>
+            <li><strong>Código fonte:</strong> Disponível sob licença de código aberto</li>
+            <li><strong>Conteúdo:</strong> Os resumos gerados são propriedade do utilizador</li>
+        </ul>
+        
+        <h3>5.2 Licença de Uso</h3>
+        <ul>
+            <li><strong>Uso pessoal:</strong> Licença para uso pessoal e não comercial</li>
+            <li><strong>Modificações:</strong> Pode modificar para uso pessoal</li>
+            <li><strong>Distribuição:</strong> Não pode redistribuir sem autorização</li>
+        </ul>
+        
+        <h2>6. Privacidade e Dados</h2>
+        
+        <h3>6.1 Recolha de Dados</h3>
+        <ul>
+            <li><strong>Dados mínimos:</strong> Recolhemos apenas dados necessários para o funcionamento</li>
+            <li><strong>Armazenamento local:</strong> A maioria dos dados é armazenada localmente</li>
+            <li><strong>Transparência:</strong> Detalhes completos na nossa Política de Privacidade</li>
+        </ul>
+        
+        <h3>6.2 Partilha de Dados</h3>
+        <ul>
+            <li><strong>Google Gemini API:</strong> Texto das páginas é enviado para análise</li>
+            <li><strong>Backend seguro:</strong> Dados de utilização para melhorias do serviço</li>
+            <li><strong>Sem vendas:</strong> Não vendemos ou partilhamos dados pessoais</li>
+        </ul>
+        
+        <h2>7. Modificações do Serviço</h2>
+        
+        <h3>7.1 Alterações aos Termos</h3>
+        <ul>
+            <li><strong>Notificação:</strong> Notificaremos sobre alterações significativas</li>
+            <li><strong>Data de atualização:</strong> A data será sempre atualizada no topo desta página</li>
+            <li><strong>Uso continuado:</strong> O uso continuado constitui aceitação das alterações</li>
+        </ul>
+        
+        <h3>7.2 Alterações ao Serviço</h3>
+        <ul>
+            <li><strong>Melhorias:</strong> Podemos melhorar ou modificar funcionalidades</li>
+            <li><strong>Discontinuidade:</strong> Podemos descontinuar funcionalidades com aviso prévio</li>
+            <li><strong>Compatibilidade:</strong> Podemos alterar requisitos de compatibilidade</li>
+        </ul>
+        
+        <h2>8. Rescisão</h2>
+        
+        <h3>8.1 Rescisão pelo Utilizador</h3>
+        <ul>
+            <li><strong>Desinstalação:</strong> Pode desinstalar a extensão a qualquer momento</li>
+            <li><strong>Eliminação de dados:</strong> Pode eliminar todos os dados armazenados</li>
+            <li><strong>Sem penalizações:</strong> Não há penalizações por desinstalação</li>
+        </ul>
+        
+        <h3>8.2 Rescisão pelo Serviço</h3>
+        <ul>
+            <li><strong>Violação dos termos:</strong> Podemos suspender o acesso por violação</li>
+            <li><strong>Uso abusivo:</strong> Podemos suspender por uso inadequado</li>
+            <li><strong>Notificação:</strong> Notificaremos antes da suspensão quando possível</li>
+        </ul>
+        
+        <h2>9. Limitação de Responsabilidade</h2>
+        
+        <div class="important">
+            <h3>⚠️ Isenção de Responsabilidade</h3>
+            <p><strong>A extensão é fornecida "como está" sem garantias de qualquer tipo.</strong> Não somos responsáveis por:</p>
+            <ul>
+                <li>Precisão dos resumos gerados</li>
+                <li>Disponibilidade contínua do serviço</li>
+                <li>Danos resultantes do uso da extensão</li>
+                <li>Problemas com serviços de terceiros</li>
+            </ul>
+        </div>
+        
+        <h2>10. Lei Aplicável</h2>
+        
+        <h3>10.1 Jurisdição</h3>
+        <ul>
+            <li><strong>Lei portuguesa:</strong> Estes termos são regidos pela lei portuguesa</li>
+            <li><strong>Resolução de disputas:</strong> Disputas serão resolvidas em tribunais portugueses</li>
+            <li><strong>Conformidade:</strong> Cumprimos regulamentações aplicáveis (GDPR, LGPD)</li>
+        </ul>
+        
+        <h3>10.2 Disposições Gerais</h3>
+        <ul>
+            <li><strong>Divisibilidade:</strong> Se alguma disposição for inválida, as restantes permanecem válidas</li>
+            <li><strong>Renúncia:</strong> A não aplicação de uma disposição não constitui renúncia</li>
+            <li><strong>Integralidade:</strong> Estes termos constituem o acordo completo entre as partes</li>
+        </ul>
+        
+        <div class="contact-info">
+            <h2>11. Contacto</h2>
+            
+            <h3>11.1 Questões sobre os Termos</h3>
+            <ul>
+                <li><strong>GitHub:</strong> <a href="https://github.com/luismsmarques/tos-privacy-summarizer" target="_blank">github.com/luismsmarques/tos-privacy-summarizer</a></li>
+                <li><strong>Chrome Web Store:</strong> Através da página da extensão</li>
+                <li><strong>Issues:</strong> Utilize o sistema de issues do GitHub para reportar problemas</li>
+            </ul>
+            
+            <h3>11.2 Tempo de Resposta</h3>
+            <ul>
+                <li><strong>Questões gerais:</strong> 48 horas</li>
+                <li><strong>Questões legais:</strong> 24 horas</li>
+                <li><strong>Problemas técnicos:</strong> 72 horas</li>
+            </ul>
+        </div>
+        
+        <h2>12. Conformidade Legal</h2>
+        
+        <h3>12.1 Regulamentações</h3>
+        <ul>
+            <li><strong>GDPR:</strong> Regulamento Geral sobre a Proteção de Dados (UE)</li>
+            <li><strong>LGPD:</strong> Lei Geral de Proteção de Dados (Brasil)</li>
+            <li><strong>CCPA:</strong> California Consumer Privacy Act (EUA)</li>
+        </ul>
+        
+        <h3>12.2 Direitos do Utilizador</h3>
+        <ul>
+            <li><strong>Acesso:</strong> Direito de aceder aos seus dados</li>
+            <li><strong>Retificação:</strong> Direito de corrigir dados incorretos</li>
+            <li><strong>Eliminação:</strong> Direito de eliminar os seus dados</li>
+            <li><strong>Portabilidade:</strong> Direito de exportar os seus dados</li>
+        </ul>
+        
+        <div class="version">
+            <p><strong>Estes termos de serviço são parte integrante da Política de Privacidade da extensão ToS & Privacy Summarizer.</strong></p>
+            <p><strong>Versão:</strong> 1.0 | <strong>Data de entrada em vigor:</strong> <span id="effectiveDate"></span></p>
+        </div>
+    </div>
+    
+    <script>
+        // Definir data atual
+        const now = new Date();
+        const currentDateElement = document.getElementById('currentDate');
+        const effectiveDateElement = document.getElementById('effectiveDate');
+        
+        if (currentDateElement) {
+            currentDateElement.textContent = now.toLocaleDateString('pt-PT');
+        }
+        
+        if (effectiveDateElement) {
+            effectiveDateElement.textContent = now.toLocaleDateString('pt-PT');
+        }
+
+        // Funções de tema
+        function initializeTheme() {
+            chrome.storage.local.get(['theme'], (result) => {
+                const theme = result.theme || 'light';
+                document.documentElement.setAttribute('data-theme', theme);
+                
+                // Atualizar ícone do botão
+                const themeToggle = document.getElementById('themeToggle');
+                if (themeToggle) {
+                const icon = themeToggle.querySelector('.material-icons');
+                icon.textContent = theme === 'dark' ? 'light_mode' : 'dark_mode';
+                }
+            });
+        }
+        
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            chrome.storage.local.set({ theme: newTheme });
+            
+            // Atualizar ícone do botão
+            const themeToggle = document.getElementById('themeToggle');
+            if (themeToggle) {
+            const icon = themeToggle.querySelector('.material-icons');
+            icon.textContent = newTheme === 'dark' ? 'light_mode' : 'dark_mode';
+            }
+        }
+
+        // Event listener para o botão de tema
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', toggleTheme);
+        }
+
+        // Inicializar tema
+        initializeTheme();
+    </script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Fundo com bordas arredondadas -->
+  <rect width="128" height="128" rx="25" ry="25" fill="url(#gradient)"/>
+  
+  <!-- Documento -->
+  <rect x="25" y="32" width="51" height="64" fill="white" rx="4" ry="4"/>
+  
+  <!-- Linhas do documento -->
+  <line x1="35" y1="48" x2="70" y2="48" stroke="#667eea" stroke-width="2"/>
+  <line x1="35" y1="56" x2="70" y2="56" stroke="#667eea" stroke-width="2"/>
+  <line x1="35" y1="64" x2="70" y2="64" stroke="#667eea" stroke-width="2"/>
+  <line x1="35" y1="72" x2="60" y2="72" stroke="#667eea" stroke-width="2"/>
+  
+  <!-- Lupa -->
+  <circle cx="85" cy="45" r="19" fill="none" stroke="white" stroke-width="4"/>
+  
+  <!-- Cabo da lupa -->
+  <line x1="100" y1="60" x2="110" y2="70" stroke="white" stroke-width="4" stroke-linecap="round"/>
+  
+  <!-- Ponto no centro da lupa -->
+  <circle cx="85" cy="45" r="3" fill="white"/>
+</svg>

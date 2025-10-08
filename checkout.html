@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="pt" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprar Créditos - ToS & Privacy Summarizer</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400&display=swap" />
+    <link rel="stylesheet" href="material-design-tokens.css">
+    <style>
+        :root {
+            /* Light theme colors */
+            --md-sys-color-primary: #6750A4;
+            --md-sys-color-on-primary: #FFFFFF;
+            --md-sys-color-primary-container: #EADDFF;
+            --md-sys-color-on-primary-container: #21005D;
+            --md-sys-color-secondary: #625B71;
+            --md-sys-color-on-secondary: #FFFFFF;
+            --md-sys-color-secondary-container: #E8DEF8;
+            --md-sys-color-on-secondary-container: #1D192B;
+            --md-sys-color-tertiary: #7D5260;
+            --md-sys-color-on-tertiary: #FFFFFF;
+            --md-sys-color-tertiary-container: #FFD8E4;
+            --md-sys-color-on-tertiary-container: #31111D;
+            --md-sys-color-error: #BA1A1A;
+            --md-sys-color-on-error: #FFFFFF;
+            --md-sys-color-error-container: #FFDAD6;
+            --md-sys-color-on-error-container: #410002;
+            --md-sys-color-surface: #FFFBFE;
+            --md-sys-color-on-surface: #1C1B1F;
+            --md-sys-color-surface-variant: #E7E0EC;
+            --md-sys-color-on-surface-variant: #49454F;
+            --md-sys-color-outline: #79747E;
+            --md-sys-color-outline-variant: #CAC4D0;
+            --md-sys-color-shadow: #000000;
+            --md-sys-color-scrim: #000000;
+            --md-sys-color-inverse-surface: #313033;
+            --md-sys-color-inverse-on-surface: #F4EFF4;
+            --md-sys-color-inverse-primary: #D0BCFF;
+            --md-sys-color-surface-container-lowest: #FFFFFF;
+            --md-sys-color-surface-container-low: #F7F2FA;
+            --md-sys-color-surface-container: #F3EDF7;
+            --md-sys-color-surface-container-high: #ECE6F0;
+            --md-sys-color-surface-container-highest: #E6E0E9;
+            --md-sys-color-success: #4CAF50;
+            --md-sys-color-warning: #FF9800;
+        }
+
+        /* Dark theme */
+        [data-theme="dark"] {
+            --md-sys-color-primary: #D0BCFF;
+            --md-sys-color-on-primary: #381E72;
+            --md-sys-color-primary-container: #4F378B;
+            --md-sys-color-on-primary-container: #EADDFF;
+            --md-sys-color-secondary: #CCC2DC;
+            --md-sys-color-on-secondary: #332D41;
+            --md-sys-color-secondary-container: #4A4458;
+            --md-sys-color-on-secondary-container: #E8DEF8;
+            --md-sys-color-tertiary: #EFB8C8;
+            --md-sys-color-on-tertiary: #492532;
+            --md-sys-color-tertiary-container: #633B48;
+            --md-sys-color-on-tertiary-container: #FFD8E4;
+            --md-sys-color-error: #FFB4AB;
+            --md-sys-color-on-error: #690005;
+            --md-sys-color-error-container: #93000A;
+            --md-sys-color-on-error-container: #FFDAD6;
+            --md-sys-color-surface: #1C1B1F;
+            --md-sys-color-on-surface: #E6E0E9;
+            --md-sys-color-surface-variant: #49454F;
+            --md-sys-color-on-surface-variant: #CAC4D0;
+            --md-sys-color-outline: #938F99;
+            --md-sys-color-outline-variant: #49454F;
+            --md-sys-color-shadow: #000000;
+            --md-sys-color-scrim: #000000;
+            --md-sys-color-inverse-surface: #E6E0E9;
+            --md-sys-color-inverse-on-surface: #313033;
+            --md-sys-color-inverse-primary: #6750A4;
+            --md-sys-color-surface-container-lowest: #0F0D13;
+            --md-sys-color-surface-container-low: #1C1B1F;
+            --md-sys-color-surface-container: #211F26;
+            --md-sys-color-surface-container-high: #2B2930;
+            --md-sys-color-surface-container-highest: #36343B;
+            --md-sys-color-success: #81C784;
+            --md-sys-color-warning: #FFB74D;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Theme toggle button */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px var(--md-sys-color-shadow);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .theme-toggle:hover {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            transform: scale(1.1);
+        }
+
+        .theme-toggle .material-symbols-outlined,
+        .theme-toggle .material-icons {
+            font-size: 24px;
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        /* Header with theme toggle integrated */
+        .page-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: var(--md-sys-color-surface-container);
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 999;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .page-header .theme-toggle {
+            position: static;
+            width: 40px;
+            height: 40px;
+            margin: 0;
+        }
+
+        .page-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--md-sys-color-on-surface);
+            margin: 0;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: var(--md-sys-color-surface);
+            color: var(--md-sys-color-on-surface);
+            min-height: 100vh;
+            padding: 80px 20px 20px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: var(--md-sys-color-surface-container);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 4px 12px var(--md-sys-color-shadow);
+            border: 1px solid var(--md-sys-color-outline-variant);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 500;
+            color: var(--md-sys-color-primary);
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: var(--md-sys-color-on-surface-variant);
+            font-size: 16px;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            color: var(--md-sys-color-primary);
+            text-decoration: none;
+            font-weight: 500;
+            margin-bottom: 24px;
+            transition: opacity 0.2s;
+        }
+
+        .back-link:hover {
+            opacity: 0.8;
+        }
+
+        .back-link .material-icons {
+            margin-right: 8px;
+            font-size: 20px;
+        }
+
+        .credits-info {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .credits-info h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        .credits-info p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .packages {
+            display: grid;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .package {
+            border: 2px solid var(--md-sys-color-outline-variant);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .package:hover {
+            border-color: var(--md-sys-color-primary);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .package.selected {
+            border-color: var(--md-sys-color-primary);
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+        }
+
+        .package.popular {
+            border-color: var(--md-sys-color-primary);
+            position: relative;
+        }
+
+        .package.popular::before {
+            content: "MAIS POPULAR";
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .package-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .package-name {
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .package-price {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--md-sys-color-primary);
+        }
+
+        .package.selected .package-price {
+            color: var(--md-sys-color-on-primary-container);
+        }
+
+        .package-details {
+            font-size: 14px;
+            color: var(--md-sys-color-on-surface-variant);
+            margin-bottom: 8px;
+        }
+
+        .package.selected .package-details {
+            color: var(--md-sys-color-on-primary-container);
+            opacity: 0.9;
+        }
+
+        .package-features {
+            list-style: none;
+            padding: 0;
+        }
+
+        .package-features li {
+            display: flex;
+            align-items: center;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+
+        .package-features .material-icons {
+            font-size: 16px;
+            margin-right: 8px;
+            color: var(--md-sys-color-primary);
+        }
+
+        .package.selected .package-features .material-icons {
+            color: var(--md-sys-color-on-primary-container);
+        }
+
+        .checkout-button {
+            width: 100%;
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            border: none;
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .checkout-button:hover {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+        }
+
+        .checkout-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .checkout-button .material-icons {
+            font-size: 20px;
+        }
+
+        .payment-info {
+            background: var(--md-sys-color-surface-container-low);
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 24px;
+            text-align: center;
+        }
+
+        .payment-info h4 {
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: var(--md-sys-color-on-surface-variant);
+        }
+
+        .payment-info p {
+            font-size: 12px;
+            color: var(--md-sys-color-on-surface-variant);
+            opacity: 0.8;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading .material-icons {
+            font-size: 32px;
+            animation: spin 1s linear infinite;
+            color: var(--md-sys-color-primary);
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: var(--md-sys-color-error-container);
+            color: var(--md-sys-color-on-error-container);
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .success-message {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        /* Dark theme */
+        [data-theme="dark"] {
+            --md-sys-color-surface: #1c1b1f;
+            --md-sys-color-surface-container: #2b2930;
+            --md-sys-color-surface-container-low: #25232a;
+            --md-sys-color-on-surface: #e6e0e9;
+            --md-sys-color-on-surface-variant: #cac4d0;
+            --md-sys-color-primary: #d0bcff;
+            --md-sys-color-primary-container: #4f378b;
+            --md-sys-color-on-primary-container: #eaddff;
+            --md-sys-color-outline-variant: #49454f;
+            --md-sys-color-error-container: #601410;
+            --md-sys-color-on-error-container: #ffdad6;
+        }
+    </style>
+</head>
+<body>
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">Comprar Créditos</h1>
+        <button class="theme-toggle" id="themeToggle" title="Alternar tema">
+            <span class="material-icons">dark_mode</span>
+        </button>
+    </div>
+
+    <div class="container">
+        <a href="options.html" class="back-link">
+            <span class="material-icons">arrow_back</span>
+            Voltar às Opções
+        </a>
+
+        <div class="header">
+            <h1>💳 Comprar Créditos</h1>
+            <p>Escolha o pacote que melhor se adequa às suas necessidades</p>
+        </div>
+
+        <div class="credits-info">
+            <h3>Créditos Atuais</h3>
+            <p id="currentCredits">A carregar...</p>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
+
+        <div class="packages">
+            <div class="package" data-package="starter" data-price="2.99" data-credits="20">
+                <div class="package-header">
+                    <div class="package-name">Pacote Starter</div>
+                    <div class="package-price">€2.99</div>
+                </div>
+                <div class="package-details">20 créditos • €0.15 por crédito</div>
+                <ul class="package-features">
+                    <li><span class="material-icons">check</span>20 análises completas</li>
+                    <li><span class="material-icons">check</span>Suporte por email</li>
+                    <li><span class="material-icons">check</span>Créditos não expiram</li>
+                </ul>
+            </div>
+
+            <div class="package popular" data-package="professional" data-price="9.99" data-credits="100">
+                <div class="package-header">
+                    <div class="package-name">Pacote Professional</div>
+                    <div class="package-price">€9.99</div>
+                </div>
+                <div class="package-details">100 créditos • €0.10 por crédito</div>
+                <ul class="package-features">
+                    <li><span class="material-icons">check</span>100 análises completas</li>
+                    <li><span class="material-icons">check</span>Suporte prioritário</li>
+                    <li><span class="material-icons">check</span>Créditos não expiram</li>
+                    <li><span class="material-icons">check</span>Desconto de 33%</li>
+                </ul>
+            </div>
+
+            <div class="package" data-package="business" data-price="19.99" data-credits="250">
+                <div class="package-header">
+                    <div class="package-name">Pacote Business</div>
+                    <div class="package-price">€19.99</div>
+                </div>
+                <div class="package-details">250 créditos • €0.08 por crédito</div>
+                <ul class="package-features">
+                    <li><span class="material-icons">check</span>250 análises completas</li>
+                    <li><span class="material-icons">check</span>Suporte prioritário</li>
+                    <li><span class="material-icons">check</span>Créditos não expiram</li>
+                    <li><span class="material-icons">check</span>Desconto de 47%</li>
+                    <li><span class="material-icons">check</span>Relatórios detalhados</li>
+                </ul>
+            </div>
+        </div>
+
+        <button class="checkout-button" id="checkoutButton" disabled>
+            <span class="material-icons">shopping_cart</span>
+            Selecionar um Pacote
+        </button>
+
+        <div class="loading" id="loading">
+            <span class="material-icons">refresh</span>
+            <p>Processando pagamento...</p>
+        </div>
+
+        <div class="payment-info">
+            <h4>🔒 Pagamento Seguro</h4>
+            <p>Processado pelo Stripe • Cartões aceites: Visa, Mastercard, American Express</p>
+        </div>
+    </div>
+
+    <script src="checkout.js"></script>
+</body>
+</html>
