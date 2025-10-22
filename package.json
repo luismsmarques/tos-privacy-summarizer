@@ -1,0 +1,22 @@
+{
+  "name": "tos-privacy-summarizer",
+  "version": "1.4.0",
+  "description": "ToS & Privacy Summarizer - Chrome Extension Backend API",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "build": "echo 'No build step required'"
+  },
+  "keywords": [
+    "chrome-extension",
+    "tos",
+    "privacy",
+    "summarizer",
+    "ai"
+  ],
+  "author": "Luis Marques",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
