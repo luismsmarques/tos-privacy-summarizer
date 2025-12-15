@@ -381,7 +381,8 @@ async function initializeAdvancedSystems() {
 initializeAdvancedSystems();
 
 // Inicializar servidor apenas se não estiver no Vercel (serverless)
-if (process.env.VERCEL !== '1' && require.main === module) {
+// No Vercel, apenas exportamos o app sem inicializar o servidor
+if (!process.env.VERCEL) {
     app.listen(PORT, () => {
         console.log(`🚀 Backend seguro rodando na porta ${PORT}`);
         console.log(`📊 Health check: http://localhost:${PORT}/health`);
