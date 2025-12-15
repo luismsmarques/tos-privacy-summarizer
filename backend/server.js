@@ -380,31 +380,45 @@ async function initializeAdvancedSystems() {
 // Inicializar sistemas
 initializeAdvancedSystems();
 
-// Inicializar servidor
-app.listen(PORT, () => {
-    console.log(`🚀 Backend seguro rodando na porta ${PORT}`);
-    console.log(`📊 Health check: http://localhost:${PORT}/health`);
-    console.log(`📈 Advanced Metrics: http://localhost:${PORT}/metrics`);
-    console.log(`🔍 System Status: http://localhost:${PORT}/status`);
-    console.log(`🔒 Ambiente: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`💾 Advanced Cache: Multi-layer com warming automático`);
-    console.log(`📊 Performance: Monitorização avançada ativa`);
-    console.log(`🚨 Alertas: Sistema ativo com ${alertSystem.alertChannels.length} canais`);
-    console.log(`🔗 Database: Pool resiliente com retry logic`);
-    console.log(`🔍 Queries: Otimizadas com índices compostos`);
-    
-    // Verificar se a chave da API Gemini está configurada
-    if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'your_gemini_api_key_here') {
-        console.warn('⚠️  ATENÇÃO: Chave da API Gemini não configurada!');
-        console.warn('   Configure GEMINI_API_KEY no arquivo .env');
-    } else {
-        console.log('✅ Chave da API Gemini configurada');
-    }
-    
-    console.log('🎯 Sistema de monitorização avançada ativo');
-    console.log('💡 Versão 1.5.0 - Performance otimizada com cache inteligente');
-    
-    // Inicializar sistemas de auditoria e rate limiting
+// Inicializar servidor apenas se não estiver no Vercel (serverless)
+if (process.env.VERCEL !== '1' && require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`🚀 Backend seguro rodando na porta ${PORT}`);
+        console.log(`📊 Health check: http://localhost:${PORT}/health`);
+        console.log(`📈 Advanced Metrics: http://localhost:${PORT}/metrics`);
+        console.log(`🔍 System Status: http://localhost:${PORT}/status`);
+        console.log(`🔒 Ambiente: ${process.env.NODE_ENV || 'development'}`);
+        console.log(`💾 Advanced Cache: Multi-layer com warming automático`);
+        console.log(`📊 Performance: Monitorização avançada ativa`);
+        console.log(`🚨 Alertas: Sistema ativo com ${alertSystem.alertChannels.length} canais`);
+        console.log(`🔗 Database: Pool resiliente com retry logic`);
+        console.log(`🔍 Queries: Otimizadas com índices compostos`);
+        
+        // Verificar se a chave da API Gemini está configurada
+        if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'your_gemini_api_key_here') {
+            console.warn('⚠️  ATENÇÃO: Chave da API Gemini não configurada!');
+            console.warn('   Configure GEMINI_API_KEY no arquivo .env');
+        } else {
+            console.log('✅ Chave da API Gemini configurada');
+        }
+        
+        console.log('🎯 Sistema de monitorização avançada ativo');
+        console.log('💡 Versão 1.5.0 - Performance otimizada com cache inteligente');
+        
+        // Inicializar sistemas de auditoria e rate limiting
+        setupRateLimitingCleanup();
+        
+        // Log de inicialização do sistema
+        logSystemEvent('server_startup', {
+            version: '1.5.0',
+            features: ['advanced_rate_limiting', 'audit_logging', 'security_monitoring'],
+            timestamp: new Date().toISOString()
+        });
+        
+        console.log('🔒 Sistemas de segurança e auditoria inicializados');
+    });
+} else {
+    // No Vercel, apenas inicializar sistemas necessários
     setupRateLimitingCleanup();
     
     // Log de inicialização do sistema
@@ -414,7 +428,7 @@ app.listen(PORT, () => {
         timestamp: new Date().toISOString()
     });
     
-    console.log('🔒 Sistemas de segurança e auditoria inicializados');
-});
+    console.log('🔒 Servidor inicializado para Vercel Serverless');
+}
 
 export default app;
