@@ -2,7 +2,8 @@
   "name": "tos-privacy-summarizer",
   "version": "1.0.0",
   "description": "Chrome Extension for ToS and Privacy Policy Summarization",
-  "main": "backend/server.js",
+  "main": "index.js",
+  "type": "module",
   "scripts": {
     "dev": "vercel dev",
     "build": "echo 'No build step required'",
