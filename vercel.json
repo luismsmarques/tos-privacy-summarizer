@@ -1,8 +1,18 @@
 {
+  "version": 2,
+  "builds": [
+    {
+      "src": "backend/server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/backend/server.js"
+    }
+  ],
   "functions": {
-    "index.js": {
-      "maxDuration": 10
-    },
     "api/analytics.js": {
       "maxDuration": 10
     }
