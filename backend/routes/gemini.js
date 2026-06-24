@@ -1,4 +1,5 @@
 import express from 'express';
+import crypto from 'crypto';
 import { body, validationResult } from 'express-validator';
 import { registerUser, registerSummary } from './analytics.js';
 import db from '../utils/database.js';
@@ -93,20 +94,43 @@ router.post('/proxy', [
             }
         }
 
-        // Chamar API Gemini com idioma
-        const geminiResponse = await callGeminiAPI(text, language);
-        success = true;
-        
-        // Detectar tipo de documento baseado no conteúdo
-        const documentType = detectDocumentType(text);
+        // Cache por hash do conteúdo (idioma + texto). Reaproveita resumos
+        // idênticos e evita uma nova chamada (e custo) à API Gemini.
+        const contentHash = crypto.createHash('sha256').update(`${language}\n${text}`).digest('hex');
 
-        // Obter ratings produzidos pelo próprio Gemini (com fallback heurístico)
-        const ratings = extractRatings(geminiResponse, text.length, documentType);
+        let summaryJson, ratings, documentType;
+        const cached = await db.getCachedSummary(contentHash);
 
-        // Resumo limpo (sem o bloco classificacao) para devolver e guardar.
-        // Guardamos a string JSON tal e qual — sem JSON.stringify extra, que
-        // antes a double-encodava.
-        const summaryJson = stripClassificacao(geminiResponse);
+        if (cached) {
+            // Cache hit — servir sem chamar o Gemini.
+            success = true;
+            summaryJson = cached.summary;
+            documentType = cached.document_type || 'unknown';
+            const cachedRatings = typeof cached.ratings === 'string'
+                ? JSON.parse(cached.ratings)
+                : cached.ratings;
+            ratings = db.normalizeRatings(cachedRatings)
+                || db.calculateRatings(summaryJson, text.length, documentType);
+            console.log('⚡ Cache hit — resumo servido sem chamar a API Gemini');
+        } else {
+            // Cache miss — chamar a API Gemini.
+            const geminiResponse = await callGeminiAPI(text, language);
+            success = true;
+
+            // Detectar tipo de documento baseado no conteúdo
+            documentType = detectDocumentType(text);
+
+            // Obter ratings produzidos pelo próprio Gemini (com fallback heurístico)
+            ratings = extractRatings(geminiResponse, text.length, documentType);
+
+            // Resumo limpo (sem o bloco classificacao) para devolver e guardar.
+            // Guardamos a string JSON tal e qual — sem JSON.stringify extra, que
+            // antes a double-encodava.
+            summaryJson = stripClassificacao(geminiResponse);
+
+            // Guardar no cache para pedidos futuros idênticos.
+            await db.saveCachedSummary(contentHash, language, summaryJson, ratings, documentType);
+        }
 
         // Registrar resumo no analytics
         const duration = Date.now() - startTime;
@@ -130,14 +154,16 @@ router.post('/proxy', [
                 ratings: ratings,
                 credits: remainingCredits,
                 apiType: 'shared',
-                documentType: documentType
+                documentType: documentType,
+                cached: !!cached
             });
         } else {
             res.json({
                 summary: summaryJson,
                 ratings: ratings,
                 apiType: 'own',
-                documentType: documentType
+                documentType: documentType,
+                cached: !!cached
             });
         }
 

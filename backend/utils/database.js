@@ -21,7 +21,9 @@ function getPool() {
 
     pool = new Pool({
         connectionString: databaseUrl,
-        ssl: { rejectUnauthorized: false },
+        // SSL ligado por omissão (exigido pelo Neon/produção). Definir
+        // DATABASE_SSL=false para Postgres local de desenvolvimento sem SSL.
+        ssl: process.env.DATABASE_SSL === 'false' ? false : { rejectUnauthorized: false },
         max: 1,                          // uma ligação por instância serverless
         idleTimeoutMillis: 10000,
         connectionTimeoutMillis: 10000,
@@ -482,6 +484,58 @@ class Database {
         } catch (error) {
             console.error('❌ Erro ao obter créditos:', error);
             return 5; // Fallback para créditos padrão
+        }
+    }
+
+    // --- Cache de resumos -------------------------------------------------
+    // Persistente em Postgres (em serverless um cache em memória não persiste).
+    // Indexado por hash do conteúdo; reaproveita resumos idênticos e evita
+    // novas chamadas (e custo) à API Gemini.
+
+    async ensureSummaryCacheTable() {
+        if (this._cacheTableReady) return;
+        await this.query(`
+            CREATE TABLE IF NOT EXISTS summary_cache (
+                content_hash  TEXT PRIMARY KEY,
+                language      VARCHAR(8) NOT NULL DEFAULT 'pt',
+                summary       TEXT NOT NULL,
+                ratings       JSONB,
+                document_type VARCHAR(50) DEFAULT 'unknown',
+                hits          INTEGER NOT NULL DEFAULT 0,
+                created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_used     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        this._cacheTableReady = true;
+    }
+
+    async getCachedSummary(contentHash) {
+        try {
+            // Incrementa o contador de hits e devolve o resumo numa só query.
+            const result = await this.query(`
+                UPDATE summary_cache
+                SET hits = hits + 1, last_used = CURRENT_TIMESTAMP
+                WHERE content_hash = $1
+                RETURNING summary, ratings, document_type
+            `, [contentHash]);
+            return result.rows[0] || null;
+        } catch (error) {
+            // Tabela pode ainda não existir — tratar como cache miss.
+            console.warn('⚠️ Cache lookup falhou (ignorado):', error.message);
+            return null;
+        }
+    }
+
+    async saveCachedSummary(contentHash, language, summary, ratings, documentType) {
+        try {
+            await this.ensureSummaryCacheTable();
+            await this.query(`
+                INSERT INTO summary_cache (content_hash, language, summary, ratings, document_type)
+                VALUES ($1, $2, $3, $4, $5)
+                ON CONFLICT (content_hash) DO NOTHING
+            `, [contentHash, language, summary, JSON.stringify(ratings), documentType]);
+        } catch (error) {
+            console.warn('⚠️ Falha ao guardar no cache (ignorado):', error.message);
         }
     }
 
