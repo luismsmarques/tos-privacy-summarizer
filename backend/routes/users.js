@@ -21,32 +21,17 @@ router.post('/create', [
         }
 
         const { deviceId, email } = req.body;
-        
+
         // Gerar ID único para o utilizador
         const userId = deviceId || uuidv4();
-        
-        // Inicializar utilizador com créditos gratuitos
-        const defaultCredits = parseInt(process.env.DEFAULT_FREE_CREDITS) || 5;
-        
-        // Em produção, guardar na base de dados
-        const users = global.users || new Map();
-        if (!users.has(userId)) {
-            users.set(userId, {
-                id: userId,
-                credits: defaultCredits,
-                email: email || null,
-                createdAt: new Date().toISOString(),
-                lastUsed: new Date().toISOString()
-            });
-            global.users = users;
-        }
 
-        const user = users.get(userId);
-        
+        // Criar/obter utilizador na base de dados (upsert com créditos gratuitos por defeito)
+        const user = await db.createUser(userId, deviceId || null);
+
         res.json({
-            userId: user.id,
+            userId: user.user_id,
             credits: user.credits,
-            isNewUser: !users.has(userId),
+            email: email || null,
             message: 'Utilizador criado/atualizado com sucesso'
         });
 
@@ -62,10 +47,9 @@ router.post('/create', [
 router.get('/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
-        
-        const users = global.users || new Map();
-        const user = users.get(userId);
-        
+
+        const user = await db.getUser(userId);
+
         if (!user) {
             return res.status(404).json({
                 error: 'Utilizador não encontrado'
@@ -73,11 +57,11 @@ router.get('/:userId', async (req, res) => {
         }
 
         res.json({
-            userId: user.id,
+            userId: user.user_id,
             credits: user.credits,
-            email: user.email,
-            createdAt: user.createdAt,
-            lastUsed: user.lastUsed
+            email: user.email || null,
+            createdAt: user.created_at,
+            lastUsed: user.last_seen
         });
 
     } catch (error) {
@@ -88,8 +72,8 @@ router.get('/:userId', async (req, res) => {
     }
 });
 
-// Endpoint para atualizar utilizador
-router.put('/:userId', [
+// Endpoint para atualizar utilizador (mutação de créditos — apenas admin autenticado)
+router.put('/:userId', authService.authenticateToken, [
     body('email').optional().isEmail(),
     body('credits').optional().isInt({ min: 0 })
 ], async (req, res) => {
@@ -103,29 +87,27 @@ router.put('/:userId', [
         }
 
         const { userId } = req.params;
-        const { email, credits } = req.body;
-        
-        const users = global.users || new Map();
-        const user = users.get(userId);
-        
-        if (!user) {
+        const { credits } = req.body;
+
+        const existing = await db.getUser(userId);
+        if (!existing) {
             return res.status(404).json({
                 error: 'Utilizador não encontrado'
             });
         }
 
-        // Atualizar dados do utilizador
-        if (email !== undefined) user.email = email;
-        if (credits !== undefined) user.credits = credits;
-        user.lastUsed = new Date().toISOString();
-        
-        users.set(userId, user);
-        global.users = users;
+        if (credits !== undefined) {
+            await db.query(
+                'UPDATE users SET credits = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2',
+                [credits, userId]
+            );
+        }
 
+        const updated = await db.getUser(userId);
         res.json({
-            userId: user.id,
-            credits: user.credits,
-            email: user.email,
+            userId: updated.user_id,
+            credits: updated.credits,
+            email: updated.email || null,
             message: 'Utilizador atualizado com sucesso'
         });
 
@@ -137,15 +119,19 @@ router.put('/:userId', [
     }
 });
 
-// Endpoint para listar todos os utilizadores (apenas para admin)
-router.get('/', async (req, res) => {
+// Endpoint para listar todos os utilizadores (apenas admin autenticado)
+router.get('/', authService.authenticateToken, async (req, res) => {
     try {
-        const users = global.users || new Map();
-        const userList = Array.from(users.values());
-        
+        const result = await db.query(`
+            SELECT user_id, credits, total_requests, summaries_generated, created_at, last_seen
+            FROM users
+            ORDER BY created_at DESC
+            LIMIT 500
+        `);
+
         res.json({
-            users: userList,
-            total: userList.length,
+            users: result.rows,
+            total: result.rows.length,
             timestamp: new Date().toISOString()
         });
 

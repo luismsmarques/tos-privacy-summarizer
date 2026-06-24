@@ -1,7 +1,10 @@
 import express from 'express';
+import crypto from 'crypto';
 import { body, validationResult } from 'express-validator';
 import { registerUser, registerSummary } from './analytics.js';
 import db from '../utils/database.js';
+import { detectDocumentType } from '../utils/document-type.js';
+import { dbRateLimit } from '../middleware/db-rate-limit.js';
 const router = express.Router();
 
 // Middleware para verificar se a chave da API está configurada
@@ -14,114 +17,58 @@ const checkGeminiKey = (req, res, next) => {
     next();
 };
 
-// Função para detectar tipo de documento baseado no conteúdo
-function detectDocumentType(text) {
-    const lowerText = text.toLowerCase();
-    
-    // Palavras-chave multi-idioma para Política de Privacidade
-    const privacyKeywords = [
-        // Português
-        'política de privacidade', 'privacidade', 'dados pessoais', 'proteção de dados',
-        'política de cookies', 'recolha de dados', 'processamento de dados',
-        'informações que coletamos', 'como usamos seus dados', 'compartilhamento de dados',
-        'retenção de dados', 'aviso de privacidade', 'informações pessoais',
-        'controlador de dados',
-        
-        // Inglês
-        'privacy policy', 'privacy', 'personal data', 'data protection',
-        'cookie policy', 'data collection', 'data processing',
-        'information we collect', 'how we use your data', 'data sharing',
-        'data retention', 'privacy notice', 'personal information',
-        'data controller',
-        
-        // Espanhol
-        'política de privacidad', 'privacidad', 'datos personales', 'protección de datos',
-        'política de cookies', 'recopilación de datos', 'procesamiento de datos',
-        'información que recopilamos', 'cómo usamos sus datos', 'compartir datos',
-        'retención de datos', 'aviso de privacidad', 'información personal',
-        'controlador de datos',
-        
-        // Francês
-        'politique de confidentialité', 'confidentialité', 'données personnelles', 'protection des données',
-        'politique de cookies', 'collecte de données', 'traitement des données',
-        'informations que nous collectons', 'comment nous utilisons vos données', 'partage de données',
-        'rétention de données', 'avis de confidentialité', 'informations personnelles',
-        'contrôleur de données'
-    ];
-    
-    // Palavras-chave multi-idioma para Termos de Serviço
-    const termsKeywords = [
-        // Português
-        'termos de serviço', 'termos e condições', 'contrato de utilizador',
-        'condições de uso', 'termos do serviço', 'condições de utilização',
-        'uso aceitável', 'usos proibidos', 'responsabilidade',
-        'limitação de responsabilidade', 'obrigações do utilizador',
-        'descrição do serviço', 'termos de pagamento', 'política de cancelamento',
-        
-        // Inglês
-        'terms of service', 'terms and conditions', 'user agreement',
-        'terms of use', 'service terms', 'conditions of use',
-        'acceptable use', 'prohibited uses', 'liability',
-        'limitation of liability', 'user obligations',
-        'service description', 'payment terms', 'cancellation policy',
-        
-        // Espanhol
-        'términos de servicio', 'términos y condiciones', 'acuerdo de usuario',
-        'términos de uso', 'términos del servicio', 'condiciones de uso',
-        'uso aceptable', 'usos prohibidos', 'responsabilidad',
-        'limitación de responsabilidad', 'obligaciones del usuario',
-        'descripción del servicio', 'términos de pago', 'política de cancelación',
-        
-        // Francês
-        'conditions de service', 'conditions générales', 'accord utilisateur',
-        'conditions d\'utilisation', 'conditions du service', 'conditions d\'usage',
-        'utilisation acceptable', 'utilisations interdites', 'responsabilité',
-        'limitation de responsabilité', 'obligations de l\'utilisateur',
-        'description du service', 'conditions de paiement', 'politique d\'annulation'
-    ];
-    
-    // Contar ocorrências com word boundaries para evitar falsos positivos
-    const privacyCount = privacyKeywords.reduce((count, keyword) => {
-        const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-        const matches = (lowerText.match(regex) || []).length;
-        return count + matches;
-    }, 0);
-    
-    const termsCount = termsKeywords.reduce((count, keyword) => {
-        const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-        const matches = (lowerText.match(regex) || []).length;
-        return count + matches;
-    }, 0);
-    
-    // Determinar tipo baseado na contagem (com threshold mínimo)
-    const minThreshold = 2;
-    
-    if (privacyCount >= minThreshold && privacyCount > termsCount) {
-        return 'privacy_policy';
-    } else if (termsCount >= minThreshold && termsCount > privacyCount) {
-        return 'terms_of_service';
-    } else if (privacyCount > 0 || termsCount > 0) {
-        // Se há pelo menos uma ocorrência, usar a maior contagem
-        if (privacyCount > termsCount) {
-            return 'privacy_policy';
-        } else if (termsCount > privacyCount) {
-            return 'terms_of_service';
+
+// Extrair a classificação numérica produzida pelo próprio Gemini.
+// Substitui a antiga contagem de palavras-chave (enviesada) pela avaliação
+// do modelo. Só recorre à heurística se o modelo não devolver scores válidos.
+export function extractRatings(responseText, textLength, documentType) {
+    try {
+        const parsed = JSON.parse(responseText);
+        const c = parsed.classificacao;
+        if (c && c.complexidade != null && c.boas_praticas != null && c.risco != null) {
+            const clamp = (v) => Math.min(Math.max(Math.round(Number(v)), 1), 10);
+            const complexidade = clamp(c.complexidade);
+            const boas_praticas = clamp(c.boas_praticas);
+            const risk_score = clamp(c.risco);
+            if ([complexidade, boas_praticas, risk_score].every(Number.isFinite)) {
+                console.log(`📊 Classificação do Gemini: complexidade=${complexidade}, boas_praticas=${boas_praticas}, risk_score=${risk_score}`);
+                return { complexidade, boas_praticas, risk_score };
+            }
         }
+        console.warn('⚠️ Classificação do Gemini ausente/inválida — a usar heurística de fallback');
+    } catch (error) {
+        console.warn('⚠️ Não foi possível parsear o JSON do Gemini para classificação — a usar heurística:', error.message);
     }
-    
-    // PRIORIDADE 2: Fallback baseado em palavras-chave simples
-    if (lowerText.includes('privacidade') || lowerText.includes('privacy')) {
-        return 'privacy_policy';
-    } else if (lowerText.includes('termos') || lowerText.includes('terms')) {
-        return 'terms_of_service';
-    }
-    
-    return 'unknown';
+    return db.calculateRatings(responseText, textLength, documentType);
 }
+
+// Remove o bloco "classificacao" do JSON do resumo — já o expomos
+// separadamente em `ratings`, não precisa de poluir o resumo guardado/devolvido.
+// Mantém a resiliência: se não for JSON válido, devolve o texto inalterado.
+export function stripClassificacao(responseText) {
+    try {
+        const parsed = JSON.parse(responseText);
+        if (parsed && typeof parsed === 'object' && 'classificacao' in parsed) {
+            delete parsed.classificacao;
+            return JSON.stringify(parsed);
+        }
+    } catch (error) {
+        // não é JSON válido — devolver tal como veio
+    }
+    return responseText;
+}
+
+// Rate limit partilhado para o endpoint caro (por utilizador, fallback IP).
+const proxyRateLimit = dbRateLimit({
+    windowMs: 60 * 1000,
+    max: 15,
+    keyGenerator: (req) => `gemini:${req.body?.userId || req.ip}`
+});
 
 // Endpoint principal para proxy da API Gemini
 router.post('/proxy', [
     checkGeminiKey,
+    proxyRateLimit,
     body('userId').isString().notEmpty().withMessage('ID do utilizador é obrigatório'),
     body('text').isString().isLength({ min: 50 }).withMessage('Texto deve ter pelo menos 50 caracteres'),
     body('apiType').optional().isIn(['shared', 'own']).withMessage('Tipo de API inválido')
@@ -156,22 +103,50 @@ router.post('/proxy', [
             }
         }
 
-        // Chamar API Gemini com idioma
-        const geminiResponse = await callGeminiAPI(text, language);
-        success = true;
-        
-        // Detectar tipo de documento baseado no conteúdo
-        const documentType = detectDocumentType(text);
-        
-        // Calcular ratings baseado no resumo e texto
-        const ratings = db.calculateRatings(geminiResponse, text.length, documentType);
-        
+        // Cache por hash do conteúdo (idioma + texto). Reaproveita resumos
+        // idênticos e evita uma nova chamada (e custo) à API Gemini.
+        const contentHash = crypto.createHash('sha256').update(`${language}\n${text}`).digest('hex');
+
+        let summaryJson, ratings, documentType;
+        const cached = await db.getCachedSummary(contentHash);
+
+        if (cached) {
+            // Cache hit — servir sem chamar o Gemini.
+            success = true;
+            summaryJson = cached.summary;
+            documentType = cached.document_type || 'unknown';
+            const cachedRatings = typeof cached.ratings === 'string'
+                ? JSON.parse(cached.ratings)
+                : cached.ratings;
+            ratings = db.normalizeRatings(cachedRatings)
+                || db.calculateRatings(summaryJson, text.length, documentType);
+            console.log('⚡ Cache hit — resumo servido sem chamar a API Gemini');
+        } else {
+            // Cache miss — chamar a API Gemini.
+            const geminiResponse = await callGeminiAPI(text, language);
+            success = true;
+
+            // Detectar tipo de documento baseado no conteúdo
+            documentType = detectDocumentType(text);
+
+            // Obter ratings produzidos pelo próprio Gemini (com fallback heurístico)
+            ratings = extractRatings(geminiResponse, text.length, documentType);
+
+            // Resumo limpo (sem o bloco classificacao) para devolver e guardar.
+            // Guardamos a string JSON tal e qual — sem JSON.stringify extra, que
+            // antes a double-encodava.
+            summaryJson = stripClassificacao(geminiResponse);
+
+            // Guardar no cache para pedidos futuros idênticos.
+            await db.saveCachedSummary(contentHash, language, summaryJson, ratings, documentType);
+        }
+
         // Registrar resumo no analytics
         const duration = Date.now() - startTime;
         console.log(`📊 Registrando resumo: userId=${userId}, success=${success}, duration=${duration}ms, type=${documentType}, textLength=${text.length}, url=${url}, title=${title}`);
         console.log(`📊 Ratings calculados: complexidade=${ratings.complexidade}, boas_praticas=${ratings.boas_praticas}, risk_score=${ratings.risk_score}`);
         try {
-            await registerSummary(userId, true, duration, documentType, text.length, url, JSON.stringify(geminiResponse), title);
+            await registerSummary(userId, true, duration, documentType, text.length, url, summaryJson, title, ratings);
             console.log('✅ Resumo registrado com sucesso no analytics');
         } catch (error) {
             console.error('❌ Erro ao registrar resumo no analytics:', error);
@@ -184,18 +159,20 @@ router.post('/proxy', [
             const remainingCredits = await getUserCredits(userId);
             
             res.json({
-                summary: geminiResponse,
+                summary: summaryJson,
                 ratings: ratings,
                 credits: remainingCredits,
                 apiType: 'shared',
-                documentType: documentType
+                documentType: documentType,
+                cached: !!cached
             });
         } else {
             res.json({
-                summary: geminiResponse,
+                summary: summaryJson,
                 ratings: ratings,
                 apiType: 'own',
-                documentType: documentType
+                documentType: documentType,
+                cached: !!cached
             });
         }
 
@@ -272,7 +249,12 @@ A ÚNICA saída permitida deve ser um objeto JSON puro. NÃO use blocos de códi
       "tipo": "jurisdicao",
       "texto": "Existem cláusulas que forçam a arbitragem ou limitam a jurisdição do tribunal, dificultando ações judiciais diretas contra a empresa."
     }
-  ]
+  ],
+  "classificacao": {
+    "complexidade": 7,
+    "boas_praticas": 4,
+    "risco": 6
+  }
 }
 
 Valores Válidos para o Campo tipo (Use um destes para cada objeto de alerta):
@@ -282,6 +264,11 @@ Valores Válidos para o Campo tipo (Use um destes para cada objeto de alerta):
 - jurisdicao
 - outros_riscos
 - sem_alertas (Apenas use este valor se não for encontrado nenhum dos riscos acima. Se este for usado, ele deve ser o único objeto na lista alertas_privacidade.)
+
+O campo "classificacao" é OBRIGATÓRIO e deve conter a sua avaliação numérica (inteiros de 1 a 10) do documento:
+- "complexidade": quão difícil é o texto de ler e compreender (1 = muito simples, 10 = muito complexo/jurídico).
+- "boas_praticas": quão respeitador é o documento para com o utilizador (1 = abusivo, 10 = exemplar em transparência e direitos).
+- "risco": risco global para o utilizador ao aceitar (1 = risco mínimo, 10 = risco muito elevado).
 
 Mantenha a linguagem dos valores dentro do JSON direta, acessível e objetiva. Evite jargão jurídico sempre que possível.`,
 
@@ -313,7 +300,12 @@ The ONLY allowed output should be a pure JSON object. DO NOT use Markdown code b
       "tipo": "jurisdicao",
       "texto": "There are clauses that force arbitration or limit court jurisdiction, making direct legal action against the company difficult."
     }
-  ]
+  ],
+  "classificacao": {
+    "complexidade": 7,
+    "boas_praticas": 4,
+    "risco": 6
+  }
 }
 
 Valid Values for the tipo field (Use one of these for each alert object):
@@ -323,6 +315,11 @@ Valid Values for the tipo field (Use one of these for each alert object):
 - jurisdicao
 - outros_riscos
 - sem_alertas (Only use this value if none of the above risks are found. If this is used, it should be the only object in the alertas_privacidade list.)
+
+The "classificacao" field is MANDATORY and must contain your numeric assessment (integers from 1 to 10) of the document:
+- "complexidade": how hard the text is to read and understand (1 = very simple, 10 = very complex/legalistic).
+- "boas_praticas": how respectful the document is towards the user (1 = abusive, 10 = exemplary in transparency and rights).
+- "risco": overall risk to the user from accepting (1 = minimal risk, 10 = very high risk).
 
 Keep the language within the JSON values direct, accessible and objective. Avoid legal jargon whenever possible.`,
 
@@ -354,7 +351,12 @@ La ÚNICA salida permitida debe ser un objeto JSON puro. NO uses bloques de cód
       "tipo": "jurisdicao",
       "texto": "Existen cláusulas que fuerzan el arbitraje o limitan la jurisdicción del tribunal, dificultando acciones legales directas contra la empresa."
     }
-  ]
+  ],
+  "classificacao": {
+    "complexidade": 7,
+    "boas_praticas": 4,
+    "risco": 6
+  }
 }
 
 Valores Válidos para el Campo tipo (Usa uno de estos para cada objeto de alerta):
@@ -364,6 +366,11 @@ Valores Válidos para el Campo tipo (Usa uno de estos para cada objeto de alerta
 - jurisdicao
 - outros_riscos
 - sem_alertas (Solo usa este valor si no se encuentra ninguno de los riesgos anteriores. Si este se usa, debe ser el único objeto en la lista alertas_privacidade.)
+
+El campo "classificacao" es OBLIGATORIO y debe contener tu evaluación numérica (enteros de 1 a 10) del documento:
+- "complexidade": cuán difícil es el texto de leer y comprender (1 = muy simple, 10 = muy complejo/jurídico).
+- "boas_praticas": cuán respetuoso es el documento con el usuario (1 = abusivo, 10 = ejemplar en transparencia y derechos).
+- "risco": riesgo global para el usuario al aceptar (1 = riesgo mínimo, 10 = riesgo muy elevado).
 
 Mantén el lenguaje de los valores dentro del JSON directo, accesible y objetivo. Evita jerga legal siempre que sea posible.`,
 
@@ -395,7 +402,12 @@ La SEULE sortie autorisée doit être un objet JSON pur. N'utilisez PAS de blocs
       "tipo": "jurisdicao",
       "texto": "Il existe des clauses qui forcent l'arbitrage ou limitent la juridiction du tribunal, rendant difficile les actions légales directes contre l'entreprise."
     }
-  ]
+  ],
+  "classificacao": {
+    "complexidade": 7,
+    "boas_praticas": 4,
+    "risco": 6
+  }
 }
 
 Valeurs Valides pour le Champ tipo (Utilisez l'une de ces valeurs pour chaque objet d'alerte):
@@ -405,6 +417,11 @@ Valeurs Valides pour le Champ tipo (Utilisez l'une de ces valeurs pour chaque ob
 - jurisdicao
 - outros_riscos
 - sem_alertas (Utilisez cette valeur seulement si aucun des risques ci-dessus n'est trouvé. Si cette valeur est utilisée, elle doit être le seul objet dans la liste alertas_privacidade.)
+
+Le champ "classificacao" est OBLIGATOIRE et doit contenir votre évaluation numérique (entiers de 1 à 10) du document :
+- "complexidade" : à quel point le texte est difficile à lire et à comprendre (1 = très simple, 10 = très complexe/juridique).
+- "boas_praticas" : à quel point le document respecte l'utilisateur (1 = abusif, 10 = exemplaire en transparence et droits).
+- "risco" : risque global pour l'utilisateur en acceptant (1 = risque minimal, 10 = risque très élevé).
 
 Gardez le langage des valeurs dans le JSON direct, accessible et objectif. Évitez le jargon juridique autant que possible.`
     };

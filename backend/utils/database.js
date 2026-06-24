@@ -1,7 +1,42 @@
-// Database utilities for Neon Postgres with advanced pooling
-import { resilientPool } from './database-pool.js';
-import { advancedCache, CacheStrategies, CacheKeys } from './cache-advanced.js';
-import { queryOptimizer } from './query-optimizer.js';
+// Database utilities for Neon Postgres (serverless-friendly).
+//
+// Em serverless (Vercel) cada função é efémera e congela entre invocações,
+// por isso pools resilientes com retry/keep-alive, caches em memória e
+// otimizadores de queries não persistem nem trazem benefício real. Usamos
+// um Pool `pg` simples, de escopo de módulo, reaproveitado entre invocações
+// "quentes" da mesma instância.
+import pkg from 'pg';
+const { Pool } = pkg;
+import { detectDocumentType } from './document-type.js';
+
+let pool = null;
+
+function getPool() {
+    if (pool) return pool;
+
+    const databaseUrl = process.env.ANALYTICS_URL || process.env.DATABASE_URL;
+    if (!databaseUrl) {
+        throw new Error('Database URL not configured (defina ANALYTICS_URL ou DATABASE_URL)');
+    }
+
+    pool = new Pool({
+        connectionString: databaseUrl,
+        // SSL ligado por omissão (exigido pelo Neon/produção). Definir
+        // DATABASE_SSL=false para Postgres local de desenvolvimento sem SSL.
+        ssl: process.env.DATABASE_SSL === 'false' ? false : { rejectUnauthorized: false },
+        max: 1,                          // uma ligação por instância serverless
+        idleTimeoutMillis: 10000,
+        connectionTimeoutMillis: 10000,
+        allowExitOnIdle: true
+    });
+
+    // Evita que erros de ligação inativa derrubem o processo.
+    pool.on('error', (err) => {
+        console.error('❌ Erro inesperado no pool da base de dados:', err.message);
+    });
+
+    return pool;
+}
 
 class Database {
     constructor() {
@@ -11,14 +46,14 @@ class Database {
 
     async connect() {
         try {
-            // Use resilient pool for connection
-            await resilientPool.initialize();
-            this.pool = resilientPool;
+            this.pool = getPool();
+            // Validar conectividade com uma query leve
+            await this.pool.query('SELECT 1');
             this.isConnected = true;
-            console.log('✅ Database connected successfully with resilient pool');
+            console.log('✅ Database connected successfully');
             return true;
         } catch (error) {
-            console.error('❌ Database connection failed:', error);
+            console.error('❌ Database connection failed:', error.message);
             this.isConnected = false;
             return false;
         }
@@ -26,14 +61,9 @@ class Database {
 
     async query(text, params) {
         try {
-            // Use resilient pool for queries
-            if (!this.pool || !this.isConnected) {
-                await this.connect();
-            }
-            
-            return await resilientPool.queryWithRetry(text, params);
+            return await getPool().query(text, params);
         } catch (error) {
-            console.error('❌ Database query failed:', error);
+            console.error('❌ Database query failed:', error.message);
             throw error;
         }
     }
@@ -83,31 +113,6 @@ class Database {
         }
     }
 
-    async getUserCredits(userId) {
-        try {
-            // Try cache first
-            const cacheKey = CacheKeys.userCredits(userId);
-            const cached = advancedCache.get(cacheKey);
-            if (cached !== null) {
-                return cached;
-            }
-
-            const result = await this.query(
-                'SELECT credits FROM users WHERE user_id = $1',
-                [userId]
-            );
-            const credits = result.rows[0]?.credits || 5;
-            
-            // Cache the result
-            advancedCache.set(cacheKey, credits, CacheStrategies.USER.CREDITS);
-            
-            return credits;
-        } catch (error) {
-            console.error('Error getting user credits:', error);
-            return 5; // Default credits
-        }
-    }
-
     async decrementUserCredits(userId) {
         try {
             const result = await this.query(`
@@ -118,11 +123,6 @@ class Database {
             `, [userId]);
             
             const newCredits = result.rows[0]?.credits || 0;
-            
-            // Invalidate cache
-            const cacheKey = CacheKeys.userCredits(userId);
-            advancedCache.delete(cacheKey);
-            
             return newCredits;
         } catch (error) {
             console.error('Error decrementing credits:', error);
@@ -131,7 +131,7 @@ class Database {
     }
 
     // Summary operations
-    async createSummary(summaryId, userId, success, duration, textLength, url, summary, title = null) {
+    async createSummary(summaryId, userId, success, duration, textLength, url, summary, title = null, providedRatings = null, providedDocumentType = null) {
         try {
             console.log(`🗄️ createSummary chamado: summaryId=${summaryId}, userId=${userId}, success=${success}, duration=${duration}, textLength=${textLength}, url=${url}, summary=${summary ? summary.substring(0, 100) + '...' : 'null'}`);
             console.log(`🗄️ Summary content length: ${summary ? summary.length : 0}`);
@@ -142,11 +142,14 @@ class Database {
             
             console.log(`🗄️ Calculated wordCount: ${wordCount}, processingTime: ${processingTime}`);
             
-            // Detectar tipo de documento baseado no conteúdo
-            const documentType = this.detectDocumentType(summary || '');
+            // Preferir o tipo já detetado a montante (sobre o texto original,
+            // mais fiável); recorrer à deteção sobre o resumo como fallback.
+            const documentType = providedDocumentType || detectDocumentType(summary || '');
             
-            // Calcular ratings de complexidade e boas práticas
-            const ratings = this.calculateRatings(summary || '', textLength, documentType);
+            // Preferir os ratings fornecidos pelo Gemini; recorrer à
+            // heurística apenas se não vierem scores válidos.
+            const ratings = this.normalizeRatings(providedRatings)
+                || this.calculateRatings(summary || '', textLength, documentType);
             
             // Primeiro, tentar inserir com todas as colunas (schema completo)
             try {
@@ -213,45 +216,6 @@ class Database {
         }
     }
     
-    // Função auxiliar para detectar tipo de documento
-    detectDocumentType(text) {
-        if (!text) return 'unknown';
-        
-        const lowerText = text.toLowerCase();
-        
-        // Palavras-chave para Política de Privacidade
-        const privacyKeywords = [
-            'privacy policy', 'política de privacidade', 'privacidade',
-            'personal data', 'dados pessoais', 'data protection',
-            'cookie policy', 'política de cookies', 'gdpr'
-        ];
-        
-        // Palavras-chave para Termos de Serviço
-        const termsKeywords = [
-            'terms of service', 'termos de serviço', 'terms and conditions',
-            'user agreement', 'contrato de utilizador', 'service agreement',
-            'terms of use', 'condições de uso'
-        ];
-        
-        const privacyCount = privacyKeywords.reduce((count, keyword) => {
-            const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-            return count + (lowerText.match(regex) || []).length;
-        }, 0);
-        
-        const termsCount = termsKeywords.reduce((count, keyword) => {
-            const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-            return count + (lowerText.match(regex) || []).length;
-        }, 0);
-        
-        if (privacyCount > termsCount && privacyCount > 0) {
-            return 'privacy_policy';
-        } else if (termsCount > privacyCount && termsCount > 0) {
-            return 'terms_of_service';
-        }
-        
-        return 'unknown';
-    }
-    
     // Função auxiliar para atualizar contador de resumos
     async updateUserSummaryCount(userId) {
         try {
@@ -281,10 +245,16 @@ class Database {
         }
     }
 
-    // Obter histórico de resumos de um utilizador (optimized)
+    // Obter histórico de resumos de um utilizador (com paginação)
     async getUserSummaries(userId, limit = 50, offset = 0) {
         try {
-            return await queryOptimizer.getUserSummariesOptimized(userId, limit, offset);
+            const result = await this.query(`
+                SELECT * FROM summaries
+                WHERE user_id = $1
+                ORDER BY created_at DESC
+                LIMIT $2 OFFSET $3
+            `, [userId, limit, offset]);
+            return result.rows;
         } catch (error) {
             console.error('Error getting user summaries:', error);
             throw error;
@@ -311,21 +281,6 @@ class Database {
             return result.rows[0];
         } catch (error) {
             console.error('Error getting user summary stats:', error);
-            throw error;
-        }
-    }
-
-    async getUserSummaries(userId, limit = 10) {
-        try {
-            const result = await this.query(`
-                SELECT * FROM summaries 
-                WHERE user_id = $1
-                ORDER BY created_at DESC
-                LIMIT $2
-            `, [userId, limit]);
-            return result.rows;
-        } catch (error) {
-            console.error('Error getting user summaries:', error);
             throw error;
         }
     }
@@ -532,15 +487,134 @@ class Database {
         }
     }
 
+    // --- Cache de resumos -------------------------------------------------
+    // Persistente em Postgres (em serverless um cache em memória não persiste).
+    // Indexado por hash do conteúdo; reaproveita resumos idênticos e evita
+    // novas chamadas (e custo) à API Gemini.
+
+    async ensureSummaryCacheTable() {
+        if (this._cacheTableReady) return;
+        await this.query(`
+            CREATE TABLE IF NOT EXISTS summary_cache (
+                content_hash  TEXT PRIMARY KEY,
+                language      VARCHAR(8) NOT NULL DEFAULT 'pt',
+                summary       TEXT NOT NULL,
+                ratings       JSONB,
+                document_type VARCHAR(50) DEFAULT 'unknown',
+                hits          INTEGER NOT NULL DEFAULT 0,
+                created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_used     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        this._cacheTableReady = true;
+    }
+
+    async getCachedSummary(contentHash) {
+        try {
+            // Incrementa o contador de hits e devolve o resumo numa só query.
+            const result = await this.query(`
+                UPDATE summary_cache
+                SET hits = hits + 1, last_used = CURRENT_TIMESTAMP
+                WHERE content_hash = $1
+                RETURNING summary, ratings, document_type
+            `, [contentHash]);
+            return result.rows[0] || null;
+        } catch (error) {
+            // Tabela pode ainda não existir — tratar como cache miss.
+            console.warn('⚠️ Cache lookup falhou (ignorado):', error.message);
+            return null;
+        }
+    }
+
+    async saveCachedSummary(contentHash, language, summary, ratings, documentType) {
+        try {
+            await this.ensureSummaryCacheTable();
+            await this.query(`
+                INSERT INTO summary_cache (content_hash, language, summary, ratings, document_type)
+                VALUES ($1, $2, $3, $4, $5)
+                ON CONFLICT (content_hash) DO NOTHING
+            `, [contentHash, language, summary, JSON.stringify(ratings), documentType]);
+        } catch (error) {
+            console.warn('⚠️ Falha ao guardar no cache (ignorado):', error.message);
+        }
+    }
+
+    // --- Rate limiting partilhado --------------------------------------
+    // Janela fixa em Postgres (partilhada entre instâncias serverless, ao
+    // contrário de um contador em memória que reinicia a cada cold start).
+
+    async ensureRateLimitTable() {
+        if (this._rateLimitTableReady) return;
+        await this.query(`
+            CREATE TABLE IF NOT EXISTS rate_limits (
+                bucket_key TEXT PRIMARY KEY,
+                count      INTEGER NOT NULL DEFAULT 0,
+                expires_at TIMESTAMP NOT NULL
+            )
+        `);
+        this._rateLimitTableReady = true;
+    }
+
+    async hitRateLimit(key, windowMs, max) {
+        try {
+            await this.ensureRateLimitTable();
+            const now = Date.now();
+            const windowStart = Math.floor(now / windowMs) * windowMs;
+            const bucketKey = `${key}:${windowStart}`;
+            const expiresAt = new Date(windowStart + windowMs);
+
+            const result = await this.query(`
+                INSERT INTO rate_limits (bucket_key, count, expires_at)
+                VALUES ($1, 1, $2)
+                ON CONFLICT (bucket_key) DO UPDATE SET count = rate_limits.count + 1
+                RETURNING count
+            `, [bucketKey, expiresAt]);
+
+            const count = result.rows[0].count;
+
+            // Limpeza best-effort das janelas expiradas (não em todos os pedidos).
+            if (Math.random() < 0.02) {
+                await this.query('DELETE FROM rate_limits WHERE expires_at < NOW()');
+            }
+
+            return {
+                allowed: count <= max,
+                count,
+                remaining: Math.max(0, max - count),
+                resetMs: windowStart + windowMs - now
+            };
+        } catch (error) {
+            // Fail-open: numa falha de BD é preferível servir do que bloquear tudo.
+            console.warn('⚠️ Rate limit indisponível (permitido por omissão):', error.message);
+            return { allowed: true, count: 0, remaining: max, resetMs: windowMs };
+        }
+    }
+
     async close() {
-        if (this.pool) {
-            await this.pool.end();
+        if (pool) {
+            await pool.end();
+            pool = null;
+            this.pool = null;
             this.isConnected = false;
             console.log('Database connection closed');
         }
     }
 
-    // Calcular ratings de complexidade e boas práticas
+    // Normalizar ratings fornecidos externamente (ex.: pelo Gemini).
+    // Devolve null se não forem números válidos, para acionar o fallback.
+    normalizeRatings(ratings) {
+        if (!ratings) return null;
+        const clamp = (v) => Math.min(Math.max(Math.round(Number(v)), 1), 10);
+        const complexidade = clamp(ratings.complexidade);
+        const boas_praticas = clamp(ratings.boas_praticas);
+        const risk_score = clamp(ratings.risk_score);
+        if (![complexidade, boas_praticas, risk_score].every(Number.isFinite)) {
+            return null;
+        }
+        return { complexidade, boas_praticas, risk_score };
+    }
+
+    // Calcular ratings de complexidade e boas práticas (heurística de fallback)
     calculateRatings(summary, textLength, documentType) {
         // Rating de Complexidade (1-10)
         let complexidade = 1;

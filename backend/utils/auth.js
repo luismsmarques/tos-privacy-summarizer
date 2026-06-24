@@ -6,17 +6,21 @@ class AuthService {
     constructor() {
         this.adminCredentials = {
             username: process.env.ADMIN_USERNAME || 'admin',
-            password: process.env.ADMIN_PASSWORD || 'CHANGE_THIS_PASSWORD_IN_PRODUCTION'
+            // Sem fallback inseguro: se não estiver definido, a autenticação fica desativada.
+            password: process.env.ADMIN_PASSWORD || null
         };
-        // Use a more secure fallback JWT secret for production
-        this.jwtSecret = process.env.JWT_SECRET || 'tos-privacy-summarizer-secure-jwt-secret-key-2024';
+        // Sem segredo hardcoded: se JWT_SECRET não estiver configurado, recusamos autenticar (fail-closed).
+        this.jwtSecret = process.env.JWT_SECRET || null;
         this.jwtExpiry = '24h';
-        
-        // Log environment status for debugging
+
+        if (!this.jwtSecret || !this.adminCredentials.password) {
+            console.warn('⚠️ AuthService: JWT_SECRET e/ou ADMIN_PASSWORD não configurados. Autenticação de administrador DESATIVADA até serem definidos nas variáveis de ambiente.');
+        }
+
+        // Log de estado (sem expor segredos)
         console.log('🔐 AuthService initialized:', {
             hasJwtSecret: !!this.jwtSecret,
-            jwtSecretLength: this.jwtSecret ? this.jwtSecret.length : 0,
-            isDefaultSecret: this.jwtSecret === 'tos-privacy-summarizer-secure-jwt-secret-key-2024',
+            hasAdminPassword: !!this.adminCredentials.password,
             nodeEnv: process.env.NODE_ENV || 'development'
         });
     }
@@ -24,6 +28,11 @@ class AuthService {
     // Verificar credenciais de login
     async validateCredentials(username, password) {
         try {
+            // Fail-closed: sem password de administrador configurada, recusar todos os logins.
+            if (!this.adminCredentials.password) {
+                console.error('❌ Login recusado: ADMIN_PASSWORD não está configurado no servidor');
+                return false;
+            }
             const isValidUsername = username === this.adminCredentials.username;
             const isValidPassword = await bcrypt.compare(password, this.adminCredentials.password) || 
                                    password === this.adminCredentials.password;
@@ -90,7 +99,6 @@ class AuthService {
                 });
             }
             
-            console.log('🔍 AuthenticateToken - Verifying token with secret:', this.jwtSecret.substring(0, 10) + '...');
             const decoded = jwt.verify(token, this.jwtSecret);
             console.log('✅ AuthenticateToken - Token verified successfully:', decoded);
             req.user = decoded;
@@ -122,17 +130,6 @@ class AuthService {
             headers: Object.keys(req.headers)
         });
         
-        // Debug: Check instance state
-        console.log('🔍 AuthService instance state:', {
-            hasThis: !!this,
-            thisType: typeof this,
-            hasJwtSecret: !!this.jwtSecret,
-            jwtSecretType: typeof this.jwtSecret,
-            jwtSecretValue: this.jwtSecret ? this.jwtSecret.substring(0, 20) + '...' : 'UNDEFINED',
-            processEnvJwtSecret: process.env.JWT_SECRET ? process.env.JWT_SECRET.substring(0, 20) + '...' : 'UNDEFINED',
-            allProperties: Object.keys(this)
-        });
-
         if (!token) {
             console.log('❌ No token found, showing login page');
             return res.status(401).send(`
@@ -233,17 +230,12 @@ class AuthService {
                 `);
             }
             
-            console.log('🔍 Verifying token with secret:', this.jwtSecret.substring(0, 10) + '...');
-            console.log('🔍 Token to verify:', token.substring(0, 20) + '...');
             const decoded = jwt.verify(token, this.jwtSecret);
-            console.log('✅ Token verified successfully:', decoded);
             req.user = decoded;
             next();
         } catch (error) {
             console.error('❌ Token verification failed:', error.message);
-            console.error('❌ JWT Secret being used:', this.jwtSecret ? this.jwtSecret.substring(0, 20) + '...' : 'UNDEFINED');
-            console.error('❌ Token being verified:', token.substring(0, 20) + '...');
-            
+
             return res.status(401).send(`
                 <!DOCTYPE html>
                 <html>
