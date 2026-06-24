@@ -119,12 +119,13 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        chrome.storage.local.set({ 
+        chrome.storage.local.set({
             geminiApiKey: apiKey,
+            apiType: 'own', // Ao guardar uma chave própria, passar a usá-la em vez dos créditos partilhados
             onboardingCompleted: true // Marcar onboarding como completado
         }, function() {
             showStatus(window.i18n.t('messages.api_key_saved'), 'success');
-            console.log('API Key guardada:', apiKey.substring(0, 10) + '...');
+            console.log('API Key guardada (modo: API própria):', apiKey.substring(0, 10) + '...');
         });
     }
     
@@ -261,8 +262,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 await new Promise((resolve) => {
                     chrome.storage.local.remove(['geminiApiKey'], resolve);
                 });
-                
-                console.log('Chave API removida de forma segura');
+
+                // Voltar a usar a API partilhada (créditos)
+                await new Promise((resolve) => {
+                    chrome.storage.local.set({ apiType: 'shared' }, resolve);
+                });
+
+                console.log('Chave API removida de forma segura; modo reposto para API partilhada');
             }
         } catch (error) {
             console.error('Erro ao limpar chave API:', error);

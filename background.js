@@ -111,11 +111,13 @@ async function processSummaryAsync(text, url = '', title = '', language = 'pt') 
       chrome.storage.local.get(['geminiApiKey', 'apiType', 'userId'], resolve);
     });
 
-    // Forçar uso da API compartilhada (backend seguro)
-    let apiType = 'shared';
+    // Respeitar a escolha do utilizador: 'own' (chave própria) ou 'shared' (backend seguro).
+    // Só usar a chave própria se o utilizador a escolheu E tem uma chave válida configurada.
+    const hasOwnKey = !!result.geminiApiKey && result.geminiApiKey !== 'SHARED_API';
+    let apiType = (result.apiType === 'own' && hasOwnKey) ? 'own' : 'shared';
     let userId = result.userId;
-    
-    Logger.log('🔧 Configuração forçada para API compartilhada');
+
+    Logger.log(`🔧 Tipo de API selecionado: ${apiType}`, { hasOwnKey, storedApiType: result.apiType });
 
     // Se não tem userId, criar um
     if (!userId) {

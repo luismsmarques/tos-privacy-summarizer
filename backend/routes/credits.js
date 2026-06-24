@@ -1,17 +1,17 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
+import db from '../utils/database.js';
+import authService from '../utils/auth.js';
 const router = express.Router();
 
 // Endpoint para verificar créditos
 router.get('/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
-        
-        const users = global.users || new Map();
-        const user = users.get(userId);
-        
-        const credits = user ? user.credits : parseInt(process.env.DEFAULT_FREE_CREDITS) || 5;
-        
+
+        // Fonte única de verdade: base de dados (Postgres)
+        const credits = await db.getUserCredits(userId);
+
         res.json({
             userId,
             credits,
@@ -26,8 +26,9 @@ router.get('/:userId', async (req, res) => {
     }
 });
 
-// Endpoint para adicionar créditos (após pagamento)
-router.post('/add', [
+// Endpoint para adicionar créditos manualmente (apenas admin autenticado).
+// O fluxo normal de compra usa a rota Stripe, que credita diretamente via base de dados.
+router.post('/add', authService.authenticateToken, [
     body('userId').isString().notEmpty().withMessage('ID do utilizador é obrigatório'),
     body('credits').isInt({ min: 1 }).withMessage('Número de créditos deve ser positivo'),
     body('paymentId').optional().isString()
@@ -42,35 +43,24 @@ router.post('/add', [
         }
 
         const { userId, credits, paymentId } = req.body;
-        
-        const users = global.users || new Map();
-        const user = users.get(userId) || { 
-            id: userId, 
-            credits: parseInt(process.env.DEFAULT_FREE_CREDITS) || 5,
-            createdAt: new Date().toISOString()
-        };
-        
-        // Adicionar créditos
-        user.credits += credits;
-        user.lastUsed = new Date().toISOString();
-        
-        // Guardar histórico de pagamento (em produção, usar base de dados)
-        if (paymentId) {
-            user.payments = user.payments || [];
-            user.payments.push({
-                paymentId,
-                credits,
-                timestamp: new Date().toISOString()
-            });
+
+        // Adicionar créditos de forma atómica na base de dados
+        const totalCredits = await db.updateUserCredits(userId, credits);
+
+        // Registar no histórico de créditos (não bloqueia a resposta se falhar)
+        try {
+            await db.query(`
+                INSERT INTO credits_history (user_id, action, amount, balance_after, description)
+                VALUES ($1, 'add', $2, $3, $4)
+            `, [userId, credits, totalCredits, paymentId ? `Pagamento ${paymentId}` : 'Créditos adicionados']);
+        } catch (historyError) {
+            console.error('⚠️ Não foi possível registar histórico de créditos:', historyError.message);
         }
-        
-        users.set(userId, user);
-        global.users = users;
 
         res.json({
-            userId: user.id,
+            userId,
             creditsAdded: credits,
-            totalCredits: user.credits,
+            totalCredits,
             message: 'Créditos adicionados com sucesso'
         });
 
@@ -86,22 +76,28 @@ router.post('/add', [
 router.get('/history/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
-        
-        const users = global.users || new Map();
-        const user = users.get(userId);
-        
-        if (!user) {
-            return res.status(404).json({
-                error: 'Utilizador não encontrado'
-            });
+
+        const currentCredits = await db.getUserCredits(userId);
+
+        let payments = [];
+        try {
+            const result = await db.query(`
+                SELECT action, amount, balance_after, description, created_at
+                FROM credits_history
+                WHERE user_id = $1
+                ORDER BY created_at DESC
+                LIMIT 100
+            `, [userId]);
+            payments = result.rows;
+        } catch (historyError) {
+            console.error('⚠️ Não foi possível obter histórico de créditos:', historyError.message);
         }
 
         res.json({
-            userId: user.id,
-            currentCredits: user.credits,
-            payments: user.payments || [],
-            createdAt: user.createdAt,
-            lastUsed: user.lastUsed
+            userId,
+            currentCredits,
+            payments,
+            timestamp: new Date().toISOString()
         });
 
     } catch (error) {

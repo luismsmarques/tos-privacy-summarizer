@@ -83,31 +83,6 @@ class Database {
         }
     }
 
-    async getUserCredits(userId) {
-        try {
-            // Try cache first
-            const cacheKey = CacheKeys.userCredits(userId);
-            const cached = advancedCache.get(cacheKey);
-            if (cached !== null) {
-                return cached;
-            }
-
-            const result = await this.query(
-                'SELECT credits FROM users WHERE user_id = $1',
-                [userId]
-            );
-            const credits = result.rows[0]?.credits || 5;
-            
-            // Cache the result
-            advancedCache.set(cacheKey, credits, CacheStrategies.USER.CREDITS);
-            
-            return credits;
-        } catch (error) {
-            console.error('Error getting user credits:', error);
-            return 5; // Default credits
-        }
-    }
-
     async decrementUserCredits(userId) {
         try {
             const result = await this.query(`
@@ -281,10 +256,16 @@ class Database {
         }
     }
 
-    // Obter histórico de resumos de um utilizador (optimized)
+    // Obter histórico de resumos de um utilizador (com paginação)
     async getUserSummaries(userId, limit = 50, offset = 0) {
         try {
-            return await queryOptimizer.getUserSummariesOptimized(userId, limit, offset);
+            const result = await this.query(`
+                SELECT * FROM summaries
+                WHERE user_id = $1
+                ORDER BY created_at DESC
+                LIMIT $2 OFFSET $3
+            `, [userId, limit, offset]);
+            return result.rows;
         } catch (error) {
             console.error('Error getting user summaries:', error);
             throw error;
@@ -311,21 +292,6 @@ class Database {
             return result.rows[0];
         } catch (error) {
             console.error('Error getting user summary stats:', error);
-            throw error;
-        }
-    }
-
-    async getUserSummaries(userId, limit = 10) {
-        try {
-            const result = await this.query(`
-                SELECT * FROM summaries 
-                WHERE user_id = $1
-                ORDER BY created_at DESC
-                LIMIT $2
-            `, [userId, limit]);
-            return result.rows;
-        } catch (error) {
-            console.error('Error getting user summaries:', error);
             throw error;
         }
     }
