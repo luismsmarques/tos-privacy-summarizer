@@ -1,6 +1,6 @@
 {
   "name": "tos-privacy-summarizer",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Chrome Extension for ToS and Privacy Policy Summarization",
   "main": "index.js",
   "type": "module",
