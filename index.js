@@ -1,14 +1,4 @@
-// Entrypoint para Vercel - redireciona para o servidor do backend
-// Usar import dinâmico para resolver caminhos relativos corretamente
-import { createRequire } from 'module';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Importar o app do backend
-const backendPath = join(__dirname, 'backend', 'server.js');
-const backendModule = await import(backendPath);
-export default backendModule.default;
-
+// Entrypoint para Vercel — reexporta a app Express do backend.
+// Import estático (não dinâmico) para que o file-tracer da Vercel inclua
+// backend/server.js e as suas dependências no bundle da função.
+export { default } from './backend/server.js';
