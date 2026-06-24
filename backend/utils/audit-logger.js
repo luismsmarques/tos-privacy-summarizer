@@ -2,7 +2,6 @@
 // Implements comprehensive audit trails for security, compliance, and debugging
 
 import db from './database.js';
-import { performanceMonitor } from './performance.js';
 
 class AuditLogger {
     constructor() {
@@ -179,11 +178,12 @@ class AuditLogger {
     // Flush buffer to database
     async flushBuffer() {
         if (this.buffer.length === 0) return;
-        
+
+        const entries = [...this.buffer];
+        this.buffer = [];
+
         try {
-            const entries = [...this.buffer];
-            this.buffer = [];
-            
+
             // Batch insert
             const values = entries.map(entry => [
                 entry.type,

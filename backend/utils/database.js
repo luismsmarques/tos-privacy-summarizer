@@ -1,7 +1,39 @@
-// Database utilities for Neon Postgres with advanced pooling
-import { resilientPool } from './database-pool.js';
-import { advancedCache, CacheStrategies, CacheKeys } from './cache-advanced.js';
-import { queryOptimizer } from './query-optimizer.js';
+// Database utilities for Neon Postgres (serverless-friendly).
+//
+// Em serverless (Vercel) cada função é efémera e congela entre invocações,
+// por isso pools resilientes com retry/keep-alive, caches em memória e
+// otimizadores de queries não persistem nem trazem benefício real. Usamos
+// um Pool `pg` simples, de escopo de módulo, reaproveitado entre invocações
+// "quentes" da mesma instância.
+import pkg from 'pg';
+const { Pool } = pkg;
+
+let pool = null;
+
+function getPool() {
+    if (pool) return pool;
+
+    const databaseUrl = process.env.ANALYTICS_URL || process.env.DATABASE_URL;
+    if (!databaseUrl) {
+        throw new Error('Database URL not configured (defina ANALYTICS_URL ou DATABASE_URL)');
+    }
+
+    pool = new Pool({
+        connectionString: databaseUrl,
+        ssl: { rejectUnauthorized: false },
+        max: 1,                          // uma ligação por instância serverless
+        idleTimeoutMillis: 10000,
+        connectionTimeoutMillis: 10000,
+        allowExitOnIdle: true
+    });
+
+    // Evita que erros de ligação inativa derrubem o processo.
+    pool.on('error', (err) => {
+        console.error('❌ Erro inesperado no pool da base de dados:', err.message);
+    });
+
+    return pool;
+}
 
 class Database {
     constructor() {
@@ -11,14 +43,14 @@ class Database {
 
     async connect() {
         try {
-            // Use resilient pool for connection
-            await resilientPool.initialize();
-            this.pool = resilientPool;
+            this.pool = getPool();
+            // Validar conectividade com uma query leve
+            await this.pool.query('SELECT 1');
             this.isConnected = true;
-            console.log('✅ Database connected successfully with resilient pool');
+            console.log('✅ Database connected successfully');
             return true;
         } catch (error) {
-            console.error('❌ Database connection failed:', error);
+            console.error('❌ Database connection failed:', error.message);
             this.isConnected = false;
             return false;
         }
@@ -26,14 +58,9 @@ class Database {
 
     async query(text, params) {
         try {
-            // Use resilient pool for queries
-            if (!this.pool || !this.isConnected) {
-                await this.connect();
-            }
-            
-            return await resilientPool.queryWithRetry(text, params);
+            return await getPool().query(text, params);
         } catch (error) {
-            console.error('❌ Database query failed:', error);
+            console.error('❌ Database query failed:', error.message);
             throw error;
         }
     }
@@ -93,11 +120,6 @@ class Database {
             `, [userId]);
             
             const newCredits = result.rows[0]?.credits || 0;
-            
-            // Invalidate cache
-            const cacheKey = CacheKeys.userCredits(userId);
-            advancedCache.delete(cacheKey);
-            
             return newCredits;
         } catch (error) {
             console.error('Error decrementing credits:', error);
@@ -106,7 +128,7 @@ class Database {
     }
 
     // Summary operations
-    async createSummary(summaryId, userId, success, duration, textLength, url, summary, title = null) {
+    async createSummary(summaryId, userId, success, duration, textLength, url, summary, title = null, providedRatings = null) {
         try {
             console.log(`🗄️ createSummary chamado: summaryId=${summaryId}, userId=${userId}, success=${success}, duration=${duration}, textLength=${textLength}, url=${url}, summary=${summary ? summary.substring(0, 100) + '...' : 'null'}`);
             console.log(`🗄️ Summary content length: ${summary ? summary.length : 0}`);
@@ -120,8 +142,10 @@ class Database {
             // Detectar tipo de documento baseado no conteúdo
             const documentType = this.detectDocumentType(summary || '');
             
-            // Calcular ratings de complexidade e boas práticas
-            const ratings = this.calculateRatings(summary || '', textLength, documentType);
+            // Preferir os ratings fornecidos pelo Gemini; recorrer à
+            // heurística apenas se não vierem scores válidos.
+            const ratings = this.normalizeRatings(providedRatings)
+                || this.calculateRatings(summary || '', textLength, documentType);
             
             // Primeiro, tentar inserir com todas as colunas (schema completo)
             try {
@@ -499,14 +523,30 @@ class Database {
     }
 
     async close() {
-        if (this.pool) {
-            await this.pool.end();
+        if (pool) {
+            await pool.end();
+            pool = null;
+            this.pool = null;
             this.isConnected = false;
             console.log('Database connection closed');
         }
     }
 
-    // Calcular ratings de complexidade e boas práticas
+    // Normalizar ratings fornecidos externamente (ex.: pelo Gemini).
+    // Devolve null se não forem números válidos, para acionar o fallback.
+    normalizeRatings(ratings) {
+        if (!ratings) return null;
+        const clamp = (v) => Math.min(Math.max(Math.round(Number(v)), 1), 10);
+        const complexidade = clamp(ratings.complexidade);
+        const boas_praticas = clamp(ratings.boas_praticas);
+        const risk_score = clamp(ratings.risk_score);
+        if (![complexidade, boas_praticas, risk_score].every(Number.isFinite)) {
+            return null;
+        }
+        return { complexidade, boas_praticas, risk_score };
+    }
+
+    // Calcular ratings de complexidade e boas práticas (heurística de fallback)
     calculateRatings(summary, textLength, documentType) {
         // Rating de Complexidade (1-10)
         let complexidade = 1;

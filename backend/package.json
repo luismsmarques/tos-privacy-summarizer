@@ -1,6 +1,6 @@
 {
   "name": "tos-summarizer-backend",
-  "version": "1.0.0",
+  "version": "1.3.0",
   "description": "Backend seguro para ToS & Privacy Summarizer",
   "main": "server.js",
   "type": "module",

@@ -1,6 +1,6 @@
 {
   "name": "tos-debug-tools",
-  "version": "1.4.0",
+  "version": "1.3.0",
   "description": "Debug tools for ToS Privacy Summarizer",
   "type": "module",
   "main": "test-suite.js",

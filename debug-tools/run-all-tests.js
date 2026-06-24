@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-// Script de teste completo - ToS Privacy Summarizer v1.4.0
+// Script de teste completo - ToS Privacy Summarizer v1.3.0
 // 
 // Este script executa todos os testes de debug disponíveis
 // para verificar o estado completo do sistema.
@@ -18,7 +18,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function runAllTests() {
-    console.log('🚀 Executando todos os testes de debug v1.4.0...');
+    console.log('🚀 Executando todos os testes de debug v1.3.0...');
     console.log('📅 Data/Hora:', new Date().toLocaleString('pt-PT'));
     console.log('=' .repeat(60));
     
