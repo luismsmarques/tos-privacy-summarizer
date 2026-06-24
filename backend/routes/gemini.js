@@ -21,7 +21,7 @@ const checkGeminiKey = (req, res, next) => {
 // Extrair a classificação numérica produzida pelo próprio Gemini.
 // Substitui a antiga contagem de palavras-chave (enviesada) pela avaliação
 // do modelo. Só recorre à heurística se o modelo não devolver scores válidos.
-function extractRatings(responseText, textLength, documentType) {
+export function extractRatings(responseText, textLength, documentType) {
     try {
         const parsed = JSON.parse(responseText);
         const c = parsed.classificacao;
@@ -45,7 +45,7 @@ function extractRatings(responseText, textLength, documentType) {
 // Remove o bloco "classificacao" do JSON do resumo — já o expomos
 // separadamente em `ratings`, não precisa de poluir o resumo guardado/devolvido.
 // Mantém a resiliência: se não for JSON válido, devolve o texto inalterado.
-function stripClassificacao(responseText) {
+export function stripClassificacao(responseText) {
     try {
         const parsed = JSON.parse(responseText);
         if (parsed && typeof parsed === 'object' && 'classificacao' in parsed) {
