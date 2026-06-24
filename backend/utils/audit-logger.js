@@ -14,14 +14,9 @@ class AuditLogger {
         };
         
         this.currentLevel = this.logLevels.INFO;
-        this.buffer = [];
-        this.bufferSize = 100;
-        this.flushInterval = 30000; // 30 seconds
-        
-        // Start periodic flush
-        this.startPeriodicFlush();
-        
-        console.log('📋 Advanced Audit Logger initialized');
+        this._tableReady = false;
+
+        console.log('📋 Audit Logger initialized');
     }
 
     // Log user actions
@@ -153,80 +148,58 @@ class AuditLogger {
         await this.writeAuditLog(auditEntry);
     }
 
-    // Write audit log to database
+    // Garante que a tabela existe (criação lazy, estilo best-effort do projeto).
+    async ensureAuditTable() {
+        if (this._tableReady) return;
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS audit_logs (
+                id SERIAL PRIMARY KEY,
+                type VARCHAR(50) NOT NULL,
+                user_id VARCHAR(255),
+                action VARCHAR(100) NOT NULL,
+                table_name VARCHAR(50),
+                record_id VARCHAR(255),
+                old_values JSONB,
+                new_values JSONB,
+                details JSONB NOT NULL,
+                metadata JSONB,
+                severity INTEGER NOT NULL DEFAULT 1,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        this._tableReady = true;
+    }
+
+    // Escrita direta (write-through) para a base de dados.
+    // Em serverless não há buffer em memória nem flush periódico — o timer
+    // podia nunca disparar antes da função congelar, perdendo logs.
     async writeAuditLog(auditEntry) {
         try {
-            // Add to buffer for batch processing
-            this.buffer.push(auditEntry);
-            
-            // Flush if buffer is full
-            if (this.buffer.length >= this.bufferSize) {
-                await this.flushBuffer();
-            }
-            
-            // Immediate write for critical events
-            if (auditEntry.severity >= this.logLevels.ERROR) {
-                await this.flushBuffer();
-            }
+            await this.ensureAuditTable();
+            await db.query(`
+                INSERT INTO audit_logs (
+                    type, user_id, action, table_name, record_id,
+                    old_values, new_values, details, metadata,
+                    severity, timestamp
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            `, [
+                auditEntry.type,
+                auditEntry.userId,
+                auditEntry.action,
+                auditEntry.tableName || null,
+                auditEntry.recordId || null,
+                auditEntry.oldValues || null,
+                auditEntry.newValues || null,
+                auditEntry.details,
+                auditEntry.metadata,
+                auditEntry.severity,
+                auditEntry.timestamp
+            ]);
         } catch (error) {
-            console.error('❌ Failed to write audit log:', error);
-            // Fallback to console logging
+            console.error('❌ Failed to write audit log:', error.message);
+            // Fallback para consola para não perder o evento por completo.
             console.log('📋 Audit Log (Fallback):', auditEntry);
         }
-    }
-
-    // Flush buffer to database
-    async flushBuffer() {
-        if (this.buffer.length === 0) return;
-
-        const entries = [...this.buffer];
-        this.buffer = [];
-
-        try {
-
-            // Batch insert
-            const values = entries.map(entry => [
-                entry.type,
-                entry.userId,
-                entry.action,
-                entry.tableName || null,
-                entry.recordId || null,
-                entry.oldValues || null,
-                entry.newValues || null,
-                entry.details,
-                entry.metadata,
-                entry.severity,
-                entry.timestamp
-            ]);
-            
-            const query = `
-                INSERT INTO audit_logs (
-                    type, user_id, action, table_name, record_id, 
-                    old_values, new_values, details, metadata, 
-                    severity, timestamp
-                ) VALUES ${values.map((_, i) => 
-                    `($${i * 11 + 1}, $${i * 11 + 2}, $${i * 11 + 3}, $${i * 11 + 4}, $${i * 11 + 5}, 
-                     $${i * 11 + 6}, $${i * 11 + 7}, $${i * 11 + 8}, $${i * 11 + 9}, 
-                     $${i * 11 + 10}, $${i * 11 + 11})`
-                ).join(', ')}
-            `;
-            
-            const flatValues = values.flat();
-            await db.query(query, flatValues);
-            
-            console.log(`📋 Flushed ${entries.length} audit logs to database`);
-        } catch (error) {
-            console.error('❌ Failed to flush audit buffer:', error);
-            // Re-add to buffer for retry
-            this.buffer.unshift(...entries);
-        }
-    }
-
-    // Start periodic flush
-    startPeriodicFlush() {
-        setInterval(() => {
-            this.flushBuffer();
-        }, this.flushInterval);
     }
 
     // Get severity levels

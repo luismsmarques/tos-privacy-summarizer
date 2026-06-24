@@ -539,6 +539,57 @@ class Database {
         }
     }
 
+    // --- Rate limiting partilhado --------------------------------------
+    // Janela fixa em Postgres (partilhada entre instâncias serverless, ao
+    // contrário de um contador em memória que reinicia a cada cold start).
+
+    async ensureRateLimitTable() {
+        if (this._rateLimitTableReady) return;
+        await this.query(`
+            CREATE TABLE IF NOT EXISTS rate_limits (
+                bucket_key TEXT PRIMARY KEY,
+                count      INTEGER NOT NULL DEFAULT 0,
+                expires_at TIMESTAMP NOT NULL
+            )
+        `);
+        this._rateLimitTableReady = true;
+    }
+
+    async hitRateLimit(key, windowMs, max) {
+        try {
+            await this.ensureRateLimitTable();
+            const now = Date.now();
+            const windowStart = Math.floor(now / windowMs) * windowMs;
+            const bucketKey = `${key}:${windowStart}`;
+            const expiresAt = new Date(windowStart + windowMs);
+
+            const result = await this.query(`
+                INSERT INTO rate_limits (bucket_key, count, expires_at)
+                VALUES ($1, 1, $2)
+                ON CONFLICT (bucket_key) DO UPDATE SET count = rate_limits.count + 1
+                RETURNING count
+            `, [bucketKey, expiresAt]);
+
+            const count = result.rows[0].count;
+
+            // Limpeza best-effort das janelas expiradas (não em todos os pedidos).
+            if (Math.random() < 0.02) {
+                await this.query('DELETE FROM rate_limits WHERE expires_at < NOW()');
+            }
+
+            return {
+                allowed: count <= max,
+                count,
+                remaining: Math.max(0, max - count),
+                resetMs: windowStart + windowMs - now
+            };
+        } catch (error) {
+            // Fail-open: numa falha de BD é preferível servir do que bloquear tudo.
+            console.warn('⚠️ Rate limit indisponível (permitido por omissão):', error.message);
+            return { allowed: true, count: 0, remaining: max, resetMs: windowMs };
+        }
+    }
+
     async close() {
         if (pool) {
             await pool.end();

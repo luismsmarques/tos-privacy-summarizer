@@ -4,6 +4,7 @@ import { body, validationResult } from 'express-validator';
 import { registerUser, registerSummary } from './analytics.js';
 import db from '../utils/database.js';
 import { detectDocumentType } from '../utils/document-type.js';
+import { dbRateLimit } from '../middleware/db-rate-limit.js';
 const router = express.Router();
 
 // Middleware para verificar se a chave da API está configurada
@@ -57,9 +58,17 @@ function stripClassificacao(responseText) {
     return responseText;
 }
 
+// Rate limit partilhado para o endpoint caro (por utilizador, fallback IP).
+const proxyRateLimit = dbRateLimit({
+    windowMs: 60 * 1000,
+    max: 15,
+    keyGenerator: (req) => `gemini:${req.body?.userId || req.ip}`
+});
+
 // Endpoint principal para proxy da API Gemini
 router.post('/proxy', [
     checkGeminiKey,
+    proxyRateLimit,
     body('userId').isString().notEmpty().withMessage('ID do utilizador é obrigatório'),
     body('text').isString().isLength({ min: 50 }).withMessage('Texto deve ter pelo menos 50 caracteres'),
     body('apiType').optional().isIn(['shared', 'own']).withMessage('Tipo de API inválido')
