@@ -2,6 +2,7 @@ import express from 'express';
 import { body, validationResult } from 'express-validator';
 import { registerUser, registerSummary } from './analytics.js';
 import db from '../utils/database.js';
+import { detectDocumentType } from '../utils/document-type.js';
 const router = express.Router();
 
 // Middleware para verificar se a chave da API está configurada
@@ -14,110 +15,6 @@ const checkGeminiKey = (req, res, next) => {
     next();
 };
 
-// Função para detectar tipo de documento baseado no conteúdo
-function detectDocumentType(text) {
-    const lowerText = text.toLowerCase();
-    
-    // Palavras-chave multi-idioma para Política de Privacidade
-    const privacyKeywords = [
-        // Português
-        'política de privacidade', 'privacidade', 'dados pessoais', 'proteção de dados',
-        'política de cookies', 'recolha de dados', 'processamento de dados',
-        'informações que coletamos', 'como usamos seus dados', 'compartilhamento de dados',
-        'retenção de dados', 'aviso de privacidade', 'informações pessoais',
-        'controlador de dados',
-        
-        // Inglês
-        'privacy policy', 'privacy', 'personal data', 'data protection',
-        'cookie policy', 'data collection', 'data processing',
-        'information we collect', 'how we use your data', 'data sharing',
-        'data retention', 'privacy notice', 'personal information',
-        'data controller',
-        
-        // Espanhol
-        'política de privacidad', 'privacidad', 'datos personales', 'protección de datos',
-        'política de cookies', 'recopilación de datos', 'procesamiento de datos',
-        'información que recopilamos', 'cómo usamos sus datos', 'compartir datos',
-        'retención de datos', 'aviso de privacidad', 'información personal',
-        'controlador de datos',
-        
-        // Francês
-        'politique de confidentialité', 'confidentialité', 'données personnelles', 'protection des données',
-        'politique de cookies', 'collecte de données', 'traitement des données',
-        'informations que nous collectons', 'comment nous utilisons vos données', 'partage de données',
-        'rétention de données', 'avis de confidentialité', 'informations personnelles',
-        'contrôleur de données'
-    ];
-    
-    // Palavras-chave multi-idioma para Termos de Serviço
-    const termsKeywords = [
-        // Português
-        'termos de serviço', 'termos e condições', 'contrato de utilizador',
-        'condições de uso', 'termos do serviço', 'condições de utilização',
-        'uso aceitável', 'usos proibidos', 'responsabilidade',
-        'limitação de responsabilidade', 'obrigações do utilizador',
-        'descrição do serviço', 'termos de pagamento', 'política de cancelamento',
-        
-        // Inglês
-        'terms of service', 'terms and conditions', 'user agreement',
-        'terms of use', 'service terms', 'conditions of use',
-        'acceptable use', 'prohibited uses', 'liability',
-        'limitation of liability', 'user obligations',
-        'service description', 'payment terms', 'cancellation policy',
-        
-        // Espanhol
-        'términos de servicio', 'términos y condiciones', 'acuerdo de usuario',
-        'términos de uso', 'términos del servicio', 'condiciones de uso',
-        'uso aceptable', 'usos prohibidos', 'responsabilidad',
-        'limitación de responsabilidad', 'obligaciones del usuario',
-        'descripción del servicio', 'términos de pago', 'política de cancelación',
-        
-        // Francês
-        'conditions de service', 'conditions générales', 'accord utilisateur',
-        'conditions d\'utilisation', 'conditions du service', 'conditions d\'usage',
-        'utilisation acceptable', 'utilisations interdites', 'responsabilité',
-        'limitation de responsabilité', 'obligations de l\'utilisateur',
-        'description du service', 'conditions de paiement', 'politique d\'annulation'
-    ];
-    
-    // Contar ocorrências com word boundaries para evitar falsos positivos
-    const privacyCount = privacyKeywords.reduce((count, keyword) => {
-        const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-        const matches = (lowerText.match(regex) || []).length;
-        return count + matches;
-    }, 0);
-    
-    const termsCount = termsKeywords.reduce((count, keyword) => {
-        const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-        const matches = (lowerText.match(regex) || []).length;
-        return count + matches;
-    }, 0);
-    
-    // Determinar tipo baseado na contagem (com threshold mínimo)
-    const minThreshold = 2;
-    
-    if (privacyCount >= minThreshold && privacyCount > termsCount) {
-        return 'privacy_policy';
-    } else if (termsCount >= minThreshold && termsCount > privacyCount) {
-        return 'terms_of_service';
-    } else if (privacyCount > 0 || termsCount > 0) {
-        // Se há pelo menos uma ocorrência, usar a maior contagem
-        if (privacyCount > termsCount) {
-            return 'privacy_policy';
-        } else if (termsCount > privacyCount) {
-            return 'terms_of_service';
-        }
-    }
-    
-    // PRIORIDADE 2: Fallback baseado em palavras-chave simples
-    if (lowerText.includes('privacidade') || lowerText.includes('privacy')) {
-        return 'privacy_policy';
-    } else if (lowerText.includes('termos') || lowerText.includes('terms')) {
-        return 'terms_of_service';
-    }
-    
-    return 'unknown';
-}
 
 // Extrair a classificação numérica produzida pelo próprio Gemini.
 // Substitui a antiga contagem de palavras-chave (enviesada) pela avaliação
@@ -141,6 +38,22 @@ function extractRatings(responseText, textLength, documentType) {
         console.warn('⚠️ Não foi possível parsear o JSON do Gemini para classificação — a usar heurística:', error.message);
     }
     return db.calculateRatings(responseText, textLength, documentType);
+}
+
+// Remove o bloco "classificacao" do JSON do resumo — já o expomos
+// separadamente em `ratings`, não precisa de poluir o resumo guardado/devolvido.
+// Mantém a resiliência: se não for JSON válido, devolve o texto inalterado.
+function stripClassificacao(responseText) {
+    try {
+        const parsed = JSON.parse(responseText);
+        if (parsed && typeof parsed === 'object' && 'classificacao' in parsed) {
+            delete parsed.classificacao;
+            return JSON.stringify(parsed);
+        }
+    } catch (error) {
+        // não é JSON válido — devolver tal como veio
+    }
+    return responseText;
 }
 
 // Endpoint principal para proxy da API Gemini
@@ -189,13 +102,18 @@ router.post('/proxy', [
 
         // Obter ratings produzidos pelo próprio Gemini (com fallback heurístico)
         const ratings = extractRatings(geminiResponse, text.length, documentType);
-        
+
+        // Resumo limpo (sem o bloco classificacao) para devolver e guardar.
+        // Guardamos a string JSON tal e qual — sem JSON.stringify extra, que
+        // antes a double-encodava.
+        const summaryJson = stripClassificacao(geminiResponse);
+
         // Registrar resumo no analytics
         const duration = Date.now() - startTime;
         console.log(`📊 Registrando resumo: userId=${userId}, success=${success}, duration=${duration}ms, type=${documentType}, textLength=${text.length}, url=${url}, title=${title}`);
         console.log(`📊 Ratings calculados: complexidade=${ratings.complexidade}, boas_praticas=${ratings.boas_praticas}, risk_score=${ratings.risk_score}`);
         try {
-            await registerSummary(userId, true, duration, documentType, text.length, url, JSON.stringify(geminiResponse), title, ratings);
+            await registerSummary(userId, true, duration, documentType, text.length, url, summaryJson, title, ratings);
             console.log('✅ Resumo registrado com sucesso no analytics');
         } catch (error) {
             console.error('❌ Erro ao registrar resumo no analytics:', error);
@@ -208,7 +126,7 @@ router.post('/proxy', [
             const remainingCredits = await getUserCredits(userId);
             
             res.json({
-                summary: geminiResponse,
+                summary: summaryJson,
                 ratings: ratings,
                 credits: remainingCredits,
                 apiType: 'shared',
@@ -216,7 +134,7 @@ router.post('/proxy', [
             });
         } else {
             res.json({
-                summary: geminiResponse,
+                summary: summaryJson,
                 ratings: ratings,
                 apiType: 'own',
                 documentType: documentType

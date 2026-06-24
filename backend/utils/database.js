@@ -7,6 +7,7 @@
 // "quentes" da mesma instância.
 import pkg from 'pg';
 const { Pool } = pkg;
+import { detectDocumentType } from './document-type.js';
 
 let pool = null;
 
@@ -128,7 +129,7 @@ class Database {
     }
 
     // Summary operations
-    async createSummary(summaryId, userId, success, duration, textLength, url, summary, title = null, providedRatings = null) {
+    async createSummary(summaryId, userId, success, duration, textLength, url, summary, title = null, providedRatings = null, providedDocumentType = null) {
         try {
             console.log(`🗄️ createSummary chamado: summaryId=${summaryId}, userId=${userId}, success=${success}, duration=${duration}, textLength=${textLength}, url=${url}, summary=${summary ? summary.substring(0, 100) + '...' : 'null'}`);
             console.log(`🗄️ Summary content length: ${summary ? summary.length : 0}`);
@@ -139,8 +140,9 @@ class Database {
             
             console.log(`🗄️ Calculated wordCount: ${wordCount}, processingTime: ${processingTime}`);
             
-            // Detectar tipo de documento baseado no conteúdo
-            const documentType = this.detectDocumentType(summary || '');
+            // Preferir o tipo já detetado a montante (sobre o texto original,
+            // mais fiável); recorrer à deteção sobre o resumo como fallback.
+            const documentType = providedDocumentType || detectDocumentType(summary || '');
             
             // Preferir os ratings fornecidos pelo Gemini; recorrer à
             // heurística apenas se não vierem scores válidos.
@@ -210,45 +212,6 @@ class Database {
             });
             throw error;
         }
-    }
-    
-    // Função auxiliar para detectar tipo de documento
-    detectDocumentType(text) {
-        if (!text) return 'unknown';
-        
-        const lowerText = text.toLowerCase();
-        
-        // Palavras-chave para Política de Privacidade
-        const privacyKeywords = [
-            'privacy policy', 'política de privacidade', 'privacidade',
-            'personal data', 'dados pessoais', 'data protection',
-            'cookie policy', 'política de cookies', 'gdpr'
-        ];
-        
-        // Palavras-chave para Termos de Serviço
-        const termsKeywords = [
-            'terms of service', 'termos de serviço', 'terms and conditions',
-            'user agreement', 'contrato de utilizador', 'service agreement',
-            'terms of use', 'condições de uso'
-        ];
-        
-        const privacyCount = privacyKeywords.reduce((count, keyword) => {
-            const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-            return count + (lowerText.match(regex) || []).length;
-        }, 0);
-        
-        const termsCount = termsKeywords.reduce((count, keyword) => {
-            const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-            return count + (lowerText.match(regex) || []).length;
-        }, 0);
-        
-        if (privacyCount > termsCount && privacyCount > 0) {
-            return 'privacy_policy';
-        } else if (termsCount > privacyCount && termsCount > 0) {
-            return 'terms_of_service';
-        }
-        
-        return 'unknown';
     }
     
     // Função auxiliar para atualizar contador de resumos
