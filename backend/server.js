@@ -16,7 +16,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const VERSION = '1.3.0';
+const VERSION = '1.3.1';
 
 // Necessário para o rate limiting/IP correto atrás do proxy da Vercel
 app.set('trust proxy', 1);

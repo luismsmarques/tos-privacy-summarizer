@@ -11,16 +11,5 @@
       "src": "/(.*)",
       "dest": "/server.js"
     }
-  ],
-  "env": {
-    "NODE_ENV": "production",
-    "DATABASE_URL": "./database.sqlite",
-    "RATE_LIMIT_WINDOW_MS": "900000",
-    "RATE_LIMIT_MAX_REQUESTS": "100",
-    "DEFAULT_FREE_CREDITS": "5",
-    "CREDIT_PRICE_CENTS": "100",
-    "FRONTEND_URL": "https://tos-privacy-summarizer.vercel.app",
-    "CORS_ORIGIN": "https://tos-privacy-summarizer.vercel.app",
-    "LOG_LEVEL": "info"
-  }
+  ]
 }
