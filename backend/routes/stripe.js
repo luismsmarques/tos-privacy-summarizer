@@ -2,6 +2,7 @@ import express from 'express';
 import { body, validationResult } from 'express-validator';
 import Stripe from 'stripe';
 import EmailService from '../utils/emailService.js';
+import { logPaymentEvent } from '../utils/audit-logger.js';
 
 const router = express.Router();
 
@@ -152,10 +153,21 @@ router.post('/verify-payment',
             // Creditar de forma idempotente (verify-payment e webhook podem
             // ambos disparar para o mesmo pagamento — só credita uma vez).
             const db = await import('../utils/database.js');
-            const { credited, newBalance } = await db.default.creditUserForPayment(userId, sessionId, credits);
+            const { credited, newBalance } = await db.default.creditUserForPayment(userId, sessionId, credits, {
+                amountCents: Number.isFinite(session.amount_total) ? session.amount_total : Math.round(price * 100),
+                currency: session.currency || 'eur',
+                packageName: packageName
+            });
 
             // Log da transação
             console.log(`Créditos: ${credited ? 'adicionados' : 'já processados'} (${credits}) para ${userId}. Saldo: ${newBalance}`);
+
+            // Auditoria (apenas no primeiro processamento; não bloqueia a resposta)
+            if (credited) {
+                logPaymentEvent('payment_success', userId, price, {
+                    credits, package: packageName, sessionId, currency: session.currency || 'eur', source: 'verify-payment'
+                }).catch((e) => console.error('audit payment_success falhou:', e.message));
+            }
 
             // Enviar email de confirmação (se email disponível)
             try {
@@ -230,8 +242,18 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
                 if (session.payment_status === 'paid' && userId && credits) {
                     // Creditar de forma idempotente (ver verify-payment).
                     const db = await import('../utils/database.js');
-                    const { credited, newBalance } = await db.default.creditUserForPayment(userId, session.id, credits);
+                    const { credited, newBalance } = await db.default.creditUserForPayment(userId, session.id, credits, {
+                        amountCents: Number.isFinite(session.amount_total) ? session.amount_total : Math.round(price * 100),
+                        currency: session.currency || 'eur',
+                        packageName: packageName
+                    });
                     console.log(`✅ Webhook: Créditos ${credited ? 'adicionados' : 'já processados'} para ${userId}. Saldo: ${newBalance}`);
+
+                    if (credited) {
+                        logPaymentEvent('payment_success', userId, price, {
+                            credits, package: packageName, sessionId: session.id, currency: session.currency || 'eur', source: 'webhook'
+                        }).catch((e) => console.error('audit payment_success falhou:', e.message));
+                    }
                     
                     // Enviar email de confirmação
                     try {

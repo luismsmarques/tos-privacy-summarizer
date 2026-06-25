@@ -467,8 +467,13 @@ class Database {
     // Creditar um pagamento de forma idempotente: regista o session_id do
     // Stripe e só adiciona créditos se este pagamento ainda não foi processado.
     // Evita o double-credit (verify-payment + webhook podem ambos disparar).
-    async creditUserForPayment(userId, sessionId, creditsToAdd) {
+    async creditUserForPayment(userId, sessionId, creditsToAdd, meta = {}) {
         await this.ensurePaymentsTable();
+
+        // Metadados de receita (opcionais; persistidos para o dashboard).
+        const amountCents = Number.isFinite(meta.amountCents) ? meta.amountCents : null;
+        const currency = meta.currency || null;
+        const packageName = meta.packageName || null;
 
         // Transação: registar o pagamento E creditar de forma atómica. Se o
         // crédito falhar, o registo é revertido (ROLLBACK) para o retry poder
@@ -478,11 +483,11 @@ class Database {
             await client.query('BEGIN');
 
             const claim = await client.query(`
-                INSERT INTO processed_payments (session_id, user_id, credits)
-                VALUES ($1, $2, $3)
+                INSERT INTO processed_payments (session_id, user_id, credits, amount_cents, currency, package)
+                VALUES ($1, $2, $3, $4, $5, $6)
                 ON CONFLICT (session_id) DO NOTHING
                 RETURNING session_id
-            `, [sessionId, userId, creditsToAdd]);
+            `, [sessionId, userId, creditsToAdd, amountCents, currency, packageName]);
 
             if (claim.rows.length === 0) {
                 // Já processado — não creditar de novo. Ler o saldo pelo MESMO
@@ -526,7 +531,93 @@ class Database {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+        // Colunas de receita acrescentadas mais tarde (idempotente).
+        await this.query(`ALTER TABLE processed_payments ADD COLUMN IF NOT EXISTS amount_cents INTEGER`);
+        await this.query(`ALTER TABLE processed_payments ADD COLUMN IF NOT EXISTS currency TEXT`);
+        await this.query(`ALTER TABLE processed_payments ADD COLUMN IF NOT EXISTS package TEXT`);
         this._paymentsTableReady = true;
+    }
+
+    // --- Custo de API (Gemini) -------------------------------------------
+    // Regista o custo de cada chamada (e os cache hits, com custo 0) para o
+    // dashboard calcular custo, margem e poupança do cache. cost_micros está
+    // em micro-euros (1 EUR = 1.000.000 micros) para preservar precisão.
+    async ensureApiCostsTable() {
+        if (this._apiCostsTableReady) return;
+        await this.query(`
+            CREATE TABLE IF NOT EXISTS api_costs (
+                id            SERIAL PRIMARY KEY,
+                user_id       TEXT,
+                model         TEXT,
+                input_tokens  INTEGER NOT NULL DEFAULT 0,
+                output_tokens INTEGER NOT NULL DEFAULT 0,
+                cost_micros   BIGINT  NOT NULL DEFAULT 0,
+                cached        BOOLEAN NOT NULL DEFAULT false,
+                created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        await this.query(`CREATE INDEX IF NOT EXISTS idx_api_costs_created_at ON api_costs (created_at)`);
+        this._apiCostsTableReady = true;
+    }
+
+    async recordApiCost({ userId = null, model = null, inputTokens = 0, outputTokens = 0, costMicros = 0, cached = false }) {
+        try {
+            await this.ensureApiCostsTable();
+            await this.query(`
+                INSERT INTO api_costs (user_id, model, input_tokens, output_tokens, cost_micros, cached)
+                VALUES ($1, $2, $3, $4, $5, $6)
+            `, [userId, model, Math.round(inputTokens) || 0, Math.round(outputTokens) || 0, Math.round(costMicros) || 0, !!cached]);
+        } catch (error) {
+            console.error('❌ Falha ao registar custo de API:', error.message);
+        }
+    }
+
+    // --- Configurações da aplicação (key-value) --------------------------
+    // Persistência autoritativa e partilhada das settings de administração.
+    // Lidas com cache em memória (TTL curto) para não bater na BD a cada uso.
+    async ensureSettingsTable() {
+        if (this._settingsTableReady) return;
+        await this.query(`
+            CREATE TABLE IF NOT EXISTS app_settings (
+                key        TEXT PRIMARY KEY,
+                value      JSONB,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        this._settingsTableReady = true;
+    }
+
+    async getAllSettings() {
+        const now = Date.now();
+        if (this._settingsCache && this._settingsCache.expires > now) return this._settingsCache.data;
+        await this.ensureSettingsTable();
+        const r = await this.query('SELECT key, value FROM app_settings');
+        const data = {};
+        r.rows.forEach((row) => { data[row.key] = row.value; });
+        this._settingsCache = { data, expires: now + 30000 };
+        return data;
+    }
+
+    async saveSettings(obj) {
+        await this.ensureSettingsTable();
+        for (const [k, v] of Object.entries(obj || {})) {
+            await this.query(`
+                INSERT INTO app_settings (key, value, updated_at)
+                VALUES ($1, $2, NOW())
+                ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = NOW()
+            `, [k, JSON.stringify(v)]);
+        }
+        this._settingsCache = null; // invalidar cache
+        return this.getAllSettings();
+    }
+
+    async getSetting(key, fallback = null) {
+        try {
+            const all = await this.getAllSettings();
+            return (all && Object.prototype.hasOwnProperty.call(all, key)) ? all[key] : fallback;
+        } catch (error) {
+            return fallback;
+        }
     }
 
     // Obter créditos do utilizador

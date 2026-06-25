@@ -108,7 +108,10 @@ router.post('/proxy', [
         const contentHash = crypto.createHash('sha256').update(`${language}\n${text}`).digest('hex');
 
         let summaryJson, ratings, documentType;
-        const cached = await db.getCachedSummary(contentHash);
+        let apiUsage = null; // preenchido apenas em cache miss (chamada real)
+        // Cache de resumos pode ser desligado nas configurações do dashboard.
+        const cacheEnabled = await db.getSetting('cacheEnabled', true) !== false;
+        const cached = cacheEnabled ? await db.getCachedSummary(contentHash) : null;
 
         if (cached) {
             // Cache hit — servir sem chamar o Gemini.
@@ -123,7 +126,9 @@ router.post('/proxy', [
             console.log('⚡ Cache hit — resumo servido sem chamar a API Gemini');
         } else {
             // Cache miss — chamar a API Gemini.
-            const geminiResponse = await callGeminiAPI(text, language);
+            const gem = await callGeminiAPI(text, language);
+            const geminiResponse = gem.text;
+            apiUsage = gem.usage;
             success = true;
 
             // Detectar tipo de documento baseado no conteúdo
@@ -137,8 +142,10 @@ router.post('/proxy', [
             // antes a double-encodava.
             summaryJson = stripClassificacao(geminiResponse);
 
-            // Guardar no cache para pedidos futuros idênticos.
-            await db.saveCachedSummary(contentHash, language, summaryJson, ratings, documentType);
+            // Guardar no cache para pedidos futuros idênticos (se ativado).
+            if (cacheEnabled) {
+                await db.saveCachedSummary(contentHash, language, summaryJson, ratings, documentType);
+            }
         }
 
         // Registrar resumo no analytics
@@ -152,6 +159,18 @@ router.post('/proxy', [
             console.error('❌ Erro ao registrar resumo no analytics:', error);
             // Não falhar o request por causa do analytics
         }
+
+        // Registar custo de API (cache hit = custo 0; serve para medir poupança).
+        // Fire-and-forget para não atrasar a resposta.
+        const isCacheHit = !!cached;
+        db.recordApiCost({
+            userId,
+            model: isCacheHit ? null : (apiUsage?.model || null),
+            inputTokens: isCacheHit ? 0 : (apiUsage?.promptTokens || 0),
+            outputTokens: isCacheHit ? 0 : (apiUsage?.candidatesTokens || 0),
+            costMicros: isCacheHit ? 0 : computeGeminiCostMicros(apiUsage),
+            cached: isCacheHit
+        }).catch((e) => console.error('recordApiCost falhou:', e.message));
         
         // Decrementar créditos se for API compartilhada
         if (apiType === 'shared') {
@@ -475,11 +494,32 @@ ${textToSummarize}`;
 
         // Limpar blocos de código Markdown se presentes
         responseText = cleanMarkdownCodeBlocks(responseText);
-        
-        return responseText;
+
+        // Contagem de tokens para cálculo de custo (pode não vir em alguns erros)
+        const u = data.usageMetadata || {};
+        const usage = {
+            model: GEMINI_MODEL,
+            promptTokens: u.promptTokenCount || 0,
+            candidatesTokens: u.candidatesTokenCount || 0,
+            totalTokens: u.totalTokenCount || 0
+        };
+
+        return { text: responseText, usage };
     } else {
         throw new Error('Resposta inválida da API Gemini');
     }
+}
+
+// Custo da chamada Gemini em micro-euros (1 EUR = 1.000.000 micros).
+// Preços por 1M de tokens configuráveis via env (aproximados por omissão —
+// confirmar com o tarifário atual do Google e ajustar GEMINI_PRICE_*).
+function computeGeminiCostMicros(usage) {
+    const inPerM = parseFloat(process.env.GEMINI_PRICE_INPUT_PER_M ?? '0.30');
+    const outPerM = parseFloat(process.env.GEMINI_PRICE_OUTPUT_PER_M ?? '2.50');
+    const input = usage?.promptTokens || 0;
+    const output = usage?.candidatesTokens || 0;
+    // (tokens / 1e6) * preço_por_milhão * 1e6  ==  tokens * preço_por_milhão
+    return Math.round(input * inPerM + output * outPerM);
 }
 
 // Função para limpar blocos de código Markdown

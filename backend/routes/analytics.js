@@ -1,6 +1,7 @@
 import express from 'express';
 import db from '../utils/database.js';
 import authService from '../utils/auth.js';
+import auditLogger from '../utils/audit-logger.js';
 
 const router = express.Router(); 
 
@@ -708,6 +709,546 @@ router.get('/summaries', async (req, res) => {
       success: false,
       error: 'Erro ao obter dados de resumos: ' + error.message
     });
+  }
+});
+
+// Endpoint consolidado de INSIGHTS reais para a secção Analytics do dashboard.
+// Tudo é derivado da tabela `summaries` (fonte fiável e rica: ratings, tipos,
+// domínios, durações) e de `summary_cache`. Cada sub-query é tolerante a falhas
+// para que um problema pontual de schema não derrube a resposta inteira.
+router.get('/insights', async (req, res) => {
+  try {
+    if (!db.isConnected) {
+      const connected = await db.connect();
+      if (!connected) {
+        return res.status(500).json({ success: false, error: 'Base de dados indisponível' });
+      }
+    }
+
+    // Janela temporal em dias (1..365), default 30.
+    let days = parseInt(req.query.days, 10);
+    if (!Number.isFinite(days) || days < 1) days = 30;
+    if (days > 365) days = 365;
+    const win = [days];
+
+    const safe = async (fn, fallback) => {
+      try { return await fn(); } catch (e) { console.error('insights sub-query falhou:', e.message); return fallback; }
+    };
+
+    const [metricsRow, prevRow, docTypes, ratingsRow, topDomains, daily, hourly, cacheRow] = await Promise.all([
+      // Métricas do período
+      safe(async () => (await db.query(`
+        SELECT
+          COUNT(*)                                            AS total_summaries,
+          COUNT(*) FILTER (WHERE success = true)              AS successful,
+          COUNT(*) FILTER (WHERE success = false)            AS failed,
+          AVG(duration) FILTER (WHERE success = true)         AS avg_duration,
+          COUNT(DISTINCT user_id)                             AS active_users,
+          COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE)  AS today_summaries
+        FROM summaries
+        WHERE created_at >= NOW() - ($1 * INTERVAL '1 day')
+      `, win)).rows[0] || {}, {}),
+
+      // Total do período anterior (igual duração) para variação %
+      safe(async () => (await db.query(`
+        SELECT COUNT(*) AS prev_total
+        FROM summaries
+        WHERE created_at >= NOW() - (2 * $1 * INTERVAL '1 day')
+          AND created_at <  NOW() - ($1 * INTERVAL '1 day')
+      `, win)).rows[0] || {}, {}),
+
+      // Distribuição por tipo de documento (apenas sucessos)
+      safe(async () => (await db.query(`
+        SELECT
+          CASE
+            WHEN COALESCE(type, document_type) = 'terms_of_service' THEN 'Termos de Serviço'
+            WHEN COALESCE(type, document_type) = 'privacy_policy'   THEN 'Políticas de Privacidade'
+            ELSE 'Outros'
+          END AS document_type,
+          COUNT(*) AS count
+        FROM summaries
+        WHERE success = true AND created_at >= NOW() - ($1 * INTERVAL '1 day')
+        GROUP BY 1 ORDER BY count DESC
+      `, win)).rows, []),
+
+      // Ratings médios + distribuição de risco
+      safe(async () => (await db.query(`
+        SELECT
+          AVG(rating_complexidade)                          AS avg_complexidade,
+          AVG(rating_boas_praticas)                         AS avg_boas_praticas,
+          AVG(risk_score)                                   AS avg_risk_score,
+          COUNT(*) FILTER (WHERE risk_score IS NOT NULL)    AS rated_count,
+          COUNT(*) FILTER (WHERE risk_score BETWEEN 1 AND 3) AS risk_low,
+          COUNT(*) FILTER (WHERE risk_score BETWEEN 4 AND 6) AS risk_medium,
+          COUNT(*) FILTER (WHERE risk_score >= 7)            AS risk_high
+        FROM summaries
+        WHERE created_at >= NOW() - ($1 * INTERVAL '1 day')
+      `, win)).rows[0] || {}, {}),
+
+      // Top domínios processados (com risco médio)
+      safe(async () => (await db.query(`
+        SELECT
+          substring(url from '^https?://(?:www\\.)?([^/:?#]+)') AS domain,
+          COUNT(*)         AS count,
+          AVG(risk_score)  AS avg_risk
+        FROM summaries
+        WHERE created_at >= NOW() - ($1 * INTERVAL '1 day')
+          AND url IS NOT NULL AND url <> ''
+        GROUP BY domain
+        HAVING substring(url from '^https?://(?:www\\.)?([^/:?#]+)') IS NOT NULL
+        ORDER BY count DESC
+        LIMIT 10
+      `, win)).rows, []),
+
+      // Atividade diária (série temporal)
+      safe(async () => (await db.query(`
+        SELECT
+          to_char(date_trunc('day', created_at), 'YYYY-MM-DD') AS date,
+          COUNT(*)                                    AS summaries,
+          AVG(duration) FILTER (WHERE success = true) AS avg_duration
+        FROM summaries
+        WHERE created_at >= NOW() - ($1 * INTERVAL '1 day')
+        GROUP BY 1 ORDER BY 1
+      `, win)).rows, []),
+
+      // Atividade por dia-da-semana x hora (heatmap)
+      safe(async () => (await db.query(`
+        SELECT
+          EXTRACT(DOW  FROM created_at)::int AS dow,
+          EXTRACT(HOUR FROM created_at)::int AS hour,
+          COUNT(*)                           AS count
+        FROM summaries
+        WHERE created_at >= NOW() - ($1 * INTERVAL '1 day')
+        GROUP BY 1, 2
+      `, win)).rows, []),
+
+      // Cache persistente (reutilizações vs entradas)
+      safe(async () => (await db.query(`
+        SELECT COALESCE(SUM(hits), 0) AS cache_hits, COUNT(*) AS cache_entries
+        FROM summary_cache
+      `)).rows[0] || {}, {})
+    ]);
+
+    const num = (v) => (v == null ? 0 : Number(v));
+    const total = num(metricsRow.total_summaries);
+    const failed = num(metricsRow.failed);
+    const prevTotal = num(prevRow.prev_total);
+    const cacheHits = num(cacheRow.cache_hits);
+    const cacheEntries = num(cacheRow.cache_entries);
+    const cacheDenom = cacheHits + cacheEntries;
+
+    const documentTypes = {};
+    docTypes.forEach((r) => { documentTypes[r.document_type] = num(r.count); });
+
+    res.json({
+      success: true,
+      range_days: days,
+      metrics: {
+        total_summaries: total,
+        successful: num(metricsRow.successful),
+        failed,
+        success_rate: total > 0 ? +(num(metricsRow.successful) / total * 100).toFixed(1) : 0,
+        failure_rate: total > 0 ? +(failed / total * 100).toFixed(2) : 0,
+        avg_duration_ms: Math.round(num(metricsRow.avg_duration)),
+        active_users: num(metricsRow.active_users),
+        today_summaries: num(metricsRow.today_summaries),
+        cache_hit_rate: cacheDenom > 0 ? +(cacheHits / cacheDenom * 100).toFixed(1) : 0,
+        cache_hits: cacheHits,
+        cache_entries: cacheEntries
+      },
+      comparison: {
+        summaries_change_pct: prevTotal > 0 ? +(((total - prevTotal) / prevTotal) * 100).toFixed(1) : null
+      },
+      document_types: documentTypes,
+      ratings: {
+        avg_complexidade: ratingsRow.avg_complexidade != null ? +Number(ratingsRow.avg_complexidade).toFixed(1) : null,
+        avg_boas_praticas: ratingsRow.avg_boas_praticas != null ? +Number(ratingsRow.avg_boas_praticas).toFixed(1) : null,
+        avg_risk_score: ratingsRow.avg_risk_score != null ? +Number(ratingsRow.avg_risk_score).toFixed(1) : null,
+        rated_count: num(ratingsRow.rated_count)
+      },
+      risk_distribution: {
+        low: num(ratingsRow.risk_low),
+        medium: num(ratingsRow.risk_medium),
+        high: num(ratingsRow.risk_high)
+      },
+      top_domains: topDomains.map((r) => ({
+        domain: r.domain,
+        count: num(r.count),
+        avg_risk: r.avg_risk != null ? +Number(r.avg_risk).toFixed(1) : null
+      })),
+      daily_activity: daily.map((r) => ({
+        date: r.date,
+        summaries: num(r.summaries),
+        avg_duration: Math.round(num(r.avg_duration))
+      })),
+      hourly_activity: hourly.map((r) => ({ dow: num(r.dow), hour: num(r.hour), count: num(r.count) })),
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Erro ao obter insights:', error);
+    res.status(500).json({ success: false, error: 'Erro ao obter insights: ' + error.message });
+  }
+});
+
+// Endpoint de RECEITA & CRÉDITOS para o dashboard admin.
+// Receita vem de processed_payments (amount_cents). Para pagamentos antigos
+// sem montante guardado, estima-se a 1€/crédito e sinaliza-se como estimativa.
+// Créditos consumidos derivam dos resumos com sucesso (o consumo decrementa
+// 1 crédito por resumo e não é registado em credits_history).
+router.get('/revenue', async (req, res) => {
+  try {
+    if (!db.isConnected) {
+      const connected = await db.connect();
+      if (!connected) {
+        return res.status(500).json({ success: false, error: 'Base de dados indisponível' });
+      }
+    }
+    // Garante as tabelas/colunas de receita e custo antes de consultar.
+    await db.ensurePaymentsTable();
+    await db.ensureApiCostsTable();
+
+    let days = parseInt(req.query.days, 10);
+    if (!Number.isFinite(days) || days < 1) days = 30;
+    if (days > 365) days = 365;
+    const win = [days];
+
+    const safe = async (fn, fallback) => {
+      try { return await fn(); } catch (e) { console.error('revenue sub-query falhou:', e.message); return fallback; }
+    };
+
+    // Expressão de receita por linha, com fallback para linhas legadas.
+    const REV = `COALESCE(amount_cents, credits * 100)`;
+
+    const [periodRow, globalRow, byPackage, daily, topBuyers, recent, consumedRow, costRow, dailyCost] = await Promise.all([
+      safe(async () => (await db.query(`
+        SELECT
+          COUNT(*)                          AS payments,
+          COALESCE(SUM(${REV}), 0)          AS revenue_cents,
+          COALESCE(SUM(credits), 0)         AS credits_sold,
+          COUNT(*) FILTER (WHERE amount_cents IS NULL) AS legacy_rows,
+          COUNT(DISTINCT user_id)           AS paying_users
+        FROM processed_payments
+        WHERE created_at >= NOW() - ($1 * INTERVAL '1 day')
+      `, win)).rows[0] || {}, {}),
+
+      safe(async () => (await db.query(`
+        SELECT
+          (SELECT COUNT(*) FROM users)                                    AS total_users,
+          (SELECT COUNT(DISTINCT user_id) FROM processed_payments)        AS paying_users_all,
+          (SELECT COALESCE(SUM(credits), 0) FROM users)                   AS outstanding_credits,
+          (SELECT COALESCE(SUM(${REV}), 0) FROM processed_payments)       AS revenue_all_cents,
+          (SELECT COUNT(*) FROM processed_payments)                       AS payments_all
+      `)).rows[0] || {}, {}),
+
+      safe(async () => (await db.query(`
+        SELECT COALESCE(package, '(desconhecido)') AS package,
+               COUNT(*)                  AS payments,
+               COALESCE(SUM(${REV}), 0)  AS revenue_cents,
+               COALESCE(SUM(credits), 0) AS credits
+        FROM processed_payments
+        WHERE created_at >= NOW() - ($1 * INTERVAL '1 day')
+        GROUP BY 1 ORDER BY revenue_cents DESC
+      `, win)).rows, []),
+
+      safe(async () => (await db.query(`
+        SELECT to_char(date_trunc('day', created_at), 'YYYY-MM-DD') AS date,
+               COUNT(*)                  AS payments,
+               COALESCE(SUM(${REV}), 0)  AS revenue_cents
+        FROM processed_payments
+        WHERE created_at >= NOW() - ($1 * INTERVAL '1 day')
+        GROUP BY 1 ORDER BY 1
+      `, win)).rows, []),
+
+      safe(async () => (await db.query(`
+        SELECT user_id,
+               COUNT(*)                  AS payments,
+               COALESCE(SUM(${REV}), 0)  AS revenue_cents,
+               COALESCE(SUM(credits), 0) AS credits
+        FROM processed_payments
+        WHERE created_at >= NOW() - ($1 * INTERVAL '1 day')
+        GROUP BY user_id ORDER BY revenue_cents DESC LIMIT 10
+      `, win)).rows, []),
+
+      safe(async () => (await db.query(`
+        SELECT session_id, user_id, credits, amount_cents, currency, package, created_at
+        FROM processed_payments
+        ORDER BY created_at DESC LIMIT 20
+      `)).rows, []),
+
+      safe(async () => (await db.query(`
+        SELECT COUNT(*) AS credits_consumed
+        FROM summaries
+        WHERE success = true AND created_at >= NOW() - ($1 * INTERVAL '1 day')
+      `, win)).rows[0] || {}, {}),
+
+      // Custo de API no período (chamadas reais vs cache hits)
+      safe(async () => (await db.query(`
+        SELECT
+          COALESCE(SUM(cost_micros) FILTER (WHERE cached = false), 0) AS cost_micros,
+          COUNT(*) FILTER (WHERE cached = false)                      AS api_calls,
+          COUNT(*) FILTER (WHERE cached = true)                       AS cache_hits,
+          COALESCE(SUM(input_tokens), 0)                              AS input_tokens,
+          COALESCE(SUM(output_tokens), 0)                             AS output_tokens
+        FROM api_costs
+        WHERE created_at >= NOW() - ($1 * INTERVAL '1 day')
+      `, win)).rows[0] || {}, {}),
+
+      // Série diária de custo
+      safe(async () => (await db.query(`
+        SELECT to_char(date_trunc('day', created_at), 'YYYY-MM-DD') AS date,
+               COALESCE(SUM(cost_micros) FILTER (WHERE cached = false), 0) AS cost_micros
+        FROM api_costs
+        WHERE created_at >= NOW() - ($1 * INTERVAL '1 day')
+        GROUP BY 1 ORDER BY 1
+      `, win)).rows, [])
+    ]);
+
+    const num = (v) => (v == null ? 0 : Number(v));
+    const revenueCents = num(periodRow.revenue_cents);
+    const payments = num(periodRow.payments);
+    const totalUsers = num(globalRow.total_users);
+    const payingAll = num(globalRow.paying_users_all);
+    const revenueAll = num(globalRow.revenue_all_cents);
+
+    // Custo & margem (cost em micro-euros: 1 cêntimo = 10.000 micros)
+    const costMicros = num(costRow.cost_micros);
+    const apiCalls = num(costRow.api_calls);
+    const cacheHits = num(costRow.cache_hits);
+    const costCents = costMicros / 10000;
+    const avgCostPerCallMicros = apiCalls > 0 ? costMicros / apiCalls : 0;
+    const cacheSavingsMicros = Math.round(cacheHits * avgCostPerCallMicros);
+    const marginCents = +(revenueCents - costCents).toFixed(2);
+
+    res.json({
+      success: true,
+      range_days: days,
+      currency: 'EUR',
+      revenue_estimated: num(periodRow.legacy_rows) > 0,
+      metrics: {
+        revenue_cents: revenueCents,
+        payments,
+        avg_order_cents: payments > 0 ? Math.round(revenueCents / payments) : 0,
+        credits_sold: num(periodRow.credits_sold),
+        credits_consumed: num(consumedRow.credits_consumed),
+        paying_users: num(periodRow.paying_users),
+        paying_users_all: payingAll,
+        total_users: totalUsers,
+        conversion_rate: totalUsers > 0 ? +((payingAll / totalUsers) * 100).toFixed(1) : 0,
+        arppu_cents: payingAll > 0 ? Math.round(revenueAll / payingAll) : 0,
+        arpu_cents: totalUsers > 0 ? Math.round(revenueAll / totalUsers) : 0,
+        outstanding_credits: num(globalRow.outstanding_credits),
+        revenue_all_cents: revenueAll,
+        payments_all: num(globalRow.payments_all),
+        // Custo & margem (cêntimos de EUR)
+        cost_cents: +costCents.toFixed(2),
+        margin_cents: marginCents,
+        margin_pct: revenueCents > 0 ? +((marginCents / revenueCents) * 100).toFixed(1) : null,
+        api_calls: apiCalls,
+        cache_hits: cacheHits,
+        avg_cost_per_call_cents: +((avgCostPerCallMicros) / 10000).toFixed(3),
+        cache_savings_cents: +(cacheSavingsMicros / 10000).toFixed(2),
+        input_tokens: num(costRow.input_tokens),
+        output_tokens: num(costRow.output_tokens)
+      },
+      daily_cost: dailyCost.map((r) => ({ date: r.date, cost_cents: num(r.cost_micros) / 10000 })),
+      by_package: byPackage.map((r) => ({
+        package: r.package, payments: num(r.payments), revenue_cents: num(r.revenue_cents), credits: num(r.credits)
+      })),
+      daily_revenue: daily.map((r) => ({ date: r.date, payments: num(r.payments), revenue_cents: num(r.revenue_cents) })),
+      top_buyers: topBuyers.map((r) => ({
+        user_id: r.user_id, payments: num(r.payments), revenue_cents: num(r.revenue_cents), credits: num(r.credits)
+      })),
+      recent_payments: recent.map((r) => ({
+        session_id: r.session_id, user_id: r.user_id, credits: num(r.credits),
+        amount_cents: r.amount_cents != null ? num(r.amount_cents) : null,
+        currency: r.currency, package: r.package, created_at: r.created_at
+      })),
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Erro ao obter receita:', error);
+    res.status(500).json({ success: false, error: 'Erro ao obter receita: ' + error.message });
+  }
+});
+
+// ===== CONFIGURAÇÕES (admin) =====
+// Persistência autoritativa das settings de administração. Apenas chaves
+// na whitelist são aceites (evita guardar segredos como a chave da API).
+const SETTINGS_WHITELIST = [
+  'sessionTimeout', 'accessLogs', 'autoBackup', 'encryption',
+  'backupFrequency', 'backupRetention', 'debugMode', 'logLevel',
+  'performanceMonitoring', 'cacheEnabled', 'apiTimeout', 'retryAttempts'
+];
+
+router.get('/settings', async (req, res) => {
+  try {
+    if (!db.isConnected) await db.connect();
+    const data = await db.getAllSettings();
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('❌ Erro ao obter settings:', error);
+    res.status(500).json({ success: false, error: 'Erro ao obter configurações: ' + error.message });
+  }
+});
+
+router.put('/settings', async (req, res) => {
+  try {
+    if (!db.isConnected) await db.connect();
+    const incoming = (req.body && typeof req.body === 'object') ? req.body : {};
+    const clean = {};
+    for (const k of SETTINGS_WHITELIST) {
+      if (Object.prototype.hasOwnProperty.call(incoming, k)) clean[k] = incoming[k];
+    }
+    const data = await db.saveSettings(clean);
+    auditLogger.logUserAction(req.user?.userId || 'admin', 'settings_update', { keys: Object.keys(clean) }, {})
+      .catch((e) => console.error('audit settings_update falhou:', e.message));
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('❌ Erro ao guardar settings:', error);
+    res.status(500).json({ success: false, error: 'Erro ao guardar configurações: ' + error.message });
+  }
+});
+
+// ===== AUDITORIA & SEGURANÇA =====
+
+// Resumo de auditoria: totais, distribuição por tipo/severidade, série diária
+// e eventos de segurança recentes. Severidade: 0=DEBUG 1=INFO 2=WARN 3=ERROR 4=CRITICAL.
+router.get('/audit-summary', async (req, res) => {
+  try {
+    if (!db.isConnected) {
+      const connected = await db.connect();
+      if (!connected) return res.status(500).json({ success: false, error: 'Base de dados indisponível' });
+    }
+    await auditLogger.ensureAuditTable();
+
+    let days = parseInt(req.query.days, 10);
+    if (!Number.isFinite(days) || days < 1) days = 7;
+    if (days > 365) days = 365;
+    const win = [days];
+
+    const safe = async (fn, fallback) => {
+      try { return await fn(); } catch (e) { console.error('audit-summary sub-query falhou:', e.message); return fallback; }
+    };
+
+    const [totals, byType, bySeverity, daily, recent] = await Promise.all([
+      safe(async () => (await db.query(`
+        SELECT
+          COUNT(*)                                                AS events,
+          COUNT(*) FILTER (WHERE type = 'security_event')         AS security_events,
+          COUNT(*) FILTER (WHERE action = 'failed_login')         AS failed_logins,
+          COUNT(*) FILTER (WHERE severity >= 4)                   AS critical,
+          COUNT(*) FILTER (WHERE severity = 3)                    AS errors,
+          COUNT(DISTINCT user_id)                                 AS distinct_users
+        FROM audit_logs
+        WHERE timestamp >= NOW() - ($1 * INTERVAL '1 day')
+      `, win)).rows[0] || {}, {}),
+
+      safe(async () => (await db.query(`
+        SELECT type, COUNT(*) AS count
+        FROM audit_logs
+        WHERE timestamp >= NOW() - ($1 * INTERVAL '1 day')
+        GROUP BY type ORDER BY count DESC
+      `, win)).rows, []),
+
+      safe(async () => (await db.query(`
+        SELECT severity, COUNT(*) AS count
+        FROM audit_logs
+        WHERE timestamp >= NOW() - ($1 * INTERVAL '1 day')
+        GROUP BY severity ORDER BY severity
+      `, win)).rows, []),
+
+      safe(async () => (await db.query(`
+        SELECT to_char(date_trunc('day', timestamp), 'YYYY-MM-DD') AS date, COUNT(*) AS count
+        FROM audit_logs
+        WHERE timestamp >= NOW() - ($1 * INTERVAL '1 day')
+        GROUP BY 1 ORDER BY 1
+      `, win)).rows, []),
+
+      safe(async () => (await db.query(`
+        SELECT id, type, user_id, action, severity, timestamp, details
+        FROM audit_logs
+        WHERE timestamp >= NOW() - ($1 * INTERVAL '1 day')
+          AND (type IN ('security_event', 'auth_event') OR severity >= 3)
+        ORDER BY timestamp DESC LIMIT 10
+      `, win)).rows, [])
+    ]);
+
+    const num = (v) => (v == null ? 0 : Number(v));
+    res.json({
+      success: true,
+      range_days: days,
+      totals: {
+        events: num(totals.events),
+        security_events: num(totals.security_events),
+        failed_logins: num(totals.failed_logins),
+        critical: num(totals.critical),
+        errors: num(totals.errors),
+        distinct_users: num(totals.distinct_users)
+      },
+      by_type: byType.map((r) => ({ type: r.type, count: num(r.count) })),
+      by_severity: bySeverity.map((r) => ({ severity: num(r.severity), count: num(r.count) })),
+      daily: daily.map((r) => ({ date: r.date, count: num(r.count) })),
+      recent_security: recent,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Erro ao obter audit-summary:', error);
+    res.status(500).json({ success: false, error: 'Erro ao obter resumo de auditoria: ' + error.message });
+  }
+});
+
+// Lista filtrável e paginada de eventos de auditoria.
+router.get('/audit-logs', async (req, res) => {
+  try {
+    if (!db.isConnected) {
+      const connected = await db.connect();
+      if (!connected) return res.status(500).json({ success: false, error: 'Base de dados indisponível' });
+    }
+    await auditLogger.ensureAuditTable();
+
+    const { type, action, user_id } = req.query;
+    let minSeverity = parseInt(req.query.severity, 10);
+    let days = parseInt(req.query.days, 10);
+    let limit = parseInt(req.query.limit, 10);
+    let offset = parseInt(req.query.offset, 10);
+    if (!Number.isFinite(days) || days < 1) days = 30;
+    if (days > 365) days = 365;
+    if (!Number.isFinite(limit) || limit < 1) limit = 50;
+    if (limit > 200) limit = 200;
+    if (!Number.isFinite(offset) || offset < 0) offset = 0;
+
+    const where = [`timestamp >= NOW() - ($1 * INTERVAL '1 day')`];
+    const params = [days];
+    const add = (clause, val) => { params.push(val); where.push(clause.replace('?', `$${params.length}`)); };
+    if (type) add('type = ?', type);
+    if (Number.isFinite(minSeverity)) add('severity >= ?', minSeverity);
+    if (action) add('action ILIKE ?', `%${action}%`);
+    if (user_id) add('user_id ILIKE ?', `%${user_id}%`);
+    const whereSql = where.join(' AND ');
+
+    const totalRow = await db.query(`SELECT COUNT(*) AS total FROM audit_logs WHERE ${whereSql}`, params);
+    const total = Number(totalRow.rows[0]?.total || 0);
+
+    const pageParams = params.slice();
+    pageParams.push(limit); const limitIdx = pageParams.length;
+    pageParams.push(offset); const offsetIdx = pageParams.length;
+    const rows = await db.query(`
+      SELECT id, type, user_id, action, table_name, record_id,
+             old_values, new_values, details, metadata, severity, timestamp
+      FROM audit_logs
+      WHERE ${whereSql}
+      ORDER BY timestamp DESC
+      LIMIT $${limitIdx} OFFSET $${offsetIdx}
+    `, pageParams);
+
+    res.json({
+      success: true,
+      data: rows.rows,
+      pagination: { total, limit, offset, hasMore: offset + rows.rows.length < total }
+    });
+  } catch (error) {
+    console.error('❌ Erro ao obter audit-logs:', error);
+    res.status(500).json({ success: false, error: 'Erro ao obter logs de auditoria: ' + error.message });
   }
 });
 
