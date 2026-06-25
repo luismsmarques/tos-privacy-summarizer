@@ -2,6 +2,7 @@ import express from 'express';
 import { body, validationResult } from 'express-validator';
 import Stripe from 'stripe';
 import EmailService from '../utils/emailService.js';
+import { logPaymentEvent } from '../utils/audit-logger.js';
 
 const router = express.Router();
 
@@ -161,6 +162,13 @@ router.post('/verify-payment',
             // Log da transação
             console.log(`Créditos: ${credited ? 'adicionados' : 'já processados'} (${credits}) para ${userId}. Saldo: ${newBalance}`);
 
+            // Auditoria (apenas no primeiro processamento; não bloqueia a resposta)
+            if (credited) {
+                logPaymentEvent('payment_success', userId, price, {
+                    credits, package: packageName, sessionId, currency: session.currency || 'eur', source: 'verify-payment'
+                }).catch((e) => console.error('audit payment_success falhou:', e.message));
+            }
+
             // Enviar email de confirmação (se email disponível)
             try {
                 const userEmail = session.customer_details?.email || session.customer_email;
@@ -240,6 +248,12 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
                         packageName: packageName
                     });
                     console.log(`✅ Webhook: Créditos ${credited ? 'adicionados' : 'já processados'} para ${userId}. Saldo: ${newBalance}`);
+
+                    if (credited) {
+                        logPaymentEvent('payment_success', userId, price, {
+                            credits, package: packageName, sessionId: session.id, currency: session.currency || 'eur', source: 'webhook'
+                        }).catch((e) => console.error('audit payment_success falhou:', e.message));
+                    }
                     
                     // Enviar email de confirmação
                     try {

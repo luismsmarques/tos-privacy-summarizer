@@ -1,6 +1,7 @@
 import express from 'express';
 import db from '../utils/database.js';
 import authService from '../utils/auth.js';
+import auditLogger from '../utils/audit-logger.js';
 
 const router = express.Router(); 
 
@@ -1025,6 +1026,149 @@ router.get('/revenue', async (req, res) => {
   } catch (error) {
     console.error('❌ Erro ao obter receita:', error);
     res.status(500).json({ success: false, error: 'Erro ao obter receita: ' + error.message });
+  }
+});
+
+// ===== AUDITORIA & SEGURANÇA =====
+
+// Resumo de auditoria: totais, distribuição por tipo/severidade, série diária
+// e eventos de segurança recentes. Severidade: 0=DEBUG 1=INFO 2=WARN 3=ERROR 4=CRITICAL.
+router.get('/audit-summary', async (req, res) => {
+  try {
+    if (!db.isConnected) {
+      const connected = await db.connect();
+      if (!connected) return res.status(500).json({ success: false, error: 'Base de dados indisponível' });
+    }
+    await auditLogger.ensureAuditTable();
+
+    let days = parseInt(req.query.days, 10);
+    if (!Number.isFinite(days) || days < 1) days = 7;
+    if (days > 365) days = 365;
+    const win = [days];
+
+    const safe = async (fn, fallback) => {
+      try { return await fn(); } catch (e) { console.error('audit-summary sub-query falhou:', e.message); return fallback; }
+    };
+
+    const [totals, byType, bySeverity, daily, recent] = await Promise.all([
+      safe(async () => (await db.query(`
+        SELECT
+          COUNT(*)                                                AS events,
+          COUNT(*) FILTER (WHERE type = 'security_event')         AS security_events,
+          COUNT(*) FILTER (WHERE action = 'failed_login')         AS failed_logins,
+          COUNT(*) FILTER (WHERE severity >= 4)                   AS critical,
+          COUNT(*) FILTER (WHERE severity = 3)                    AS errors,
+          COUNT(DISTINCT user_id)                                 AS distinct_users
+        FROM audit_logs
+        WHERE timestamp >= NOW() - ($1 * INTERVAL '1 day')
+      `, win)).rows[0] || {}, {}),
+
+      safe(async () => (await db.query(`
+        SELECT type, COUNT(*) AS count
+        FROM audit_logs
+        WHERE timestamp >= NOW() - ($1 * INTERVAL '1 day')
+        GROUP BY type ORDER BY count DESC
+      `, win)).rows, []),
+
+      safe(async () => (await db.query(`
+        SELECT severity, COUNT(*) AS count
+        FROM audit_logs
+        WHERE timestamp >= NOW() - ($1 * INTERVAL '1 day')
+        GROUP BY severity ORDER BY severity
+      `, win)).rows, []),
+
+      safe(async () => (await db.query(`
+        SELECT to_char(date_trunc('day', timestamp), 'YYYY-MM-DD') AS date, COUNT(*) AS count
+        FROM audit_logs
+        WHERE timestamp >= NOW() - ($1 * INTERVAL '1 day')
+        GROUP BY 1 ORDER BY 1
+      `, win)).rows, []),
+
+      safe(async () => (await db.query(`
+        SELECT id, type, user_id, action, severity, timestamp, details
+        FROM audit_logs
+        WHERE timestamp >= NOW() - ($1 * INTERVAL '1 day')
+          AND (type IN ('security_event', 'auth_event') OR severity >= 3)
+        ORDER BY timestamp DESC LIMIT 10
+      `, win)).rows, [])
+    ]);
+
+    const num = (v) => (v == null ? 0 : Number(v));
+    res.json({
+      success: true,
+      range_days: days,
+      totals: {
+        events: num(totals.events),
+        security_events: num(totals.security_events),
+        failed_logins: num(totals.failed_logins),
+        critical: num(totals.critical),
+        errors: num(totals.errors),
+        distinct_users: num(totals.distinct_users)
+      },
+      by_type: byType.map((r) => ({ type: r.type, count: num(r.count) })),
+      by_severity: bySeverity.map((r) => ({ severity: num(r.severity), count: num(r.count) })),
+      daily: daily.map((r) => ({ date: r.date, count: num(r.count) })),
+      recent_security: recent,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Erro ao obter audit-summary:', error);
+    res.status(500).json({ success: false, error: 'Erro ao obter resumo de auditoria: ' + error.message });
+  }
+});
+
+// Lista filtrável e paginada de eventos de auditoria.
+router.get('/audit-logs', async (req, res) => {
+  try {
+    if (!db.isConnected) {
+      const connected = await db.connect();
+      if (!connected) return res.status(500).json({ success: false, error: 'Base de dados indisponível' });
+    }
+    await auditLogger.ensureAuditTable();
+
+    const { type, action, user_id } = req.query;
+    let minSeverity = parseInt(req.query.severity, 10);
+    let days = parseInt(req.query.days, 10);
+    let limit = parseInt(req.query.limit, 10);
+    let offset = parseInt(req.query.offset, 10);
+    if (!Number.isFinite(days) || days < 1) days = 30;
+    if (days > 365) days = 365;
+    if (!Number.isFinite(limit) || limit < 1) limit = 50;
+    if (limit > 200) limit = 200;
+    if (!Number.isFinite(offset) || offset < 0) offset = 0;
+
+    const where = [`timestamp >= NOW() - ($1 * INTERVAL '1 day')`];
+    const params = [days];
+    const add = (clause, val) => { params.push(val); where.push(clause.replace('?', `$${params.length}`)); };
+    if (type) add('type = ?', type);
+    if (Number.isFinite(minSeverity)) add('severity >= ?', minSeverity);
+    if (action) add('action ILIKE ?', `%${action}%`);
+    if (user_id) add('user_id ILIKE ?', `%${user_id}%`);
+    const whereSql = where.join(' AND ');
+
+    const totalRow = await db.query(`SELECT COUNT(*) AS total FROM audit_logs WHERE ${whereSql}`, params);
+    const total = Number(totalRow.rows[0]?.total || 0);
+
+    const pageParams = params.slice();
+    pageParams.push(limit); const limitIdx = pageParams.length;
+    pageParams.push(offset); const offsetIdx = pageParams.length;
+    const rows = await db.query(`
+      SELECT id, type, user_id, action, table_name, record_id,
+             old_values, new_values, details, metadata, severity, timestamp
+      FROM audit_logs
+      WHERE ${whereSql}
+      ORDER BY timestamp DESC
+      LIMIT $${limitIdx} OFFSET $${offsetIdx}
+    `, pageParams);
+
+    res.json({
+      success: true,
+      data: rows.rows,
+      pagination: { total, limit, offset, hasMore: offset + rows.rows.length < total }
+    });
+  } catch (error) {
+    console.error('❌ Erro ao obter audit-logs:', error);
+    res.status(500).json({ success: false, error: 'Erro ao obter logs de auditoria: ' + error.message });
   }
 });
 

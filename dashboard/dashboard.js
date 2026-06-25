@@ -815,6 +815,7 @@ class Dashboard {
             'summaries': 'Resumos',
             'revenue': 'Receita',
             'analytics': 'Analytics',
+            'audit': 'Auditoria & Segurança',
             'settings': 'Configurações'
         };
         pageTitle.textContent = titles[section] || 'Dashboard';
@@ -829,6 +830,8 @@ class Dashboard {
         } else if (section === 'revenue') {
             // loadRevenueData vive no closure do DOMContentLoaded; exposto em window.
             if (typeof window.__loadRevenue === 'function') window.__loadRevenue();
+        } else if (section === 'audit') {
+            if (typeof window.__loadAudit === 'function') window.__loadAudit();
         }
     }
 
@@ -2502,6 +2505,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Inicializar receita
     initializeRevenue();
 
+    // Inicializar auditoria
+    initializeAudit();
+
     // ===== Secção Receita & Créditos =====
     const eur = (cents) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format((cents || 0) / 100);
 
@@ -2638,6 +2644,196 @@ document.addEventListener('DOMContentLoaded', () => {
     function shortId(id) {
         if (!id) return '—';
         return id.length > 16 ? id.slice(0, 10) + '…' + id.slice(-4) : id;
+    }
+
+    // ===== Secção Auditoria & Segurança =====
+    const AUDIT_SEVERITY = {
+        0: { name: 'DEBUG', bg: '#9e9e9e' },
+        1: { name: 'INFO', bg: '#1976d2' },
+        2: { name: 'WARN', bg: '#f5a623' },
+        3: { name: 'ERROR', bg: '#e64a19' },
+        4: { name: 'CRITICAL', bg: '#ba1a1a' }
+    };
+    const AUDIT_TYPES = {
+        auth_event: 'Autenticação', security_event: 'Segurança', payment_event: 'Pagamentos',
+        data_change: 'Alteração', user_action: 'Ação', api_request: 'API', system_event: 'Sistema'
+    };
+    const escAudit = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+    function aRenderAuditChart(key, id, config) {
+        window.__auditCharts = window.__auditCharts || {};
+        const ctx = document.querySelector('#audit-section #' + id);
+        if (!ctx) return;
+        if (window.__auditCharts[key]) window.__auditCharts[key].destroy();
+        window.__auditCharts[key] = new Chart(ctx, config);
+    }
+
+    function auditFilters() {
+        return {
+            days: document.getElementById('auditTimeRange')?.value || '7',
+            type: document.getElementById('auditTypeFilter')?.value || '',
+            sev: document.getElementById('auditSeverityFilter')?.value || '',
+            action: (document.getElementById('auditActionFilter')?.value || '').trim(),
+            user: (document.getElementById('auditUserFilter')?.value || '').trim()
+        };
+    }
+
+    function initializeAudit() {
+        document.getElementById('refreshAuditBtn')?.addEventListener('click', () => loadAudit());
+        document.getElementById('auditTimeRange')?.addEventListener('change', () => loadAudit());
+        ['auditTypeFilter', 'auditSeverityFilter'].forEach((id) =>
+            document.getElementById(id)?.addEventListener('change', () => loadAuditLogs(true)));
+        let t;
+        ['auditActionFilter', 'auditUserFilter'].forEach((id) =>
+            document.getElementById(id)?.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => loadAuditLogs(true), 400); }));
+        window.__auditState = { offset: 0, limit: 50 };
+        window.__loadAudit = loadAudit;
+    }
+
+    async function loadAudit() {
+        window.__auditState.offset = 0;
+        await Promise.all([loadAuditSummary(), loadAuditLogs(true)]);
+    }
+
+    async function loadAuditSummary() {
+        try {
+            const days = auditFilters().days;
+            const d = await window.dashboard.fetchData(`/api/analytics/audit-summary?days=${days}`);
+            const t = (d && d.totals) || {};
+            const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+            set('auditTotalEvents', Number(t.events || 0).toLocaleString('pt-PT'));
+            set('auditSecurityEvents', Number(t.security_events || 0).toLocaleString('pt-PT'));
+            set('auditFailedLogins', Number(t.failed_logins || 0).toLocaleString('pt-PT'));
+            set('auditCritical', Number(t.critical || 0).toLocaleString('pt-PT'));
+
+            // Eventos ao longo do tempo
+            const daily = d.daily || [];
+            aRenderAuditChart('auditDaily', 'auditDailyChart', {
+                type: 'line',
+                data: {
+                    labels: daily.map((x) => new Date(x.date + 'T00:00:00').toLocaleDateString('pt-PT', { month: 'short', day: 'numeric' })),
+                    datasets: [{ label: 'Eventos', data: daily.map((x) => x.count || 0), borderColor: 'rgb(103,80,164)', backgroundColor: 'rgba(103,80,164,0.1)', tension: 0.4, fill: true }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } }
+            });
+
+            // Por tipo
+            const byType = d.by_type || [];
+            aRenderAuditChart('auditType', 'auditTypeChart', {
+                type: 'doughnut',
+                data: {
+                    labels: byType.length ? byType.map((x) => AUDIT_TYPES[x.type] || x.type) : ['Sem dados'],
+                    datasets: [{ data: byType.length ? byType.map((x) => x.count) : [1], backgroundColor: ['rgb(103,80,164)', 'rgb(125,82,96)', 'rgb(98,91,113)', 'rgb(70,110,160)', 'rgb(56,142,60)', 'rgb(245,166,35)', 'rgb(186,26,26)'], borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+
+            // Por severidade
+            const bySev = d.by_severity || [];
+            aRenderAuditChart('auditSeverity', 'auditSeverityChart', {
+                type: 'bar',
+                data: {
+                    labels: bySev.map((x) => AUDIT_SEVERITY[x.severity]?.name || x.severity),
+                    datasets: [{ label: 'Eventos', data: bySev.map((x) => x.count), backgroundColor: bySev.map((x) => AUDIT_SEVERITY[x.severity]?.bg || '#999'), borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+            });
+        } catch (err) {
+            console.error('❌ Erro ao carregar resumo de auditoria:', err);
+        }
+    }
+
+    async function loadAuditLogs(reset) {
+        try {
+            if (reset) window.__auditState.offset = 0;
+            const f = auditFilters();
+            const p = new URLSearchParams({ days: f.days, limit: String(window.__auditState.limit), offset: String(window.__auditState.offset) });
+            if (f.type) p.set('type', f.type);
+            if (f.sev) p.set('severity', f.sev);
+            if (f.action) p.set('action', f.action);
+            if (f.user) p.set('user_id', f.user);
+            const resp = await window.dashboard.fetchData(`/api/analytics/audit-logs?${p.toString()}`);
+            renderAuditTable(resp.data || []);
+            renderAuditPagination(resp.pagination || { total: 0, limit: window.__auditState.limit, offset: 0, hasMore: false });
+        } catch (err) {
+            console.error('❌ Erro ao carregar logs de auditoria:', err);
+            const tb = document.getElementById('auditTableBody');
+            if (tb) tb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px">Não foi possível carregar os logs.</td></tr>';
+        }
+    }
+
+    function renderAuditTable(rows) {
+        const tb = document.getElementById('auditTableBody');
+        if (!tb) return;
+        if (!rows.length) {
+            tb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px">Sem eventos para os filtros selecionados.</td></tr>';
+            window.__auditRows = [];
+            return;
+        }
+        window.__auditRows = rows;
+        tb.innerHTML = rows.map((r, i) => {
+            const sev = AUDIT_SEVERITY[r.severity] || { name: r.severity, bg: '#999' };
+            const dt = new Date(r.timestamp);
+            return `<tr>
+                <td>${dt.toLocaleString('pt-PT')}</td>
+                <td><span class="status-badge" style="background:${sev.bg};color:#fff">${sev.name}</span></td>
+                <td>${escAudit(AUDIT_TYPES[r.type] || r.type)}</td>
+                <td>${escAudit(r.action)}</td>
+                <td><span class="user-id">${escAudit(shortId(r.user_id))}</span></td>
+                <td><button class="action-btn" data-audit-idx="${i}">Ver</button></td>
+            </tr>`;
+        }).join('');
+        tb.querySelectorAll('[data-audit-idx]').forEach((btn) => {
+            btn.addEventListener('click', () => showAuditDetail(window.__auditRows[Number(btn.dataset.auditIdx)]));
+        });
+    }
+
+    function renderAuditPagination(pg) {
+        const el = document.getElementById('auditPagination');
+        if (!el) return;
+        const total = pg.total || 0;
+        const limit = pg.limit || window.__auditState.limit;
+        const offset = pg.offset || 0;
+        if (total === 0) { el.innerHTML = ''; return; }
+        const from = offset + 1;
+        const to = Math.min(offset + limit, total);
+        el.innerHTML = `
+            <button id="auditPrev" ${offset <= 0 ? 'disabled' : ''}>Anterior</button>
+            <span style="padding:0 12px">${from}–${to} de ${total.toLocaleString('pt-PT')}</span>
+            <button id="auditNext" ${pg.hasMore ? '' : 'disabled'}>Seguinte</button>`;
+        document.getElementById('auditPrev')?.addEventListener('click', () => {
+            window.__auditState.offset = Math.max(0, offset - limit); loadAuditLogs(false);
+        });
+        document.getElementById('auditNext')?.addEventListener('click', () => {
+            window.__auditState.offset = offset + limit; loadAuditLogs(false);
+        });
+    }
+
+    function showAuditDetail(row) {
+        if (!row) return;
+        const sev = AUDIT_SEVERITY[row.severity] || { name: row.severity, bg: '#999' };
+        const payload = { details: row.details, old_values: row.old_values, new_values: row.new_values, metadata: row.metadata };
+        const json = escAudit(JSON.stringify(payload, null, 2));
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.innerHTML = `
+            <div class="modal-content large">
+                <div class="modal-header">
+                    <h2>Evento #${escAudit(row.id)} · <span class="status-badge" style="background:${sev.bg};color:#fff">${sev.name}</span></h2>
+                    <button class="modal-close"><span class="material-symbols-outlined">close</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="info-item"><label>Tipo</label><span>${escAudit(AUDIT_TYPES[row.type] || row.type)}</span></div>
+                    <div class="info-item"><label>Ação</label><span>${escAudit(row.action)}</span></div>
+                    <div class="info-item"><label>Utilizador</label><span>${escAudit(row.user_id || '—')}</span></div>
+                    <div class="info-item"><label>Data/Hora</label><span>${new Date(row.timestamp).toLocaleString('pt-PT')}</span></div>
+                    ${row.table_name ? `<div class="info-item"><label>Tabela</label><span>${escAudit(row.table_name)} (${escAudit(row.record_id || '')})</span></div>` : ''}
+                    <h3 style="margin:16px 0 8px">Dados</h3>
+                    <pre style="background:var(--md-sys-color-surface);border:1px solid var(--md-sys-color-outline-variant);border-radius:8px;padding:16px;overflow:auto;max-height:360px;white-space:pre-wrap;word-break:break-word">${json}</pre>
+                </div>
+            </div>`;
+        overlay.addEventListener('click', (e) => { if (e.target === overlay || e.target.closest('.modal-close')) overlay.remove(); });
+        document.body.appendChild(overlay);
     }
 
     function initializeAnalytics() {

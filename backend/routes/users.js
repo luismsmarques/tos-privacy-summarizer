@@ -3,6 +3,7 @@ import { body, validationResult } from 'express-validator';
 import { v4 as uuidv4 } from 'uuid';
 import db from '../utils/database.js';
 import authService from '../utils/auth.js';
+import { logDataChange, logUserAction } from '../utils/audit-logger.js';
 
 const router = express.Router();
 
@@ -324,7 +325,14 @@ router.put('/:userId/credits', authService.authenticateToken, [
             INSERT INTO credits_history (user_id, action, amount, balance_after, description)
             VALUES ($1, $2, $3, $4, $5)
         `, [userId, action, credits, newCredits, reason || `Créditos ${action} por administrador`]);
-        
+
+        // Auditoria: registar a alteração de créditos pelo admin (não bloqueia)
+        logDataChange('users', 'UPDATE', userId,
+            { credits: currentCredits }, { credits: newCredits },
+            req.user?.userId || 'admin',
+            { action, amount: credits, reason: reason || null }
+        ).catch((e) => console.error('audit credit-change falhou:', e.message));
+
         res.json({
             success: true,
             data: {
@@ -451,6 +459,12 @@ router.post('/bulk-action', authService.authenticateToken, [
             }
         }
         
+        // Auditoria: registar a ação em massa (severidade elevada para delete)
+        logUserAction(req.user?.userId || 'admin', `bulk_${action}`, {
+            total: userIds.length, successful: results.length, failed: bulkErrors.length,
+            value: value ?? null, reason: reason || null, userIds
+        }, { critical: action === 'delete' }).catch((e) => console.error('audit bulk-action falhou:', e.message));
+
         res.json({
             success: true,
             data: {

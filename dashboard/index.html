@@ -1885,6 +1885,10 @@
                     <span class="material-symbols-outlined nav-icon">bar_chart</span>
                     <span class="nav-text">Analytics</span>
                 </a>
+                <a href="#audit" class="nav-item" data-section="audit">
+                    <span class="material-symbols-outlined nav-icon">shield</span>
+                    <span class="nav-text">Auditoria</span>
+                </a>
                 <a href="#settings" class="nav-item" data-section="settings">
                     <span class="material-symbols-outlined nav-icon">settings</span>
                     <span class="nav-text">Configurações</span>
@@ -2606,6 +2610,129 @@
                     </div>
                 </section>
                 
+                <!-- Audit Section -->
+                <section id="audit-section" class="content-section hidden">
+                    <div class="section-header">
+                        <h2>🛡️ Auditoria &amp; Segurança</h2>
+                        <div class="section-controls">
+                            <div class="time-range-selector">
+                                <label for="auditTimeRange">Período:</label>
+                                <select id="auditTimeRange">
+                                    <option value="1">Últimas 24h</option>
+                                    <option value="7" selected>Últimos 7 dias</option>
+                                    <option value="30">Últimos 30 dias</option>
+                                    <option value="90">Últimos 90 dias</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" id="refreshAuditBtn">
+                                <span class="material-symbols-outlined">refresh</span>
+                                Atualizar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Cards de segurança -->
+                    <div class="analytics-metrics-grid">
+                        <div class="metric-card info">
+                            <div class="metric-icon"><span class="material-symbols-outlined">event_list</span></div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="auditTotalEvents">-</div>
+                                <div class="metric-label">Eventos (período)</div>
+                            </div>
+                        </div>
+                        <div class="metric-card warning">
+                            <div class="metric-icon"><span class="material-symbols-outlined">gpp_maybe</span></div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="auditSecurityEvents">-</div>
+                                <div class="metric-label">Eventos de segurança</div>
+                            </div>
+                        </div>
+                        <div class="metric-card warning">
+                            <div class="metric-icon"><span class="material-symbols-outlined">lock_person</span></div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="auditFailedLogins">-</div>
+                                <div class="metric-label">Logins falhados</div>
+                            </div>
+                        </div>
+                        <div class="metric-card warning">
+                            <div class="metric-icon"><span class="material-symbols-outlined">crisis_alert</span></div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="auditCritical">-</div>
+                                <div class="metric-label">Críticos</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gráficos -->
+                    <div class="analytics-charts-grid">
+                        <div class="chart-card large">
+                            <div class="chart-header"><h3>Eventos ao longo do tempo</h3></div>
+                            <div class="chart-container"><canvas id="auditDailyChart"></canvas></div>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-header"><h3>Por tipo</h3></div>
+                            <div class="chart-container"><canvas id="auditTypeChart"></canvas></div>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-header"><h3>Por severidade</h3></div>
+                            <div class="chart-container"><canvas id="auditSeverityChart"></canvas></div>
+                        </div>
+                    </div>
+
+                    <!-- Filtros -->
+                    <div class="users-filters">
+                        <div class="filter-group">
+                            <label for="auditTypeFilter">Tipo</label>
+                            <select id="auditTypeFilter">
+                                <option value="">Todos</option>
+                                <option value="auth_event">Autenticação</option>
+                                <option value="security_event">Segurança</option>
+                                <option value="payment_event">Pagamentos</option>
+                                <option value="data_change">Alteração de dados</option>
+                                <option value="user_action">Ação de utilizador</option>
+                                <option value="api_request">Pedido API</option>
+                                <option value="system_event">Sistema</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="auditSeverityFilter">Severidade mínima</label>
+                            <select id="auditSeverityFilter">
+                                <option value="">Todas</option>
+                                <option value="1">INFO+</option>
+                                <option value="2">WARN+</option>
+                                <option value="3">ERROR+</option>
+                                <option value="4">CRITICAL</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="auditActionFilter">Ação contém</label>
+                            <input type="text" id="auditActionFilter" placeholder="ex: login, bulk_delete">
+                        </div>
+                        <div class="filter-group">
+                            <label for="auditUserFilter">Utilizador</label>
+                            <input type="text" id="auditUserFilter" placeholder="ID do utilizador">
+                        </div>
+                    </div>
+
+                    <!-- Tabela -->
+                    <div class="users-table-container">
+                        <table class="users-table">
+                            <thead>
+                                <tr>
+                                    <th>Data/Hora</th>
+                                    <th>Severidade</th>
+                                    <th>Tipo</th>
+                                    <th>Ação</th>
+                                    <th>Utilizador</th>
+                                    <th>Detalhe</th>
+                                </tr>
+                            </thead>
+                            <tbody id="auditTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="pagination" id="auditPagination"></div>
+                </section>
+
                 <section id="settings-section" class="content-section hidden">
                     <div class="section-header">
                         <h2>🛠️ Configurações Avançadas</h2>
