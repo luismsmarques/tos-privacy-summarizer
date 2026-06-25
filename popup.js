@@ -845,7 +845,15 @@ document.addEventListener('DOMContentLoaded', function() {
         if (progressContainer) progressContainer.classList.remove('hidden');
         if (summaryContainer) summaryContainer.classList.add('hidden');
         if (errorContainer) errorContainer.classList.add('hidden');
-        
+
+        // Sub-linha "domínio · tipo" (mockup ANALYZING)
+        const progressSubtitle = document.getElementById('progressSubtitle');
+        if (progressSubtitle) {
+            const domain = domainFromUrl(currentTab && currentTab.url ? currentTab.url : '');
+            const typeLabel = (contentTypeText && contentTypeText.textContent) ? contentTypeText.textContent : '';
+            progressSubtitle.textContent = [domain, typeLabel].filter(Boolean).join(' · ');
+        }
+
         // Simular progresso
         let progress = 0;
         const interval = setInterval(() => {
