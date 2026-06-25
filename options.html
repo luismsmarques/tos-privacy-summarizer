@@ -59,7 +59,7 @@
 
         /* ---- Layout ---- */
         .container {
-            max-width: 640px;
+            max-width: 720px;
             margin: 28px auto 48px;
             padding: 0 20px;
         }
@@ -91,7 +91,7 @@
 
         .card-body { padding: 28px 32px 34px; }
 
-        .section-label { margin-bottom: 14px; }
+        .section-label { margin-bottom: 0; }
 
         .ds-hr { height: 1px; background: var(--ds-hairline); margin: 26px 0; }
 
@@ -100,26 +100,51 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 14px;
+            margin-top: 14px;
         }
         .api-options .ds-option { display: flex; gap: 13px; }
         .ds-option .opt-title { font: 700 14.5px/1.2 var(--ds-font); color: var(--ds-ink); }
         .ds-option .opt-desc { font: 400 12.5px/1.45 var(--ds-font); color: var(--ds-muted-2); margin-top: 5px; }
         .ds-radio { margin-top: 2px; }
 
-        /* ---- API key row ---- */
+        /* ---- API key row (mockup: masked field + Test) ---- */
         .api-key-row {
             display: flex;
             gap: 10px;
             margin-top: 14px;
             align-items: stretch;
         }
-        .api-key-row .ds-input { flex: 1; letter-spacing: .02em; }
-        .api-key-row .ds-btn { padding: 0 20px; }
+        .api-key-field {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--ds-surface-soft);
+            border: 1px solid var(--ds-border);
+            border-radius: var(--ds-r-sm);
+            padding: 0 15px;
+        }
+        .api-key-field svg { flex-shrink: 0; color: var(--ds-faint); }
+        .api-key-field .ds-input {
+            border: none;
+            background: transparent;
+            padding: 13px 0;
+            letter-spacing: .04em;
+        }
+        .api-key-field .ds-input:focus { border: none; }
+        .api-key-row .ds-btn { padding: 0 20px; white-space: nowrap; }
 
+        .key-actions {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .key-actions .ds-btn { padding: 11px 18px; }
         .help-text {
             font: 400 12px/1.45 var(--ds-font);
             color: var(--ds-faint);
-            margin-top: 8px;
         }
         .link { color: var(--ds-brand); text-decoration: none; font-weight: 600; }
         .link:hover { text-decoration: underline; }
@@ -151,11 +176,11 @@
 
         .ds-segment { flex-shrink: 0; }
 
-        /* Bridge the JS toggle state (.active) onto the DS toggle visuals (.is-on) */
+        /* Bridge the JS toggle state (.active) onto the DS toggle visuals */
         .ds-toggle.active { background: var(--ds-brand); }
         .ds-toggle.active > i { left: 23px; }
 
-        /* Language select styled as DS dropdown */
+        /* Language select styled as DS dropdown (mockup) */
         .select-wrap {
             display: inline-flex;
             align-items: center;
@@ -179,7 +204,7 @@
             background-position: right 13px center;
         }
 
-        /* ---- Danger / clear history box ---- */
+        /* ---- Danger / clear history box (mockup) ---- */
         .danger-box {
             display: flex;
             gap: 12px;
@@ -204,15 +229,14 @@
         }
         .btn-danger:hover { background: var(--ds-high-bg); }
 
-        /* ---- Extra action buttons ---- */
-        .action-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+        /* ---- Footer / secondary actions ---- */
+        .footer-actions {
+            display: flex;
+            flex-wrap: wrap;
             gap: 10px;
-            margin-top: 18px;
+            margin-top: 22px;
         }
-        .action-grid .ds-btn { padding: 12px 0; }
-        .action-grid .span-2 { grid-column: 1 / -1; }
+        .footer-actions .ds-btn { flex: 1; min-width: 160px; padding: 12px 0; }
 
         .info-block {
             margin-top: 22px;
@@ -262,19 +286,22 @@
                     </div>
                 </div>
 
-                <!-- API key field + Test (own-key, stored locally) -->
+                <!-- API key field (masked) + Test (own-key, stored locally) -->
                 <div class="api-key-row">
-                    <input type="password" id="apiKey" class="ds-input"
-                           data-i18n-placeholder="settings.api_key_placeholder"
-                           placeholder="Cole aqui a sua chave da API Gemini">
+                    <div class="api-key-field">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.6 7.6a5 5 0 11-7.1 7.1 5 5 0 017.1-7.1zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3"/></svg>
+                        <input type="password" id="apiKey" class="ds-input"
+                               data-i18n-placeholder="settings.api_key_placeholder"
+                               placeholder="Cole aqui a sua chave da API Gemini">
+                    </div>
                     <button id="testApiKey" class="ds-btn ds-btn-ghost" data-i18n="settings.test_key">Testar</button>
                 </div>
-                <div class="api-key-row">
-                    <button id="saveApiKey" class="ds-btn ds-btn-primary ds-btn-block" data-i18n="settings.save_key">Guardar Chave</button>
-                </div>
-                <div class="help-text">
-                    <span data-i18n="settings.get_api_key">Obtenha a sua chave gratuita em</span>
-                    <a href="https://makersuite.google.com/app/apikey" target="_blank" class="link">Google AI Studio</a>
+                <div class="key-actions">
+                    <button id="saveApiKey" class="ds-btn ds-btn-primary" data-i18n="settings.save_key">Guardar Chave</button>
+                    <span class="help-text">
+                        <span data-i18n="settings.get_api_key">Obtenha a sua chave gratuita em</span>
+                        <a href="https://makersuite.google.com/app/apikey" target="_blank" class="link">Google AI Studio</a>
+                    </span>
                 </div>
 
                 <div id="apiKeyStatus" class="status-message" style="display: none;"></div>
@@ -297,25 +324,7 @@
                     </div>
                 </div>
 
-                <!-- Auto-detect legal pages -->
-                <div class="pref-row">
-                    <div>
-                        <label class="pref-name" for="autoDetect" data-i18n="settings.auto_detect">Detecção Automática de Páginas Legais</label>
-                        <div class="pref-help" data-i18n="settings.auto_detect_help">Detecta automaticamente se a página contém Termos de Serviço</div>
-                    </div>
-                    <div class="ds-toggle" id="autoDetectToggle"><i></i></div>
-                </div>
-
-                <!-- Notifications -->
-                <div class="pref-row">
-                    <div>
-                        <label class="pref-name" for="showNotifications" data-i18n="settings.notifications">Notificações de Sucesso</label>
-                        <div class="pref-help" data-i18n="settings.notifications_help">Mostra notificações quando o resumo é gerado</div>
-                    </div>
-                    <div class="ds-toggle" id="notificationsToggle"><i></i></div>
-                </div>
-
-                <!-- Language -->
+                <!-- Language (dropdown, mockup) -->
                 <div class="pref-row">
                     <div>
                         <label class="pref-name" for="languageSelect" data-i18n="settings.language">Idioma da Interface</label>
@@ -324,23 +333,14 @@
                     <div class="select-wrap">
                         <select id="languageSelect">
                             <option value="pt">🇵🇹 Português</option>
-                            <option value="en">🇬🇧 English</option>
+                            <option value="en">🇬🇧 English (US)</option>
                             <option value="es">🇪🇸 Español</option>
                             <option value="fr">🇫🇷 Français</option>
                         </select>
                     </div>
                 </div>
 
-                <!-- Auto-detect language -->
-                <div class="pref-row">
-                    <div>
-                        <label class="pref-name" for="autoDetectLanguage" data-i18n="settings.auto_detect_language">Detectar idioma automaticamente</label>
-                        <div class="pref-help">Detecta automaticamente o idioma da página e ajusta a análise.</div>
-                    </div>
-                    <div class="ds-toggle" id="autoDetectLanguageToggle"><i></i></div>
-                </div>
-
-                <!-- Theme segment (visual) + functional toggle lives in header -->
+                <!-- Theme segment (visual, mockup) — functional toggle lives in header -->
                 <div class="pref-row">
                     <div>
                         <div class="pref-name" data-i18n="settings.theme">Tema</div>
@@ -353,7 +353,34 @@
                     </div>
                 </div>
 
-                <!-- Clear history / danger box -->
+                <!-- Save history (toggle, mockup) -->
+                <div class="pref-row">
+                    <div>
+                        <label class="pref-name" for="autoDetectToggle" data-i18n="settings.auto_detect">Detecção Automática de Páginas Legais</label>
+                        <div class="pref-help" data-i18n="settings.auto_detect_help">Detecta automaticamente se a página contém Termos de Serviço</div>
+                    </div>
+                    <div class="ds-toggle" id="autoDetectToggle" role="switch" tabindex="0"><i></i></div>
+                </div>
+
+                <!-- Notifications (toggle) -->
+                <div class="pref-row">
+                    <div>
+                        <label class="pref-name" for="notificationsToggle" data-i18n="settings.notifications">Notificações de Sucesso</label>
+                        <div class="pref-help" data-i18n="settings.notifications_help">Mostra notificações quando o resumo é gerado</div>
+                    </div>
+                    <div class="ds-toggle" id="notificationsToggle" role="switch" tabindex="0"><i></i></div>
+                </div>
+
+                <!-- Auto-detect language (toggle) -->
+                <div class="pref-row">
+                    <div>
+                        <label class="pref-name" for="autoDetectLanguageToggle" data-i18n="settings.auto_detect_language">Detectar idioma automaticamente</label>
+                        <div class="pref-help">Detecta automaticamente o idioma da página e ajusta a análise.</div>
+                    </div>
+                    <div class="ds-toggle" id="autoDetectLanguageToggle" role="switch" tabindex="0"><i></i></div>
+                </div>
+
+                <!-- Clear history / danger box (mockup) -->
                 <div class="danger-box">
                     <div style="flex:1;">
                         <div class="dz-title" data-i18n="settings.reset_settings">Repor configurações</div>
@@ -363,9 +390,9 @@
                 </div>
 
                 <!-- Secondary actions -->
-                <div class="action-grid">
-                    <button id="exportSettings" class="ds-btn ds-btn-ghost">📤 Exportar Configurações</button>
-                    <button id="showOnboarding" class="ds-btn ds-btn-ghost">👋 Ver Guia de Início</button>
+                <div class="footer-actions">
+                    <button id="exportSettings" class="ds-btn ds-btn-ghost" data-i18n="settings.export_settings">Exportar Configurações</button>
+                    <button id="showOnboarding" class="ds-btn ds-btn-ghost" data-i18n="settings.show_onboarding">Ver Guia de Início</button>
                     <button id="viewPrivacyPolicy" class="ds-btn ds-btn-ghost" data-i18n="settings.privacy_policy">Política de Privacidade</button>
                     <button id="viewTermsOfService" class="ds-btn ds-btn-ghost" data-i18n="settings.terms_of_service">Termos de Serviço</button>
                 </div>

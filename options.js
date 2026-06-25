@@ -334,7 +334,8 @@ document.addEventListener('DOMContentLoaded', function() {
         chrome.storage.local.get(['theme'], (result) => {
             const theme = result.theme || 'light';
             document.documentElement.setAttribute('data-theme', theme);
-            
+            if (typeof syncThemeSegment === 'function') syncThemeSegment(theme);
+
             // Atualizar ícone do botão
             if (themeToggle) {
                 const icon = themeToggle.querySelector('.material-icons');
@@ -351,7 +352,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         document.documentElement.setAttribute('data-theme', newTheme);
         chrome.storage.local.set({ theme: newTheme });
-        
+        if (typeof syncThemeSegment === 'function') syncThemeSegment(newTheme);
+
         // Atualizar ícone do botão
         if (themeToggle) {
             const icon = themeToggle.querySelector('.material-icons');
@@ -361,6 +363,59 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // ---- Segmented controls (mockup-faithful visuals) ----
+    // "Default focus" segment: visual-only selection, persisted as a preference.
+    const defaultFocusSegment = document.getElementById('defaultFocusSegment');
+    if (defaultFocusSegment) {
+        const focusBtns = defaultFocusSegment.querySelectorAll('[data-focus]');
+        chrome.storage.local.get(['defaultFocus'], (result) => {
+            const current = result.defaultFocus || 'general';
+            focusBtns.forEach((b) => {
+                b.classList.toggle('is-active', b.dataset.focus === current);
+            });
+        });
+        focusBtns.forEach((btn) => {
+            btn.addEventListener('click', () => {
+                focusBtns.forEach((b) => b.classList.remove('is-active'));
+                btn.classList.add('is-active');
+                chrome.storage.local.set({ defaultFocus: btn.dataset.focus });
+            });
+        });
+    }
+
+    // "Theme" segment: drives the real theme (light/dark/auto), kept in sync
+    // with the header theme toggle and the persisted `theme` value.
+    const themeSegment = document.getElementById('themeSegment');
+    function syncThemeSegment(theme) {
+        if (!themeSegment) return;
+        themeSegment.querySelectorAll('[data-theme-choice]').forEach((b) => {
+            b.classList.toggle('is-active', b.dataset.themeChoice === theme);
+        });
+    }
+    if (themeSegment) {
+        chrome.storage.local.get(['theme'], (result) => {
+            syncThemeSegment(result.theme || 'light');
+        });
+        themeSegment.querySelectorAll('[data-theme-choice]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const choice = btn.dataset.themeChoice;
+                let applied = choice;
+                if (choice === 'auto') {
+                    applied = window.matchMedia &&
+                        window.matchMedia('(prefers-color-scheme: dark)').matches
+                        ? 'dark' : 'light';
+                }
+                document.documentElement.setAttribute('data-theme', applied);
+                chrome.storage.local.set({ theme: choice });
+                syncThemeSegment(choice);
+                if (themeToggle) {
+                    const icon = themeToggle.querySelector('.material-icons');
+                    if (icon) icon.textContent = applied === 'dark' ? 'light_mode' : 'dark_mode';
+                }
+            });
+        });
+    }
+
     console.log('Página de configurações carregada');
     console.log('Theme toggle button:', themeToggle);
     console.log('Theme toggle button found:', !!themeToggle);

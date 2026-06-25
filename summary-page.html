@@ -107,7 +107,7 @@
             overflow: hidden;
         }
 
-        /* ---- Doc header (avatar + title + risk badge) ---- */
+        /* ---- Doc header (back + avatar + title + risk badge) ---- */
         .page-info {
             display: flex;
             align-items: center;
@@ -120,7 +120,15 @@
             color: var(--ds-faint);
             display: flex;
             align-items: center;
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
         }
+
+        .page-info .page-info-back:hover { color: var(--ds-muted); }
+
+        .page-info .page-info-back .material-symbols-outlined { font-size: 20px; }
 
         .page-info .page-avatar {
             width: 40px;
@@ -157,15 +165,16 @@
             white-space: nowrap;
         }
 
-        .page-info .page-sub .page-type-chip {
-            color: var(--ds-muted);
-            font-weight: 600;
+        /* Risk badge in the header (mockup: "Moderate risk · 7/10") */
+        .page-info .page-risk {
+            flex-shrink: 0;
+            white-space: nowrap;
         }
 
-        /* ---- 2-column body ---- */
+        /* ---- 2-column body (mockup: 1fr / 300px) ---- */
         .analysis-body {
             display: grid;
-            grid-template-columns: 1fr 320px;
+            grid-template-columns: 1fr 300px;
         }
 
         .analysis-main {
@@ -197,13 +206,6 @@
             letter-spacing: .07em;
             text-transform: uppercase;
             margin: 0 0 12px 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .summary-section h3 .material-symbols-outlined {
-            font-size: 16px;
         }
 
         .summary-section p {
@@ -212,9 +214,9 @@
             color: var(--ds-ink-2);
         }
 
-        /* Key points list -> .ds-keypoint look */
+        /* Key points list -> mockup .ds-keypoint look (check icon) */
         .key-points {
-            margin: 0;
+            margin: 14px 0 0;
             padding: 0;
             list-style: none;
             display: flex;
@@ -242,7 +244,7 @@
             mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E") no-repeat center / contain;
         }
 
-        /* ---- Privacy alerts (injected) -> .ds-alert look ---- */
+        /* ---- Privacy alerts (injected) -> mockup callout box ---- */
         .privacy-alerts {
             display: flex;
             flex-direction: column;
@@ -266,36 +268,115 @@
             color: var(--ds-high);
         }
 
+        .alert-body { flex: 1; min-width: 0; }
+
+        .alert-title {
+            font: 700 14px/1.2 var(--ds-font);
+            color: var(--ds-high-text);
+        }
+
         .alert-text {
-            flex: 1;
             font: 400 13.5px/1.5 var(--ds-font);
             color: var(--ds-high-text);
-            opacity: .95;
+            margin-top: 6px;
+            opacity: .92;
         }
 
         /* Alert type variants keep the same hooks but map to DS tones */
-        .alert-partilha_dados {
-            background: var(--ds-high-bg);
-            border-color: var(--ds-high-border);
-        }
-        .alert-partilha_dados .alert-icon,
-        .alert-partilha_dados .alert-text { color: var(--ds-high-text); }
-        .alert-partilha_dados .alert-icon { color: var(--ds-high); }
-
         .alert-alteracoes_termos {
             background: var(--ds-mid-bg);
             border-color: var(--ds-mid-border);
         }
-        .alert-alteracoes_termos .alert-icon,
-        .alert-alteracoes_termos .alert-text { color: var(--ds-mid-text); }
         .alert-alteracoes_termos .alert-icon { color: var(--ds-mid); }
+        .alert-alteracoes_termos .alert-title,
+        .alert-alteracoes_termos .alert-text { color: var(--ds-mid-text); }
 
         .alert-outros_riscos {
             background: var(--ds-tint);
             border-color: var(--ds-tint-border);
         }
         .alert-outros_riscos .alert-icon { color: var(--ds-brand); }
+        .alert-outros_riscos .alert-title,
         .alert-outros_riscos .alert-text { color: var(--ds-brand-deep); }
+
+        .alert-sem_alertas {
+            background: var(--ds-low-bg);
+            border-color: var(--ds-low-border);
+        }
+        .alert-sem_alertas .alert-icon { color: var(--ds-low); }
+        .alert-sem_alertas .alert-title,
+        .alert-sem_alertas .alert-text { color: var(--ds-low-text); }
+
+        /* ---- Right column: rating bar cards (mockup) ---- */
+        .rating-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        .rating-card {
+            background: var(--ds-surface);
+            border: 1px solid var(--ds-border);
+            border-radius: var(--ds-r-md);
+            padding: 14px;
+        }
+
+        .rating-card.is-low  { border-color: var(--ds-low-border); }
+        .rating-card.is-mid  { border-color: var(--ds-mid-border); }
+        .rating-card.is-high { border-color: var(--ds-high-border); }
+
+        .rating-card .rating-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+
+        .rating-card .rating-name {
+            font: 600 13px/1 var(--ds-font);
+            color: var(--ds-muted);
+        }
+
+        .rating-card .ds-rating-num {
+            font-family: var(--ds-serif);
+            font-weight: 700;
+            font-size: 22px;
+            line-height: 1;
+            color: var(--ds-muted);
+        }
+        .rating-card .ds-rating-num small { font-size: 12px; opacity: .7; }
+
+        .rating-card.is-low  .ds-rating-num { color: var(--ds-low-text); }
+        .rating-card.is-mid  .ds-rating-num { color: var(--ds-mid-text); }
+        .rating-card.is-high .ds-rating-num { color: var(--ds-high-text); }
+
+        /* ---- Details list ---- */
+        .details-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .details-list .detail-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font: 500 13px/1 var(--ds-font);
+        }
+
+        .details-list .detail-row .detail-key { color: var(--ds-faint-2); }
+        .details-list .detail-row .detail-val { color: var(--ds-ink-2); font-weight: 600; }
+
+        /* ---- Action buttons ---- */
+        .side-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+            margin-top: 24px;
+        }
+
+        .side-actions .ds-btn .material-symbols-outlined { font-size: 18px; }
 
         /* ---- Loading state ---- */
         .loading-container {
@@ -354,6 +435,8 @@
             .main-content { padding: 20px 16px 36px; }
             .analysis-main { padding: 24px 20px 28px; }
             .analysis-side { padding: 22px 20px; }
+            .page-info { padding: 16px 18px; }
+            .page-info .page-risk { display: none; }
             .back-button span:not(.material-symbols-outlined) { display: none; }
         }
 
@@ -394,19 +477,19 @@
 
         <!-- Analysis card: doc header + 2-column body -->
         <div class="summary-content hidden" id="analysisCard">
-            <!-- Doc header (avatar + title + risk badge) -->
+            <!-- Doc header (back + avatar + title + risk badge) -->
             <div id="pageInfo" class="page-info hidden">
-                <span class="page-info-back" aria-hidden="true">
+                <button class="page-info-back" id="backButtonInline" title="Voltar" aria-label="Voltar">
                     <span class="material-symbols-outlined">arrow_back</span>
-                </span>
+                </button>
                 <div class="page-avatar" id="pageAvatar">D</div>
                 <div class="page-meta">
                     <div class="page-title" id="pageTitle">-</div>
-                    <div class="page-sub">
-                        <span id="pageUrl">-</span>
-                        <span class="page-type-chip"> · <span id="pageType">-</span></span>
+                    <div class="page-sub" id="pageSub">
+                        <span id="pageUrl">-</span><span id="pageType" class="hidden"></span>
                     </div>
                 </div>
+                <span class="ds-risk page-risk hidden" id="pageRisk">-</span>
             </div>
 
             <div class="analysis-body">
@@ -420,53 +503,54 @@
                 <!-- Right column: rating, details, actions -->
                 <aside class="analysis-side">
                     <span class="ds-label">Rating</span>
-                    <div class="ds-ratings" id="ratingsContainer" style="flex-direction:column;gap:12px;margin-top:14px;">
-                        <div class="ds-rating" style="text-align:left;padding:14px;">
-                            <div class="ds-row-between">
-                                <span style="font:600 13px/1 var(--ds-font);color:var(--ds-muted);">Risco</span>
+                    <div class="rating-cards" id="ratingsContainer">
+                        <!-- Rating cards populated by JavaScript -->
+                        <div class="rating-card" data-rating="risco">
+                            <div class="rating-head">
+                                <span class="rating-name">Risco</span>
                                 <span class="ds-rating-num">—<small>/10</small></span>
                             </div>
                             <div class="ds-meter"><i style="width:0%"></i></div>
                         </div>
-                        <div class="ds-rating" style="text-align:left;padding:14px;">
-                            <div class="ds-row-between">
-                                <span style="font:600 13px/1 var(--ds-font);color:var(--ds-muted);">Complexidade</span>
+                        <div class="rating-card" data-rating="complexidade">
+                            <div class="rating-head">
+                                <span class="rating-name">Complexidade</span>
                                 <span class="ds-rating-num">—<small>/10</small></span>
                             </div>
                             <div class="ds-meter"><i style="width:0%"></i></div>
                         </div>
-                        <div class="ds-rating" style="text-align:left;padding:14px;">
-                            <div class="ds-row-between">
-                                <span style="font:600 13px/1 var(--ds-font);color:var(--ds-muted);">Boas práticas</span>
+                        <div class="rating-card" data-rating="boas_praticas">
+                            <div class="rating-head">
+                                <span class="rating-name">Boas práticas</span>
                                 <span class="ds-rating-num">—<small>/10</small></span>
                             </div>
                             <div class="ds-meter"><i style="width:0%"></i></div>
                         </div>
                     </div>
 
-                    <span class="ds-label" style="margin-top:24px;">Detalhes</span>
-                    <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
-                        <div class="ds-row-between" style="font:500 13px/1 var(--ds-font);">
-                            <span style="color:var(--ds-faint-2);">Tipo</span>
-                            <span id="detailType" style="color:var(--ds-ink-2);font-weight:600;">-</span>
+                    <span class="ds-label" style="display:block;margin-top:24px;">Detalhes</span>
+                    <div class="details-list">
+                        <div class="detail-row">
+                            <span class="detail-key">Tipo</span>
+                            <span class="detail-val" id="detailType">-</span>
                         </div>
-                        <div class="ds-row-between" style="font:500 13px/1 var(--ds-font);">
-                            <span style="color:var(--ds-faint-2);">Tamanho</span>
-                            <span id="detailLength" style="color:var(--ds-ink-2);font-weight:600;">-</span>
+                        <div class="detail-row">
+                            <span class="detail-key">Tamanho</span>
+                            <span class="detail-val" id="detailLength">-</span>
                         </div>
-                        <div class="ds-row-between" style="font:500 13px/1 var(--ds-font);">
-                            <span style="color:var(--ds-faint-2);">Modelo</span>
-                            <span id="detailModel" style="color:var(--ds-ink-2);font-weight:600;">-</span>
+                        <div class="detail-row">
+                            <span class="detail-key">Modelo</span>
+                            <span class="detail-val" id="detailModel">-</span>
                         </div>
                     </div>
 
-                    <div style="display:flex;flex-direction:column;gap:9px;margin-top:24px;">
+                    <div class="side-actions">
                         <button class="ds-btn ds-btn-primary ds-btn-block" id="exportButton">
-                            <span class="material-symbols-outlined" style="font-size:18px;">download</span>
+                            <span class="material-symbols-outlined">download</span>
                             Exportar
                         </button>
                         <button class="ds-btn ds-btn-ghost ds-btn-block" id="shareButton">
-                            <span class="material-symbols-outlined" style="font-size:18px;">share</span>
+                            <span class="material-symbols-outlined">share</span>
                             Partilhar
                         </button>
                     </div>
