@@ -75,9 +75,19 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Admin-Token']
 }));
 
-// Middleware para parsing JSON
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+// Middleware para parsing JSON.
+// IMPORTANTE: o webhook do Stripe precisa do corpo RAW para validar a
+// assinatura (stripe.webhooks.constructEvent), por isso não fazemos JSON
+// parsing nesse caminho — senão a verificação da assinatura falha sempre.
+const STRIPE_WEBHOOK_PATH = '/api/stripe/webhook';
+app.use((req, res, next) => {
+    if (req.originalUrl === STRIPE_WEBHOOK_PATH) return next();
+    express.json({ limit: '10mb' })(req, res, next);
+});
+app.use((req, res, next) => {
+    if (req.originalUrl === STRIPE_WEBHOOK_PATH) return next();
+    express.urlencoded({ extended: true })(req, res, next);
+});
 
 // Middleware para cookies (simples)
 app.use((req, res, next) => {

@@ -24,7 +24,7 @@ function getPool() {
         // SSL ligado por omissão (exigido pelo Neon/produção). Definir
         // DATABASE_SSL=false para Postgres local de desenvolvimento sem SSL.
         ssl: process.env.DATABASE_SSL === 'false' ? false : { rejectUnauthorized: false },
-        max: 1,                          // uma ligação por instância serverless
+        max: 3,                          // pequeno: headroom p/ transações sem esgotar ligações
         idleTimeoutMillis: 10000,
         connectionTimeoutMillis: 10000,
         allowExitOnIdle: true
@@ -462,6 +462,71 @@ class Database {
             console.error('❌ Erro ao atualizar créditos:', error);
             throw error;
         }
+    }
+
+    // Creditar um pagamento de forma idempotente: regista o session_id do
+    // Stripe e só adiciona créditos se este pagamento ainda não foi processado.
+    // Evita o double-credit (verify-payment + webhook podem ambos disparar).
+    async creditUserForPayment(userId, sessionId, creditsToAdd) {
+        await this.ensurePaymentsTable();
+
+        // Transação: registar o pagamento E creditar de forma atómica. Se o
+        // crédito falhar, o registo é revertido (ROLLBACK) para o retry poder
+        // creditar — evita marcar como processado sem ter creditado.
+        const client = await getPool().connect();
+        try {
+            await client.query('BEGIN');
+
+            const claim = await client.query(`
+                INSERT INTO processed_payments (session_id, user_id, credits)
+                VALUES ($1, $2, $3)
+                ON CONFLICT (session_id) DO NOTHING
+                RETURNING session_id
+            `, [sessionId, userId, creditsToAdd]);
+
+            if (claim.rows.length === 0) {
+                // Já processado — não creditar de novo. Ler o saldo pelo MESMO
+                // client (não chamar this.query: com pool pequeno ficaria sem
+                // ligação enquanto esta transação a tem reservada).
+                const cur = await client.query('SELECT credits FROM users WHERE user_id = $1', [userId]);
+                await client.query('COMMIT');
+                const current = cur.rows[0]?.credits ?? 0;
+                console.log(`↩️ Pagamento ${sessionId} já processado; saldo mantém-se em ${current}.`);
+                return { credited: false, newBalance: current };
+            }
+
+            const upd = await client.query(`
+                INSERT INTO users (user_id, credits, created_at, updated_at)
+                VALUES ($1, $2, NOW(), NOW())
+                ON CONFLICT (user_id)
+                DO UPDATE SET credits = users.credits + $2, updated_at = NOW()
+                RETURNING credits
+            `, [userId, creditsToAdd]);
+
+            await client.query('COMMIT');
+            const newBalance = upd.rows[0].credits;
+            console.log(`✅ Pagamento ${sessionId}: ${creditsToAdd} créditos adicionados a ${userId}. Saldo: ${newBalance}`);
+            return { credited: true, newBalance };
+        } catch (error) {
+            await client.query('ROLLBACK').catch(() => {});
+            console.error('❌ Erro ao creditar pagamento (rollback):', error.message);
+            throw error;
+        } finally {
+            client.release();
+        }
+    }
+
+    async ensurePaymentsTable() {
+        if (this._paymentsTableReady) return;
+        await this.query(`
+            CREATE TABLE IF NOT EXISTS processed_payments (
+                session_id TEXT PRIMARY KEY,
+                user_id    TEXT NOT NULL,
+                credits    INTEGER NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        this._paymentsTableReady = true;
     }
 
     // Obter créditos do utilizador
