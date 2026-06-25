@@ -89,6 +89,9 @@ app.use((req, res, next) => {
     express.urlencoded({ extended: true })(req, res, next);
 });
 
+// Páginas públicas hospedadas (success.html / cancel.html do checkout Stripe).
+app.use(express.static(path.join(__dirname, 'public')));
+
 // Middleware para cookies (simples)
 app.use((req, res, next) => {
     req.cookies = {};

@@ -69,6 +69,7 @@ router.post('/create-checkout-session',
                 success_url: `${process.env.CHECKOUT_SUCCESS_URL}?session_id={CHECKOUT_SESSION_ID}&success=true`,
                 cancel_url: `${process.env.CHECKOUT_CANCEL_URL}?session_id={CHECKOUT_SESSION_ID}&success=false`,
                 metadata: {
+                    app: 'tos-privacy-summarizer',
                     userId: userId,
                     package: packageName,
                     credits: credits.toString(),
@@ -231,7 +232,17 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
         case 'checkout.session.completed':
             const session = event.data.object;
             console.log('✅ Webhook: Checkout session completed:', session.id);
-            
+
+            // IMPORTANTE: esta conta Stripe é partilhada por vários produtos.
+            // Só processamos sessões DESTE produto, para nunca creditar/enviar
+            // email a partir de eventos de outro produto (ex.: vibesell).
+            const isOurs = session.metadata?.app === 'tos-privacy-summarizer'
+                || (session.metadata?.userId && session.metadata?.credits);
+            if (!isOurs) {
+                console.log('↪️ Webhook: sessão de outro produto — ignorada:', session.id);
+                break;
+            }
+
             // Processar pagamento bem-sucedido
             try {
                 const userId = session.metadata.userId;
@@ -297,6 +308,64 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     }
 
     res.json({ received: true });
+});
+
+// GET /confirm?session_id=... — usado pela página de sucesso hospedada.
+// Credita de forma idempotente o comprador da própria sessão (não há como
+// redirecionar créditos para outra conta) e devolve o saldo para mostrar.
+// Funciona mesmo que o webhook já tenha creditado (creditUserForPayment é
+// idempotente) e serve de recuperação caso o webhook não esteja configurado.
+router.get('/confirm', async (req, res) => {
+    try {
+        const sessionId = req.query.session_id;
+        if (!sessionId) {
+            return res.status(400).json({ success: false, error: 'session_id em falta' });
+        }
+
+        const session = await stripe.checkout.sessions.retrieve(sessionId);
+        if (!session) {
+            return res.status(404).json({ success: false, error: 'Sessão não encontrada' });
+        }
+        if (session.payment_status !== 'paid') {
+            return res.status(400).json({ success: false, error: 'Pagamento ainda não foi concluído' });
+        }
+        // Só sessões deste produto (conta Stripe partilhada).
+        if (session.metadata?.app && session.metadata.app !== 'tos-privacy-summarizer') {
+            return res.status(400).json({ success: false, error: 'Sessão pertence a outro produto' });
+        }
+
+        const userId = session.metadata?.userId;
+        const credits = parseInt(session.metadata?.credits);
+        const packageName = session.metadata?.package;
+        const price = parseFloat(session.metadata?.price);
+        if (!userId || !Number.isFinite(credits)) {
+            return res.status(400).json({ success: false, error: 'Sessão sem dados de créditos' });
+        }
+
+        const db = await import('../utils/database.js');
+        const { credited, newBalance } = await db.default.creditUserForPayment(userId, sessionId, credits, {
+            amountCents: Number.isFinite(session.amount_total) ? session.amount_total : Math.round(price * 100),
+            currency: session.currency || 'eur',
+            packageName: packageName
+        });
+
+        if (credited) {
+            logPaymentEvent('payment_success', userId, price, {
+                credits, package: packageName, sessionId, currency: session.currency || 'eur', source: 'confirm'
+            }).catch((e) => console.error('audit payment_success falhou:', e.message));
+        }
+
+        res.json({
+            success: true,
+            credits,
+            newBalance,
+            package: packageName,
+            alreadyProcessed: !credited
+        });
+    } catch (error) {
+        console.error('Erro no confirm:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
 });
 
 export default router;
