@@ -482,10 +482,27 @@ document.addEventListener('DOMContentLoaded', function() {
     // Carregar créditos e atualizar status da API
     async function loadCredits() {
         try {
-            const result = await chrome.storage.local.get(['sharedCredits', 'geminiApiKey', 'apiType']);
-            const credits = result.sharedCredits || 5;
+            const result = await chrome.storage.local.get(['sharedCredits', 'geminiApiKey', 'apiType', 'userId']);
             const hasApiKey = !!result.geminiApiKey && result.geminiApiKey !== 'SHARED_API';
-            
+            let credits = result.sharedCredits || 5;
+
+            // Buscar o saldo REAL ao servidor (o admin pode ter alterado os
+            // créditos no dashboard; a cache local só atualizava ao gerar resumo).
+            if (!hasApiKey && result.userId) {
+                try {
+                    const resp = await fetch(`https://tos-privacy-summarizer.vercel.app/api/credits/${encodeURIComponent(result.userId)}`);
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        if (typeof data.credits === 'number') {
+                            credits = data.credits;
+                            chrome.storage.local.set({ sharedCredits: credits });
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Saldo do servidor indisponível, a usar cache:', e.message);
+                }
+            }
+
             // Atualizar status da conexão
             updateConnectionStatus(hasApiKey, credits);
             
