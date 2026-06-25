@@ -737,11 +737,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const s = document.createElement('style');
             s.id = 'legalLinksStyles';
             s.textContent = `
-                .legal-links-zone { margin: 8px 12px; padding: 10px 12px; border:1px solid rgba(128,128,128,0.25); border-radius:10px; }
-                .legal-links-title { font-size:12px; font-weight:600; margin-bottom:8px; opacity:0.85; }
-                .legal-links-list { display:flex; flex-direction:column; gap:6px; }
-                .legal-link-btn { display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:8px 10px; border:1px solid rgba(128,128,128,0.25); border-radius:8px; background:transparent; color:inherit; cursor:pointer; font-size:13px; font-family:inherit; }
-                .legal-link-btn:hover { background: rgba(128,128,128,0.12); }
+                .legal-links-zone { margin: 0 18px 16px; padding: 13px 14px; background: var(--ds-surface-soft); border:1px solid var(--ds-border); border-radius: var(--ds-r-md); }
+                .legal-links-title { font: 700 11px/1 var(--ds-font); letter-spacing:.07em; text-transform:uppercase; color: var(--ds-faint); margin-bottom:10px; }
+                .legal-links-list { display:flex; flex-direction:column; gap:7px; }
+                .legal-link-btn { display:flex; align-items:center; gap:9px; width:100%; text-align:left; padding:10px 11px; border:1px solid var(--ds-border-2); border-radius: var(--ds-r-sm); background: var(--ds-surface); color: var(--ds-ink-2); cursor:pointer; font: 600 13px/1.2 var(--ds-font); }
+                .legal-link-btn:hover { background: var(--ds-tint); border-color: var(--ds-tint-border); color: var(--ds-brand); }
                 .legal-link-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
             `;
             document.head.appendChild(s);
@@ -818,7 +818,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Esconder resumo
         if (summaryContainer) summaryContainer.classList.add('hidden');
-        
+
+        // Remover cabeçalho de resultado (recriado a cada resumo)
+        const resultHeader = document.getElementById('resultHeader');
+        if (resultHeader) resultHeader.remove();
+
         // Mostrar zonas originais
         const valueZone = document.querySelector('.value-zone');
         const contextZone = document.querySelector('.context-zone');
@@ -1031,15 +1035,41 @@ document.addEventListener('DOMContentLoaded', function() {
         if (practicesBar) practicesBar.style.width = `${(boas_praticas / 10) * 100}%`;
         if (practicesText) practicesText.textContent = `${boas_praticas}/10`;
         
-        // Mostrar o display
+        // ----- Render visual (mockup RESULT): badge de risco + 3 rating cards -----
+        // risk_score: low<=3, medium<=6, high>6 (mesma escala da lógica existente)
+        const riskBadgeEl = document.getElementById('resultRiskBadge');
+        if (riskBadgeEl) {
+            const badgeLabel = risk_score <= 3 ? 'Low risk' : risk_score <= 6 ? 'Moderate risk' : 'High risk';
+            riskBadgeEl.textContent = badgeLabel;
+            riskBadgeEl.className = `risk-badge ${riskClass}`;
+            riskBadgeEl.style.display = '';
+        }
+
+        const cardsEl = document.getElementById('resultRatingCards');
+        if (cardsEl) {
+            // Risco: quanto maior, pior (low verde / mid âmbar / high vermelho)
+            const riskCardClass = risk_score <= 3 ? 'low' : risk_score <= 6 ? 'medium' : 'high';
+            // Boas práticas: quanto maior, melhor => inverter a escala de cor
+            const practicesClass = boas_praticas >= 7 ? 'low' : boas_praticas >= 4 ? 'medium' : 'high';
+            cardsEl.innerHTML = `
+                <div class="rating-card ${riskCardClass}">
+                    <div class="rating-num">${risk_score}<small>/10</small></div>
+                    <div class="rating-lbl">Risk</div>
+                </div>
+                <div class="rating-card">
+                    <div class="rating-num">${complexidade}<small>/10</small></div>
+                    <div class="rating-lbl">Complexity</div>
+                </div>
+                <div class="rating-card ${practicesClass}">
+                    <div class="rating-num">${boas_praticas}<small>/10</small></div>
+                    <div class="rating-lbl">Best practices</div>
+                </div>
+            `;
+            cardsEl.style.display = 'flex';
+        }
+
+        // Mostrar o display legacy (oculto via CSS, mantido para retrocompat)
         riskScoreDisplay.classList.remove('hidden');
-        
-        // FORÇAR VISIBILIDADE (fix temporário)
-        riskScoreDisplay.style.display = 'block';
-        riskScoreDisplay.style.visibility = 'visible';
-        riskScoreDisplay.style.opacity = '1';
-        riskScoreDisplay.style.position = 'relative';
-        riskScoreDisplay.style.zIndex = '999';
         
         console.log(`✅ Risk score exibido: ${risk_score}/10 (${riskClass})`);
         console.log('👁️ Elemento riskScoreDisplay visível:', !riskScoreDisplay.classList.contains('hidden'));
@@ -1199,7 +1229,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function resetButton() {
         isProcessing = false;
         if (actionButton) actionButton.disabled = false;
-        if (actionButtonText) actionButtonText.textContent = 'Extrair & Resumir';
+        if (actionButtonText) {
+            actionButtonText.textContent = (window.i18n && window.i18n.isInitialized)
+                ? window.i18n.t('analysis.extract_summarize')
+                : 'Analyze page';
+        }
     }
 
     // Toggle tema
