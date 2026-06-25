@@ -1,6 +1,5 @@
 // Service Worker para comunicação com API Gemini
 // Suporte para API compartilhada (via backend seguro) e chaves próprias
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent';
 const GEMINI_MODELS_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 // URLs do backend seguro (substituir pela URL do seu servidor)
@@ -364,17 +363,23 @@ async function summarizeWithGemini(text, apiKey, language = 'pt') {
     let modelsToTry = [];
 
     if (cachedModels && cachedModels.models) {
-      // Filtrar apenas modelos que suportam generateContent
-      modelsToTry = cachedModels.models
+      const available = cachedModels.models
         .filter(model => model.supportedGenerationMethods &&
                         model.supportedGenerationMethods.includes('generateContent'))
-        .map(model => model.name.replace('models/', ''))
-        .slice(0, 3); // Pegar apenas os primeiros 3
+        .map(model => model.name.replace('models/', ''));
+
+      // Preferir modelos atuais (rápidos/baratos) quando a conta os tiver,
+      // em vez de pegar arbitrariamente nos primeiros da lista.
+      const preferred = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro', 'gemini-2.0-flash'];
+      const preferredAvailable = preferred.filter(m => available.includes(m));
+      const others = available.filter(m => !preferred.includes(m));
+      modelsToTry = [...preferredAvailable, ...others].slice(0, 3);
     }
 
-    // Fallback para modelos conhecidos se não conseguir listar
+    // Fallback para modelos atuais se não conseguir listar (os antigos
+    // gemini-pro/1.5-pro/1.0-pro foram descontinuados pelo Google).
     if (modelsToTry.length === 0) {
-      modelsToTry = ['gemini-pro', 'gemini-1.5-pro', 'gemini-1.0-pro'];
+      modelsToTry = ['gemini-2.5-flash', 'gemini-2.5-pro'];
     }
 
     console.log('Modelos a tentar:', modelsToTry);
@@ -597,7 +602,10 @@ ${textToSummarize}`;
           temperature: 0.7,
           topK: 40,
           topP: 0.95,
-          maxOutputTokens: 2048,
+          maxOutputTokens: 4096,
+          // Desativar "thinking" nos modelos 2.5 (reduz latência e evita JSON
+          // truncado). Só se aplica a esses modelos para não quebrar os outros.
+          ...(/^gemini-2\.5/.test(model) ? { thinkingConfig: { thinkingBudget: 0 } } : {})
         }
       })
     });

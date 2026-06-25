@@ -196,12 +196,9 @@ if (!process.env.VERCEL) {
         });
     });
 } else {
-    logSystemEvent('server_startup', {
-        version: VERSION,
-        environment: 'vercel',
-        timestamp: new Date().toISOString()
-    });
-    console.log('🔒 Servidor inicializado para Vercel Serverless');
+    // Em serverless não escrevemos o arranque na auditoria: corria a cada cold
+    // start (BD ainda fria → timeout) e poluía audit_logs com ruído de baixo valor.
+    console.log(`🔒 Servidor inicializado para Vercel Serverless (v${VERSION})`);
 }
 
 export default app;

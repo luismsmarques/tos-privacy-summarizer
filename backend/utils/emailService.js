@@ -8,8 +8,15 @@ class EmailService {
     }
 
     async initializeTransporter() {
+        // Sem credenciais de email não vale a pena criar/verificar o transporter:
+        // evita o erro EAUTH e um round-trip SMTP a cada cold start serverless.
+        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+            console.log('ℹ️ Serviço de email não configurado (EMAIL_USER/EMAIL_PASS em falta) — emails desativados.');
+            this.transporter = null;
+            return;
+        }
+
         try {
-            // Configuração para Gmail (pode ser alterada para outros provedores)
             this.transporter = nodemailer.createTransport({
                 service: 'gmail',
                 auth: {
@@ -17,12 +24,11 @@ class EmailService {
                     pass: process.env.EMAIL_PASS // App password para Gmail
                 }
             });
-
-            // Verificar conexão
-            await this.transporter.verify();
-            console.log('✅ Serviço de email configurado com sucesso');
+            // Não fazer verify() na inicialização — evita bloquear o cold start
+            // com um handshake SMTP. Se houver problema, sendMail falha e é tratado.
+            console.log('✅ Serviço de email configurado');
         } catch (error) {
-            console.error('❌ Erro ao configurar serviço de email:', error);
+            console.error('❌ Erro ao configurar serviço de email:', error.message);
             this.transporter = null;
         }
     }
