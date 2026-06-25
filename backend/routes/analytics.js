@@ -1071,6 +1071,44 @@ router.get('/revenue', async (req, res) => {
   }
 });
 
+// ===== CONFIGURAÇÕES (admin) =====
+// Persistência autoritativa das settings de administração. Apenas chaves
+// na whitelist são aceites (evita guardar segredos como a chave da API).
+const SETTINGS_WHITELIST = [
+  'sessionTimeout', 'accessLogs', 'autoBackup', 'encryption',
+  'backupFrequency', 'backupRetention', 'debugMode', 'logLevel',
+  'performanceMonitoring', 'cacheEnabled', 'apiTimeout', 'retryAttempts'
+];
+
+router.get('/settings', async (req, res) => {
+  try {
+    if (!db.isConnected) await db.connect();
+    const data = await db.getAllSettings();
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('❌ Erro ao obter settings:', error);
+    res.status(500).json({ success: false, error: 'Erro ao obter configurações: ' + error.message });
+  }
+});
+
+router.put('/settings', async (req, res) => {
+  try {
+    if (!db.isConnected) await db.connect();
+    const incoming = (req.body && typeof req.body === 'object') ? req.body : {};
+    const clean = {};
+    for (const k of SETTINGS_WHITELIST) {
+      if (Object.prototype.hasOwnProperty.call(incoming, k)) clean[k] = incoming[k];
+    }
+    const data = await db.saveSettings(clean);
+    auditLogger.logUserAction(req.user?.userId || 'admin', 'settings_update', { keys: Object.keys(clean) }, {})
+      .catch((e) => console.error('audit settings_update falhou:', e.message));
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('❌ Erro ao guardar settings:', error);
+    res.status(500).json({ success: false, error: 'Erro ao guardar configurações: ' + error.message });
+  }
+});
+
 // ===== AUDITORIA & SEGURANÇA =====
 
 // Resumo de auditoria: totais, distribuição por tipo/severidade, série diária

@@ -109,7 +109,9 @@ router.post('/proxy', [
 
         let summaryJson, ratings, documentType;
         let apiUsage = null; // preenchido apenas em cache miss (chamada real)
-        const cached = await db.getCachedSummary(contentHash);
+        // Cache de resumos pode ser desligado nas configurações do dashboard.
+        const cacheEnabled = await db.getSetting('cacheEnabled', true) !== false;
+        const cached = cacheEnabled ? await db.getCachedSummary(contentHash) : null;
 
         if (cached) {
             // Cache hit — servir sem chamar o Gemini.
@@ -140,8 +142,10 @@ router.post('/proxy', [
             // antes a double-encodava.
             summaryJson = stripClassificacao(geminiResponse);
 
-            // Guardar no cache para pedidos futuros idênticos.
-            await db.saveCachedSummary(contentHash, language, summaryJson, ratings, documentType);
+            // Guardar no cache para pedidos futuros idênticos (se ativado).
+            if (cacheEnabled) {
+                await db.saveCachedSummary(contentHash, language, summaryJson, ratings, documentType);
+            }
         }
 
         // Registrar resumo no analytics

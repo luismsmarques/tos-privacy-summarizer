@@ -572,6 +572,54 @@ class Database {
         }
     }
 
+    // --- Configurações da aplicação (key-value) --------------------------
+    // Persistência autoritativa e partilhada das settings de administração.
+    // Lidas com cache em memória (TTL curto) para não bater na BD a cada uso.
+    async ensureSettingsTable() {
+        if (this._settingsTableReady) return;
+        await this.query(`
+            CREATE TABLE IF NOT EXISTS app_settings (
+                key        TEXT PRIMARY KEY,
+                value      JSONB,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        this._settingsTableReady = true;
+    }
+
+    async getAllSettings() {
+        const now = Date.now();
+        if (this._settingsCache && this._settingsCache.expires > now) return this._settingsCache.data;
+        await this.ensureSettingsTable();
+        const r = await this.query('SELECT key, value FROM app_settings');
+        const data = {};
+        r.rows.forEach((row) => { data[row.key] = row.value; });
+        this._settingsCache = { data, expires: now + 30000 };
+        return data;
+    }
+
+    async saveSettings(obj) {
+        await this.ensureSettingsTable();
+        for (const [k, v] of Object.entries(obj || {})) {
+            await this.query(`
+                INSERT INTO app_settings (key, value, updated_at)
+                VALUES ($1, $2, NOW())
+                ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = NOW()
+            `, [k, JSON.stringify(v)]);
+        }
+        this._settingsCache = null; // invalidar cache
+        return this.getAllSettings();
+    }
+
+    async getSetting(key, fallback = null) {
+        try {
+            const all = await this.getAllSettings();
+            return (all && Object.prototype.hasOwnProperty.call(all, key)) ? all[key] : fallback;
+        } catch (error) {
+            return fallback;
+        }
+    }
+
     // Obter créditos do utilizador
     async getUserCredits(userId) {
         try {

@@ -3498,18 +3498,21 @@ document.addEventListener('DOMContentLoaded', () => {
         startPerformanceMonitoring();
     }
     
-    function saveSettings() {
+    // Preferências do cliente (por browser) vs configurações de administração
+    // (servidor, partilhadas e autoritativas).
+    async function saveSettings() {
         console.log('💾 Guardando configurações...');
-        
-        const settings = {
+
+        const clientSettings = {
             theme: document.getElementById('themeSetting')?.value || 'light',
             language: document.getElementById('languageSetting')?.value || 'pt',
-            notifications: document.getElementById('notificationsSetting')?.checked || false,
-            autoRefresh: parseInt(document.getElementById('autoRefreshSetting')?.value) || 30,
-            backendUrl: document.getElementById('backendUrlSetting')?.value || window.location.origin,
-            geminiApiKey: document.getElementById('geminiApiKeySetting')?.value || '',
-            apiTimeout: parseInt(document.getElementById('apiTimeoutSetting')?.value) || 10000,
-            retryAttempts: parseInt(document.getElementById('retryAttemptsSetting')?.value) || 3,
+            notifications: document.getElementById('notificationsSetting')?.checked ?? true,
+            autoRefresh: parseInt(document.getElementById('autoRefreshSetting')?.value) || 30
+        };
+        localStorage.setItem('dashboardSettings', JSON.stringify(clientSettings));
+        applySettings(clientSettings);
+
+        const serverSettings = {
             sessionTimeout: parseInt(document.getElementById('sessionTimeoutSetting')?.value) || 60,
             accessLogs: document.getElementById('accessLogsSetting')?.checked || false,
             autoBackup: document.getElementById('autoBackupSetting')?.checked || false,
@@ -3519,46 +3522,59 @@ document.addEventListener('DOMContentLoaded', () => {
             debugMode: document.getElementById('debugModeSetting')?.checked || false,
             logLevel: document.getElementById('logLevelSetting')?.value || 'info',
             performanceMonitoring: document.getElementById('performanceMonitoringSetting')?.checked || false,
-            cacheEnabled: document.getElementById('cacheEnabledSetting')?.checked || false
+            cacheEnabled: document.getElementById('cacheEnabledSetting')?.checked ?? true,
+            apiTimeout: parseInt(document.getElementById('apiTimeoutSetting')?.value) || 10000,
+            retryAttempts: parseInt(document.getElementById('retryAttemptsSetting')?.value) || 3
         };
-        
-        // Guardar no localStorage
-        localStorage.setItem('dashboardSettings', JSON.stringify(settings));
-        
-        // Aplicar configurações
-        applySettings(settings);
-        
-        // Mostrar notificação de sucesso
-        showNotification('✅ Configurações guardadas com sucesso!', 'success');
-        
-        console.log('✅ Configurações guardadas:', settings);
-    }
-    
-    function loadSettings() {
-        console.log('📂 Carregando configurações...');
-        
-        const savedSettings = localStorage.getItem('dashboardSettings');
-        if (savedSettings) {
-            const settings = JSON.parse(savedSettings);
-            
-            // Aplicar valores aos campos
-            Object.keys(settings).forEach(key => {
-                const element = document.getElementById(key + 'Setting');
-                if (element) {
-                    if (element.type === 'checkbox') {
-                        element.checked = settings[key];
-                    } else {
-                        element.value = settings[key];
-                    }
-                }
+
+        try {
+            await window.dashboard.fetchData('/api/analytics/settings', {
+                method: 'PUT',
+                body: JSON.stringify(serverSettings)
             });
-            
-            // Aplicar configurações
-            applySettings(settings);
-            
-            console.log('✅ Configurações carregadas:', settings);
-        } else {
-            console.log('ℹ️ Nenhuma configuração salva encontrada, usando padrões');
+            showNotification('✅ Configurações guardadas (servidor + este dispositivo)', 'success');
+        } catch (error) {
+            console.error('❌ Falha ao guardar no servidor:', error);
+            showNotification('⚠️ Preferências locais guardadas, mas falhou guardar no servidor', 'error');
+        }
+    }
+
+    async function loadSettings() {
+        console.log('📂 Carregando configurações...');
+
+        const populate = (settings) => {
+            Object.keys(settings || {}).forEach((key) => {
+                const el = document.getElementById(key + 'Setting');
+                if (!el) return;
+                if (el.type === 'checkbox') el.checked = !!settings[key];
+                else el.value = settings[key];
+            });
+        };
+
+        // Preferências do cliente (localStorage)
+        try {
+            const saved = localStorage.getItem('dashboardSettings');
+            if (saved) { const s = JSON.parse(saved); populate(s); applySettings(s); }
+        } catch (error) {
+            console.warn('Configurações locais inválidas:', error);
+        }
+
+        // Configurações de administração (servidor)
+        try {
+            const resp = await window.dashboard.fetchData('/api/analytics/settings');
+            const s = (resp && resp.data) ? resp.data : {};
+            populate(s);
+            applySettings(s);
+        } catch (error) {
+            console.warn('Não foi possível carregar configurações do servidor:', error);
+        }
+
+        // A chave da API Gemini é gerida no servidor — nunca a guardamos no cliente.
+        const keyInput = document.getElementById('geminiApiKeySetting');
+        if (keyInput) {
+            keyInput.value = '';
+            keyInput.readOnly = true;
+            keyInput.placeholder = 'Gerida no servidor (env GEMINI_API_KEY)';
         }
     }
     
@@ -3566,6 +3582,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Aplicar tema
         if (settings.theme) {
             document.documentElement.setAttribute('data-theme', settings.theme);
+        }
+
+        // Respeitar a preferência de notificações (só quando vem definida)
+        if ('notifications' in settings) {
+            window.__notificationsEnabled = settings.notifications !== false;
         }
         
         // Aplicar configurações de debug
@@ -3754,6 +3775,8 @@ document.addEventListener('DOMContentLoaded', () => {
     window.showNotification = showNotification;
 
     function showNotification(message, type = 'info') {
+        // Respeitar a preferência de notificações do utilizador.
+        if (window.__notificationsEnabled === false) return;
         // Criar elemento de notificação
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
