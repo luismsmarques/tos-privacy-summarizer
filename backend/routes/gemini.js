@@ -453,7 +453,11 @@ ${textToSummarize}`;
                 temperature: 0.7,
                 topK: 40,
                 topP: 0.95,
-                maxOutputTokens: 2048,
+                maxOutputTokens: 4096,
+                // Desativar o "thinking" do gemini-2.5-flash: reduz a latência
+                // e evita que os tokens de raciocínio consumam o orçamento de
+                // saída (causava JSON truncado / "Unterminated string").
+                thinkingConfig: { thinkingBudget: 0 }
             }
         })
     });

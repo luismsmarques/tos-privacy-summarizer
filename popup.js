@@ -644,14 +644,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     console.log('Resposta do content script:', response);
                     
-                    // Fallback: se não receber resposta em 10 segundos, mostrar erro
+                    // Fallback: se não receber resposta em 45 segundos, mostrar erro.
+                    // Uma chamada ao LLM + cold start da função serverless pode
+                    // legitimamente passar dos 10s; 45s evita timeouts prematuros.
                     setTimeout(() => {
                         if (isProcessing) {
-                            console.log('Timeout - não recebeu resumo em 10 segundos');
+                            console.log('Timeout - não recebeu resumo em 45 segundos');
                             showError('Timeout: O resumo demorou muito para ser processado. Tente novamente.');
                             resetButton();
                         }
-                    }, 10000);
+                    }, 45000);
                 }
             });
             
