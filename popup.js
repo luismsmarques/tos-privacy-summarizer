@@ -807,7 +807,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (actionButtonText) actionButtonText.textContent = 'Processando...';
             showProgress();
 
-            chrome.runtime.sendMessage({ action: 'summarizeUrl', url, language: language || 'pt' }, () => {
+            chrome.runtime.sendMessage({ action: 'analyzeLegalLink', url, language: language || 'pt' }, () => {
                 if (chrome.runtime.lastError) {
                     showError('Erro ao iniciar a análise do link.');
                     resetButton();

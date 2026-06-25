@@ -97,7 +97,84 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     sendResponse({ status: 'processing' });
   }
+
+  if (request.action === 'analyzeLegalLink') {
+    Logger.log('Analisar link legal (abrir aba + extrair):', { url: request.url });
+    analyzeLegalLinkInTab(request.url, request.language || 'pt')
+      .catch(error => {
+        Logger.error('Erro ao analisar link em aba:', error);
+        chrome.runtime.sendMessage({ action: 'displaySummary', summary: `Erro: ${error.message}` });
+      });
+    sendResponse({ status: 'processing' });
+  }
 });
+
+// Função injetada na PÁGINA (executeScript) — extrai o texto JÁ renderizado.
+// Tem de ser autónoma (sem refs externas).
+function pageTextExtractor() {
+  try {
+    const main = document.querySelector('main, article, [role="main"]');
+    let t = (main && main.innerText) || (document.body && document.body.innerText) || '';
+    return t.replace(/[ \t\f\v]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, 100000);
+  } catch (e) {
+    return '';
+  }
+}
+
+// Espera a aba terminar o carregamento (ou timeout).
+function waitForTabComplete(tabId, timeoutMs) {
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = (ok) => { if (!done) { done = true; clearTimeout(timer); chrome.tabs.onUpdated.removeListener(listener); resolve(ok); } };
+    const listener = (id, info) => { if (id === tabId && info.status === 'complete') finish(true); };
+    const timer = setTimeout(() => finish(false), timeoutMs);
+    chrome.tabs.onUpdated.addListener(listener);
+  });
+}
+
+// Abre o link de Termos/Privacidade numa aba em segundo plano, extrai o texto
+// renderizado (funciona em SPAs) e resume via backend. Fecha a aba no fim.
+async function analyzeLegalLinkInTab(url, language = 'pt') {
+  let tab = null;
+  try {
+    chrome.runtime.sendMessage({ action: 'progressUpdate', step: 1, text: 'A abrir a página…', progress: 20 });
+    tab = await chrome.tabs.create({ url, active: false });
+    await waitForTabComplete(tab.id, 15000);
+    // Dar tempo a SPAs para renderizar o conteúdo.
+    await new Promise(r => setTimeout(r, 1400));
+
+    chrome.runtime.sendMessage({ action: 'progressUpdate', step: 2, text: 'A ler o texto…', progress: 45 });
+    const results = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: pageTextExtractor });
+    const text = results && results[0] && results[0].result;
+    if (!text || text.length < 50) {
+      throw new Error('Não foi possível ler texto suficiente desta página');
+    }
+
+    let title = url;
+    try { const info = await chrome.tabs.get(tab.id); title = info.title || url; } catch (e) { /* sem título */ }
+
+    const stored = await new Promise(res => chrome.storage.local.get(['userId'], res));
+    const userId = stored.userId || await createOrGetUserId();
+
+    chrome.runtime.sendMessage({ action: 'progressUpdate', step: 3, text: 'A analisar com IA…', progress: 70 });
+    const summary = await RetryManager.executeWithRetry(
+      () => summarizeWithBackend(text, userId, url, title, language),
+      'analyzeLegalLinkInTab'
+    );
+
+    chrome.runtime.sendMessage({ action: 'progressUpdate', step: 4, text: 'Concluído', progress: 100 });
+    setTimeout(() => {
+      chrome.runtime.sendMessage({
+        action: 'displaySummary',
+        summary: summary.summary || summary,
+        ratings: summary.ratings,
+        documentType: summary.documentType
+      });
+    }, 300);
+  } finally {
+    if (tab && tab.id) { try { await chrome.tabs.remove(tab.id); } catch (e) { /* ignore */ } }
+  }
+}
 
 // Resume uma página a partir do URL (deteção de links de Termos/Privacidade).
 // O texto é extraído no servidor; usa sempre o backend partilhado.
