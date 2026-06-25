@@ -1197,7 +1197,57 @@ class Dashboard {
         console.log('Editar créditos do utilizador:', userId);
         this.showEditCreditsModal(userId);
     }
-    
+
+    // Notificação acessível a partir dos métodos da classe (showNotification
+    // vive no closure do DOMContentLoaded e é exposto em window).
+    notify(msg, type) {
+        if (window.showNotification) window.showNotification(msg, type);
+        else console.log(`[${type}] ${msg}`);
+    }
+
+    // GDPR: exportar todos os dados de um utilizador num ficheiro JSON
+    async exportUserData(userId) {
+        try {
+            this.notify('⏳ A preparar exportação...', 'info');
+            const resp = await this.fetchData(`/api/users/${encodeURIComponent(userId)}/export`);
+            const bundle = (resp && resp.data) ? resp.data : resp;
+            const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `gdpr-${userId}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            this.notify('✅ Dados exportados', 'success');
+        } catch (err) {
+            console.error('❌ Erro ao exportar dados:', err);
+            this.notify('❌ Não foi possível exportar os dados', 'error');
+        }
+    }
+
+    // GDPR: apagar definitivamente todos os dados de um utilizador
+    async deleteUserGDPR(userId) {
+        const confirmed = window.confirm(
+            `Eliminar DEFINITIVAMENTE todos os dados de ${userId}?\n\n` +
+            `Remove resumos, créditos, pagamentos, custos e a conta. ` +
+            `Os registos de auditoria são preservados. Esta ação é irreversível.`
+        );
+        if (!confirmed) return;
+        try {
+            const resp = await this.fetchData(`/api/users/${encodeURIComponent(userId)}`, { method: 'DELETE' });
+            if (resp && resp.success) {
+                this.notify('✅ Utilizador eliminado (GDPR)', 'success');
+                document.querySelectorAll('.modal-overlay').forEach((m) => m.remove());
+                this.loadUsersData();
+            } else {
+                this.notify('❌ Falha ao eliminar', 'error');
+            }
+        } catch (err) {
+            console.error('❌ Erro ao eliminar utilizador:', err);
+            this.notify('❌ Não foi possível eliminar o utilizador', 'error');
+        }
+    }
+
     toggleTheme() {
         const currentTheme = document.documentElement.getAttribute('data-theme');
         const newTheme = currentTheme === 'light' ? 'dark' : 'light';
@@ -1543,6 +1593,14 @@ class Dashboard {
                     <button class="btn btn-primary" onclick="window.dashboard.editUserCredits('${userData.user.user_id}'); this.closest('.modal-overlay').remove();">
                         <span class="material-symbols-outlined">edit</span>
                         Editar Créditos
+                    </button>
+                    <button class="btn btn-secondary" onclick="window.dashboard.exportUserData('${userData.user.user_id}')">
+                        <span class="material-symbols-outlined">download</span>
+                        Exportar (GDPR)
+                    </button>
+                    <button class="btn btn-danger" onclick="window.dashboard.deleteUserGDPR('${userData.user.user_id}')">
+                        <span class="material-symbols-outlined">delete_forever</span>
+                        Eliminar (GDPR)
                     </button>
                     <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">
                         Fechar
@@ -3692,6 +3750,9 @@ document.addEventListener('DOMContentLoaded', () => {
         refreshPerformanceMetrics();
     }
     
+    // Exposto para os métodos da classe Dashboard (fora deste closure).
+    window.showNotification = showNotification;
+
     function showNotification(message, type = 'info') {
         // Criar elemento de notificação
         const notification = document.createElement('div');

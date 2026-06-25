@@ -529,4 +529,85 @@ router.get('/:userId/credits-history', authService.authenticateToken, async (req
     }
 });
 
+// ===== GDPR =====
+
+// Exportar todos os dados de um utilizador (direito de acesso/portabilidade).
+router.get('/:userId/export', authService.authenticateToken, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        if (!db.isConnected) {
+            const connected = await db.connect();
+            if (!connected) return res.status(500).json({ success: false, error: 'Base de dados indisponível' });
+        }
+
+        const q = async (sql, params) => {
+            try { return (await db.query(sql, params)).rows; } catch (e) { console.error('export sub-query falhou:', e.message); return []; }
+        };
+
+        const userRows = await q('SELECT * FROM users WHERE user_id = $1', [userId]);
+        if (!userRows.length) {
+            return res.status(404).json({ success: false, error: 'Utilizador não encontrado' });
+        }
+
+        const bundle = {
+            generated_at: new Date().toISOString(),
+            user_id: userId,
+            user: userRows[0],
+            summaries: await q('SELECT * FROM summaries WHERE user_id = $1 ORDER BY created_at DESC', [userId]),
+            credits_history: await q('SELECT * FROM credits_history WHERE user_id = $1 ORDER BY created_at DESC', [userId]),
+            payments: await q('SELECT * FROM processed_payments WHERE user_id = $1 ORDER BY created_at DESC', [userId]),
+            api_costs: await q('SELECT * FROM api_costs WHERE user_id = $1 ORDER BY created_at DESC', [userId]),
+            audit_logs: await q('SELECT id, type, action, severity, timestamp FROM audit_logs WHERE user_id = $1 ORDER BY timestamp DESC LIMIT 500', [userId])
+        };
+
+        logUserAction(req.user?.userId || 'admin', 'gdpr_export', { target_user: userId }, {})
+            .catch((e) => console.error('audit gdpr_export falhou:', e.message));
+
+        res.setHeader('Content-Disposition', `attachment; filename="gdpr-${userId}.json"`);
+        res.json({ success: true, data: bundle });
+    } catch (error) {
+        console.error('Erro ao exportar dados do utilizador:', error);
+        res.status(500).json({ success: false, error: 'Erro ao exportar dados: ' + error.message });
+    }
+});
+
+// Apagar todos os dados de um utilizador (direito ao esquecimento).
+// Os audit_logs são preservados (interesse legítimo de segurança) e a própria
+// eliminação fica registada.
+router.delete('/:userId', authService.authenticateToken, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        if (!db.isConnected) {
+            const connected = await db.connect();
+            if (!connected) return res.status(500).json({ success: false, error: 'Base de dados indisponível' });
+        }
+
+        const exists = await db.query('SELECT 1 FROM users WHERE user_id = $1', [userId]);
+        if (!exists.rows.length) {
+            return res.status(404).json({ success: false, error: 'Utilizador não encontrado' });
+        }
+
+        const del = async (sql) => {
+            try { return (await db.query(sql, [userId])).rowCount || 0; } catch (e) { console.error('delete falhou:', e.message); return 0; }
+        };
+
+        const deleted = {
+            credits_history: await del('DELETE FROM credits_history WHERE user_id = $1'),
+            summaries: await del('DELETE FROM summaries WHERE user_id = $1'),
+            requests: await del('DELETE FROM requests WHERE user_id = $1'),
+            payments: await del('DELETE FROM processed_payments WHERE user_id = $1'),
+            api_costs: await del('DELETE FROM api_costs WHERE user_id = $1'),
+            users: await del('DELETE FROM users WHERE user_id = $1')
+        };
+
+        logUserAction(req.user?.userId || 'admin', 'gdpr_delete', { target_user: userId, deleted }, { critical: true })
+            .catch((e) => console.error('audit gdpr_delete falhou:', e.message));
+
+        res.json({ success: true, message: 'Dados do utilizador eliminados', deleted });
+    } catch (error) {
+        console.error('Erro ao eliminar dados do utilizador:', error);
+        res.status(500).json({ success: false, error: 'Erro ao eliminar dados: ' + error.message });
+    }
+});
+
 export default router;
