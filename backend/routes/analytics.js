@@ -903,8 +903,9 @@ router.get('/revenue', async (req, res) => {
         return res.status(500).json({ success: false, error: 'Base de dados indisponível' });
       }
     }
-    // Garante a tabela e as colunas de receita antes de consultar.
+    // Garante as tabelas/colunas de receita e custo antes de consultar.
     await db.ensurePaymentsTable();
+    await db.ensureApiCostsTable();
 
     let days = parseInt(req.query.days, 10);
     if (!Number.isFinite(days) || days < 1) days = 30;
@@ -918,7 +919,7 @@ router.get('/revenue', async (req, res) => {
     // Expressão de receita por linha, com fallback para linhas legadas.
     const REV = `COALESCE(amount_cents, credits * 100)`;
 
-    const [periodRow, globalRow, byPackage, daily, topBuyers, recent, consumedRow] = await Promise.all([
+    const [periodRow, globalRow, byPackage, daily, topBuyers, recent, consumedRow, costRow, dailyCost] = await Promise.all([
       safe(async () => (await db.query(`
         SELECT
           COUNT(*)                          AS payments,
@@ -978,7 +979,28 @@ router.get('/revenue', async (req, res) => {
         SELECT COUNT(*) AS credits_consumed
         FROM summaries
         WHERE success = true AND created_at >= NOW() - ($1 * INTERVAL '1 day')
-      `, win)).rows[0] || {}, {})
+      `, win)).rows[0] || {}, {}),
+
+      // Custo de API no período (chamadas reais vs cache hits)
+      safe(async () => (await db.query(`
+        SELECT
+          COALESCE(SUM(cost_micros) FILTER (WHERE cached = false), 0) AS cost_micros,
+          COUNT(*) FILTER (WHERE cached = false)                      AS api_calls,
+          COUNT(*) FILTER (WHERE cached = true)                       AS cache_hits,
+          COALESCE(SUM(input_tokens), 0)                              AS input_tokens,
+          COALESCE(SUM(output_tokens), 0)                             AS output_tokens
+        FROM api_costs
+        WHERE created_at >= NOW() - ($1 * INTERVAL '1 day')
+      `, win)).rows[0] || {}, {}),
+
+      // Série diária de custo
+      safe(async () => (await db.query(`
+        SELECT to_char(date_trunc('day', created_at), 'YYYY-MM-DD') AS date,
+               COALESCE(SUM(cost_micros) FILTER (WHERE cached = false), 0) AS cost_micros
+        FROM api_costs
+        WHERE created_at >= NOW() - ($1 * INTERVAL '1 day')
+        GROUP BY 1 ORDER BY 1
+      `, win)).rows, [])
     ]);
 
     const num = (v) => (v == null ? 0 : Number(v));
@@ -987,6 +1009,15 @@ router.get('/revenue', async (req, res) => {
     const totalUsers = num(globalRow.total_users);
     const payingAll = num(globalRow.paying_users_all);
     const revenueAll = num(globalRow.revenue_all_cents);
+
+    // Custo & margem (cost em micro-euros: 1 cêntimo = 10.000 micros)
+    const costMicros = num(costRow.cost_micros);
+    const apiCalls = num(costRow.api_calls);
+    const cacheHits = num(costRow.cache_hits);
+    const costCents = costMicros / 10000;
+    const avgCostPerCallMicros = apiCalls > 0 ? costMicros / apiCalls : 0;
+    const cacheSavingsMicros = Math.round(cacheHits * avgCostPerCallMicros);
+    const marginCents = +(revenueCents - costCents).toFixed(2);
 
     res.json({
       success: true,
@@ -1007,8 +1038,19 @@ router.get('/revenue', async (req, res) => {
         arpu_cents: totalUsers > 0 ? Math.round(revenueAll / totalUsers) : 0,
         outstanding_credits: num(globalRow.outstanding_credits),
         revenue_all_cents: revenueAll,
-        payments_all: num(globalRow.payments_all)
+        payments_all: num(globalRow.payments_all),
+        // Custo & margem (cêntimos de EUR)
+        cost_cents: +costCents.toFixed(2),
+        margin_cents: marginCents,
+        margin_pct: revenueCents > 0 ? +((marginCents / revenueCents) * 100).toFixed(1) : null,
+        api_calls: apiCalls,
+        cache_hits: cacheHits,
+        avg_cost_per_call_cents: +((avgCostPerCallMicros) / 10000).toFixed(3),
+        cache_savings_cents: +(cacheSavingsMicros / 10000).toFixed(2),
+        input_tokens: num(costRow.input_tokens),
+        output_tokens: num(costRow.output_tokens)
       },
+      daily_cost: dailyCost.map((r) => ({ date: r.date, cost_cents: num(r.cost_micros) / 10000 })),
       by_package: byPackage.map((r) => ({
         package: r.package, payments: num(r.payments), revenue_cents: num(r.revenue_cents), credits: num(r.credits)
       })),

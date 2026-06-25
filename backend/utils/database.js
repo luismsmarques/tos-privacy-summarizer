@@ -538,6 +538,40 @@ class Database {
         this._paymentsTableReady = true;
     }
 
+    // --- Custo de API (Gemini) -------------------------------------------
+    // Regista o custo de cada chamada (e os cache hits, com custo 0) para o
+    // dashboard calcular custo, margem e poupança do cache. cost_micros está
+    // em micro-euros (1 EUR = 1.000.000 micros) para preservar precisão.
+    async ensureApiCostsTable() {
+        if (this._apiCostsTableReady) return;
+        await this.query(`
+            CREATE TABLE IF NOT EXISTS api_costs (
+                id            SERIAL PRIMARY KEY,
+                user_id       TEXT,
+                model         TEXT,
+                input_tokens  INTEGER NOT NULL DEFAULT 0,
+                output_tokens INTEGER NOT NULL DEFAULT 0,
+                cost_micros   BIGINT  NOT NULL DEFAULT 0,
+                cached        BOOLEAN NOT NULL DEFAULT false,
+                created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        await this.query(`CREATE INDEX IF NOT EXISTS idx_api_costs_created_at ON api_costs (created_at)`);
+        this._apiCostsTableReady = true;
+    }
+
+    async recordApiCost({ userId = null, model = null, inputTokens = 0, outputTokens = 0, costMicros = 0, cached = false }) {
+        try {
+            await this.ensureApiCostsTable();
+            await this.query(`
+                INSERT INTO api_costs (user_id, model, input_tokens, output_tokens, cost_micros, cached)
+                VALUES ($1, $2, $3, $4, $5, $6)
+            `, [userId, model, Math.round(inputTokens) || 0, Math.round(outputTokens) || 0, Math.round(costMicros) || 0, !!cached]);
+        } catch (error) {
+            console.error('❌ Falha ao registar custo de API:', error.message);
+        }
+    }
+
     // Obter créditos do utilizador
     async getUserCredits(userId) {
         try {

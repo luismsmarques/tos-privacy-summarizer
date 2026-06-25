@@ -2565,19 +2565,42 @@ document.addEventListener('DOMContentLoaded', () => {
         // Passivo: créditos por consumir, com valor estimado a 1€/crédito
         set('revLiability', `${Number(m.outstanding_credits || 0).toLocaleString('pt-PT')} créd. (~${eur((m.outstanding_credits || 0) * 100)})`);
 
-        // Gráfico: receita ao longo do tempo
+        // Custo & margem
+        const eurFine = (cents) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 4, maximumFractionDigits: 4 }).format((cents || 0) / 100);
+        set('revCost', eur(m.cost_cents));
+        set('revMargin', `${eur(m.margin_cents)}${m.margin_pct != null ? ` (${m.margin_pct}%)` : ''}`);
+        set('revAvgCost', eurFine(m.avg_cost_per_call_cents));
+        set('revCacheSavings', eur(m.cache_savings_cents));
+        // Margem negativa a vermelho
+        const marginEl = document.getElementById('revMargin');
+        if (marginEl) marginEl.style.color = (m.margin_cents < 0) ? 'var(--md-sys-color-error)' : '';
+
+        // Gráfico: receita vs custo ao longo do tempo (eixo de datas unificado)
         const daily = d.daily_revenue || [];
+        const dailyCost = d.daily_cost || [];
+        const revByDate = {}; daily.forEach((x) => { revByDate[x.date] = (x.revenue_cents || 0) / 100; });
+        const costByDate = {}; dailyCost.forEach((x) => { costByDate[x.date] = x.cost_cents / 100; });
+        const allDates = Array.from(new Set([...daily.map((x) => x.date), ...dailyCost.map((x) => x.date)])).sort();
         rRenderChart('revOverTime', 'revenueOverTimeChart', {
             type: 'line',
             data: {
-                labels: daily.map((x) => new Date(x.date + 'T00:00:00').toLocaleDateString('pt-PT', { month: 'short', day: 'numeric' })),
-                datasets: [{
-                    label: 'Receita (€)',
-                    data: daily.map((x) => (x.revenue_cents || 0) / 100),
-                    borderColor: 'rgb(103, 80, 164)',
-                    backgroundColor: 'rgba(103, 80, 164, 0.1)',
-                    tension: 0.4, fill: true
-                }]
+                labels: allDates.map((dt) => new Date(dt + 'T00:00:00').toLocaleDateString('pt-PT', { month: 'short', day: 'numeric' })),
+                datasets: [
+                    {
+                        label: 'Receita (€)',
+                        data: allDates.map((dt) => revByDate[dt] || 0),
+                        borderColor: 'rgb(103, 80, 164)',
+                        backgroundColor: 'rgba(103, 80, 164, 0.1)',
+                        tension: 0.4, fill: true
+                    },
+                    {
+                        label: 'Custo API (€)',
+                        data: allDates.map((dt) => costByDate[dt] || 0),
+                        borderColor: 'rgb(186, 26, 26)',
+                        backgroundColor: 'rgba(186, 26, 26, 0.08)',
+                        tension: 0.4, fill: true
+                    }
+                ]
             },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } }
         });

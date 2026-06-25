@@ -2308,6 +2308,41 @@
                         </div>
                     </div>
 
+                    <!-- Custo & Margem -->
+                    <div class="analytics-metrics-grid">
+                        <div class="metric-card warning">
+                            <div class="metric-icon"><span class="material-symbols-outlined">smart_toy</span></div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="revCost">-</div>
+                                <div class="metric-label">Custo de API (período)</div>
+                            </div>
+                        </div>
+                        <div class="metric-card success">
+                            <div class="metric-icon"><span class="material-symbols-outlined">savings</span></div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="revMargin">-</div>
+                                <div class="metric-label">Margem (receita − custo)</div>
+                            </div>
+                        </div>
+                        <div class="metric-card info">
+                            <div class="metric-icon"><span class="material-symbols-outlined">request_quote</span></div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="revAvgCost">-</div>
+                                <div class="metric-label">Custo médio / resumo</div>
+                            </div>
+                        </div>
+                        <div class="metric-card primary">
+                            <div class="metric-icon"><span class="material-symbols-outlined">bolt</span></div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="revCacheSavings">-</div>
+                                <div class="metric-label">Poupança do cache (est.)</div>
+                            </div>
+                        </div>
+                    </div>
+                    <p style="font-size:12px;color:var(--md-sys-color-on-surface-variant);margin:-12px 0 8px">
+                        Custo estimado a partir dos tokens do Gemini e dos preços configurados (<code>GEMINI_PRICE_INPUT_PER_M</code> / <code>GEMINI_PRICE_OUTPUT_PER_M</code>).
+                    </p>
+
                     <!-- Gráficos -->
                     <div class="analytics-charts-grid">
                         <div class="chart-card large">
