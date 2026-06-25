@@ -160,10 +160,12 @@
         }
 
         /* Connection status / créditos foram movidos para a app bar e para o
-           cartão do site; mantemos os elementos para a lógica do JS mas ocultos. */
+           cartão do site; mantemos os elementos para a lógica do JS mas ocultos.
+           !important garante que continuam ocultos mesmo quando o JS escreve
+           style.display='flex' (a app bar mostra os créditos em vez destes). */
         .credits-status,
         .connection-status {
-            display: none;
+            display: none !important;
         }
 
         .credits-info { display: flex; align-items: center; gap: 8px; }
