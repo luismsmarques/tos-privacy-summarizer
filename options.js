@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         if (!isValidApiKey(apiKey)) {
-            showStatus('Formato de chave da API inválido. Deve começar com "AIza".', 'error');
+            showStatus('Formato de chave da API inválido. Verifique se copiou a chave completa, sem espaços.', 'error');
             return;
         }
         
@@ -178,8 +178,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Função para validar formato da chave da API
     function isValidApiKey(apiKey) {
-        // Chaves da Gemini API geralmente começam com "AIza"
-        return apiKey.startsWith('AIza') && apiKey.length > 30;
+        // Não assumir um prefixo fixo ("AIza"): o formato das chaves do Google
+        // AI mudou ao longo do tempo e nem todas começam por "AIza". Validação
+        // leve de sanidade — o validador real é o botão "Testar" (chamada à API).
+        return /^[A-Za-z0-9_-]{20,}$/.test(apiKey);
     }
     
     // Função para alternar configurações

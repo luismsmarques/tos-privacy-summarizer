@@ -212,7 +212,11 @@ router.post('/proxy', [
 
 // Função para chamar a API Gemini
 async function callGeminiAPI(text, language = 'pt') {
-    const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+    // Modelo configurável via env (GEMINI_MODEL). Default num modelo atual —
+    // o gemini-2.0-flash foi descontinuado pelo Google (404). Permite trocar
+    // de modelo sem alterar código quando o Google descontinuar outro.
+    const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+    const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
     const apiKey = process.env.GEMINI_API_KEY;
     
     // Limitar o tamanho do texto
