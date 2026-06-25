@@ -1,10 +1,27 @@
 // Sistema de Internacionalização para ToS & Privacy Summarizer
 class I18nManager {
     constructor() {
-        this.currentLanguage = 'pt';
+        this.currentLanguage = 'en';
         this.translations = {};
         this.isInitialized = false;
         this.init();
+    }
+
+    // Idioma por omissão: EN, mas se o browser estiver em PT/ES/FR usamos esse.
+    detectBrowserLanguage() {
+        let ui = 'en';
+        try {
+            if (typeof chrome !== 'undefined' && chrome.i18n && chrome.i18n.getUILanguage) {
+                ui = chrome.i18n.getUILanguage();
+            } else if (typeof navigator !== 'undefined' && navigator.language) {
+                ui = navigator.language;
+            }
+        } catch (e) { /* usar 'en' */ }
+        ui = (ui || 'en').toLowerCase();
+        if (ui.startsWith('pt')) return 'pt';
+        if (ui.startsWith('es')) return 'es';
+        if (ui.startsWith('fr')) return 'fr';
+        return 'en';
     }
 
     async init() {
@@ -15,7 +32,7 @@ class I18nManager {
             console.log(`[I18n] Initialized with language: ${this.currentLanguage}`);
         } catch (error) {
             console.error('[I18n] Initialization error:', error);
-            this.currentLanguage = 'pt'; // Fallback
+            this.currentLanguage = 'en'; // Fallback
         }
     }
 
@@ -23,14 +40,15 @@ class I18nManager {
         // Verificar se estamos no contexto da extensão
         if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
             console.log('[I18n] Running outside extension context, using defaults');
-            this.currentLanguage = 'pt';
+            this.currentLanguage = this.detectBrowserLanguage();
             this.autoDetectLanguage = true;
             return Promise.resolve();
         }
 
         return new Promise((resolve) => {
             chrome.storage.local.get(['language', 'autoDetectLanguage'], (result) => {
-                this.currentLanguage = result.language || 'pt';
+                // Preferência guardada > idioma do browser (EN/PT/ES/FR) > EN.
+                this.currentLanguage = result.language || this.detectBrowserLanguage();
                 this.autoDetectLanguage = result.autoDetectLanguage !== false;
                 resolve();
             });

@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "ToS & Privacy Summarizer",
-  "version": "1.4.1",
-  "description": "Resuma Termos de Serviço e Políticas de Privacidade usando IA. Entenda rapidamente o que está a aceitar antes de clicar em 'Aceito'.",
+  "name": "__MSG_appName__",
+  "version": "1.4.2",
+  "description": "__MSG_appDesc__",
+  "default_locale": "en",
   "author": "Luis Marques",
   "homepage_url": "https://github.com/luismsmarques/tos-privacy-summarizer",
   "permissions": [

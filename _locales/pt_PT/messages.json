@@ -1,0 +1,10 @@
+{
+  "appName": {
+    "message": "ToS & Privacy Summarizer",
+    "description": "Nome da extensão mostrado na Chrome Web Store e no browser."
+  },
+  "appDesc": {
+    "message": "Resuma Termos de Serviço e Políticas de Privacidade com IA. Perceba rapidamente o que está a aceitar antes de clicar em 'Aceito'.",
+    "description": "Descrição da extensão mostrada na Chrome Web Store e no browser."
+  }
+}
