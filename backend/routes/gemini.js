@@ -107,146 +107,216 @@ router.post('/proxy', [
 
         const { userId, text, apiType = 'shared', url, title, language = 'pt' } = req.body;
 
-        // Registrar utilizador no analytics
-        await registerUser(userId, req.ip || 'unknown');
-
-        // Verificar créditos do utilizador (apenas para API compartilhada)
-        if (apiType === 'shared') {
-            const userCredits = await getUserCredits(userId);
-            if (userCredits <= 0) {
-                return res.status(402).json({
-                    error: 'Créditos insuficientes',
-                    credits: userCredits,
-                    message: 'Compre mais créditos ou configure a sua própria chave da API'
-                });
-            }
-        }
-
-        // Cache por hash do conteúdo (idioma + texto). Reaproveita resumos
-        // idênticos e evita uma nova chamada (e custo) à API Gemini.
-        const contentHash = crypto.createHash('sha256').update(`${language}\n${text}`).digest('hex');
-
-        let summaryJson, ratings, documentType;
-        let apiUsage = null; // preenchido apenas em cache miss (chamada real)
-        // Cache de resumos pode ser desligado nas configurações do dashboard.
-        const cacheEnabled = await db.getSetting('cacheEnabled', true) !== false;
-        const cached = cacheEnabled ? await db.getCachedSummary(contentHash) : null;
-
-        if (cached) {
-            // Cache hit — servir sem chamar o Gemini.
-            success = true;
-            summaryJson = normalizeSummaryAlerts(cached.summary);
-            documentType = cached.document_type || 'unknown';
-            const cachedRatings = typeof cached.ratings === 'string'
-                ? JSON.parse(cached.ratings)
-                : cached.ratings;
-            ratings = db.normalizeRatings(cachedRatings)
-                || db.calculateRatings(summaryJson, text.length, documentType);
-            console.log('⚡ Cache hit — resumo servido sem chamar a API Gemini');
-        } else {
-            // Cache miss — chamar a API Gemini.
-            const gem = await callGeminiAPI(text, language);
-            const geminiResponse = gem.text;
-            apiUsage = gem.usage;
-            success = true;
-
-            // Detectar tipo de documento baseado no conteúdo
-            documentType = detectDocumentType(text);
-
-            // Obter ratings produzidos pelo próprio Gemini (com fallback heurístico)
-            ratings = extractRatings(geminiResponse, text.length, documentType);
-
-            // Resumo limpo (sem o bloco classificacao) para devolver e guardar.
-            // Guardamos a string JSON tal e qual — sem JSON.stringify extra, que
-            // antes a double-encodava.
-            summaryJson = normalizeSummaryAlerts(stripClassificacao(geminiResponse));
-
-            // Guardar no cache para pedidos futuros idênticos (se ativado).
-            if (cacheEnabled) {
-                await db.saveCachedSummary(contentHash, language, summaryJson, ratings, documentType);
-            }
-        }
-
-        // Registrar resumo no analytics
-        const duration = Date.now() - startTime;
-        console.log(`📊 Registrando resumo: userId=${userId}, success=${success}, duration=${duration}ms, type=${documentType}, textLength=${text.length}, url=${url}, title=${title}`);
-        console.log(`📊 Ratings calculados: complexidade=${ratings.complexidade}, boas_praticas=${ratings.boas_praticas}, risk_score=${ratings.risk_score}`);
-        try {
-            await registerSummary(userId, true, duration, documentType, text.length, url, summaryJson, title, ratings);
-            console.log('✅ Resumo registrado com sucesso no analytics');
-        } catch (error) {
-            console.error('❌ Erro ao registrar resumo no analytics:', error);
-            // Não falhar o request por causa do analytics
-        }
-
-        // Registar custo de API (cache hit = custo 0; serve para medir poupança).
-        // Fire-and-forget para não atrasar a resposta.
-        const isCacheHit = !!cached;
-        db.recordApiCost({
-            userId,
-            model: isCacheHit ? null : (apiUsage?.model || null),
-            inputTokens: isCacheHit ? 0 : (apiUsage?.promptTokens || 0),
-            outputTokens: isCacheHit ? 0 : (apiUsage?.candidatesTokens || 0),
-            costMicros: isCacheHit ? 0 : computeGeminiCostMicros(apiUsage),
-            cached: isCacheHit
-        }).catch((e) => console.error('recordApiCost falhou:', e.message));
-        
-        // Decrementar créditos se for API compartilhada
-        if (apiType === 'shared') {
-            await decrementUserCredits(userId);
-            const remainingCredits = await getUserCredits(userId);
-            
-            res.json({
-                summary: summaryJson,
-                ratings: ratings,
-                credits: remainingCredits,
-                apiType: 'shared',
-                documentType: documentType,
-                cached: !!cached
-            });
-        } else {
-            res.json({
-                summary: summaryJson,
-                ratings: ratings,
-                apiType: 'own',
-                documentType: documentType,
-                cached: !!cached
-            });
-        }
+        const body = await runSummary({ userId, text, apiType, url, title, language, ip: req.ip || 'unknown' });
+        res.json(body);
 
     } catch (error) {
         console.error('Erro no proxy Gemini:', error);
-        
-        // Registrar falha no analytics
         const duration = Date.now() - startTime;
-        await registerSummary(req.body.userId || 'unknown', false, duration, 'error', 0);
-        
-        // Determinar tipo de erro
-        let errorMessage = 'Erro ao processar resumo';
-        let statusCode = 500;
-        
-        if (error.message.includes('API Gemini')) {
-            if (error.message.includes('401') || error.message.includes('403')) {
-                errorMessage = 'Chave da API inválida ou sem permissões';
-                statusCode = 401;
-            } else if (error.message.includes('429')) {
-                errorMessage = 'Limite de uso da API atingido';
-                statusCode = 429;
-            } else {
-                errorMessage = 'Erro na API Gemini';
-                statusCode = 502;
-            }
-        } else if (error.message.includes('fetch') || error.message.includes('network')) {
-            errorMessage = 'Erro de ligação à internet';
-            statusCode = 503;
-        }
-        
-        res.status(statusCode).json({
-            error: errorMessage,
-            timestamp: new Date().toISOString()
-        });
+        await registerSummary(req.body.userId || 'unknown', false, duration, 'error', 0).catch(() => {});
+        sendSummaryError(res, error);
     }
 });
+
+// Lógica central de sumarização — partilhada por /proxy (texto) e
+// /summarize-url (URL). Devolve o corpo de resposta; lança erro tipado
+// INSUFFICIENT_CREDITS quando não há créditos (API partilhada).
+async function runSummary({ userId, text, apiType = 'shared', url = null, title = null, language = 'pt', ip = 'unknown' }) {
+    const startTime = Date.now();
+
+    await registerUser(userId, ip);
+
+    if (apiType === 'shared') {
+        const userCredits = await getUserCredits(userId);
+        if (userCredits <= 0) {
+            const err = new Error('Créditos insuficientes');
+            err.code = 'INSUFFICIENT_CREDITS';
+            err.credits = userCredits;
+            throw err;
+        }
+    }
+
+    // Cache por hash do conteúdo (idioma + texto).
+    const contentHash = crypto.createHash('sha256').update(`${language}\n${text}`).digest('hex');
+
+    let summaryJson, ratings, documentType, apiUsage = null;
+    const cacheEnabled = await db.getSetting('cacheEnabled', true) !== false;
+    const cached = cacheEnabled ? await db.getCachedSummary(contentHash) : null;
+
+    if (cached) {
+        summaryJson = normalizeSummaryAlerts(cached.summary);
+        documentType = cached.document_type || 'unknown';
+        const cachedRatings = typeof cached.ratings === 'string' ? JSON.parse(cached.ratings) : cached.ratings;
+        ratings = db.normalizeRatings(cachedRatings) || db.calculateRatings(summaryJson, text.length, documentType);
+        console.log('⚡ Cache hit — resumo servido sem chamar a API Gemini');
+    } else {
+        const gem = await callGeminiAPI(text, language);
+        apiUsage = gem.usage;
+        documentType = detectDocumentType(text);
+        ratings = extractRatings(gem.text, text.length, documentType);
+        summaryJson = normalizeSummaryAlerts(stripClassificacao(gem.text));
+        if (cacheEnabled) {
+            await db.saveCachedSummary(contentHash, language, summaryJson, ratings, documentType);
+        }
+    }
+
+    const duration = Date.now() - startTime;
+    try {
+        await registerSummary(userId, true, duration, documentType, text.length, url, summaryJson, title, ratings);
+    } catch (error) {
+        console.error('❌ Erro ao registrar resumo no analytics:', error);
+    }
+
+    const isCacheHit = !!cached;
+    db.recordApiCost({
+        userId,
+        model: isCacheHit ? null : (apiUsage?.model || null),
+        inputTokens: isCacheHit ? 0 : (apiUsage?.promptTokens || 0),
+        outputTokens: isCacheHit ? 0 : (apiUsage?.candidatesTokens || 0),
+        costMicros: isCacheHit ? 0 : computeGeminiCostMicros(apiUsage),
+        cached: isCacheHit
+    }).catch((e) => console.error('recordApiCost falhou:', e.message));
+
+    if (apiType === 'shared') {
+        await decrementUserCredits(userId);
+        const remainingCredits = await getUserCredits(userId);
+        return { summary: summaryJson, ratings, credits: remainingCredits, apiType: 'shared', documentType, cached: isCacheHit };
+    }
+    return { summary: summaryJson, ratings, apiType: 'own', documentType, cached: isCacheHit };
+}
+
+// Mapeia erros de sumarização para resposta HTTP (partilhado pelos endpoints).
+function sendSummaryError(res, error) {
+    if (error.code === 'INSUFFICIENT_CREDITS') {
+        return res.status(402).json({
+            error: 'Créditos insuficientes',
+            credits: error.credits,
+            message: 'Compre mais créditos ou configure a sua própria chave da API'
+        });
+    }
+    let errorMessage = 'Erro ao processar resumo';
+    let statusCode = 500;
+    const msg = error.message || '';
+    if (msg.includes('API Gemini')) {
+        if (msg.includes('401') || msg.includes('403')) { errorMessage = 'Chave da API inválida ou sem permissões'; statusCode = 401; }
+        else if (msg.includes('429')) { errorMessage = 'Limite de uso da API atingido'; statusCode = 429; }
+        else { errorMessage = 'Erro na API Gemini'; statusCode = 502; }
+    } else if (msg.includes('fetch') || msg.includes('network')) {
+        errorMessage = 'Erro de ligação à internet'; statusCode = 503;
+    }
+    return res.status(statusCode).json({ error: errorMessage, timestamp: new Date().toISOString() });
+}
+
+// Endpoint: resume uma página a partir do URL (o servidor busca e extrai o
+// texto). Usado pela deteção de links de Termos/Privacidade na extensão.
+// Sempre via backend partilhado (consome um crédito), pois a extração é no servidor.
+router.post('/summarize-url', [
+    checkGeminiKey,
+    proxyRateLimit,
+    body('userId').isString().notEmpty().withMessage('ID do utilizador é obrigatório'),
+    body('url').isString().notEmpty().withMessage('URL é obrigatório')
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ error: 'Dados inválidos', details: errors.array() });
+        }
+        const { userId, url, language = 'pt' } = req.body;
+
+        let extracted;
+        try {
+            extracted = await fetchAndExtract(url);
+        } catch (e) {
+            return res.status(e.code === 'BAD_URL' ? 400 : 422).json({ error: e.message || 'Não foi possível obter a página' });
+        }
+        if (!extracted.text || extracted.text.length < 50) {
+            return res.status(422).json({ error: 'Não foi possível extrair texto suficiente desta página' });
+        }
+
+        const body = await runSummary({
+            userId, text: extracted.text, apiType: 'shared',
+            url, title: extracted.title, language, ip: req.ip || 'unknown'
+        });
+        res.json(body);
+    } catch (error) {
+        console.error('Erro no summarize-url:', error);
+        await registerSummary(req.body.userId || 'unknown', false, 0, 'error', 0).catch(() => {});
+        sendSummaryError(res, error);
+    }
+});
+
+// --- Busca e extração de texto de um URL (para /summarize-url) ---------------
+// Guarda contra SSRF: só http/https e bloqueia hosts privados/loopback.
+function isPrivateHost(hostname) {
+    const h = (hostname || '').toLowerCase();
+    if (!h || h === 'localhost' || h.endsWith('.localhost')) return true;
+    const m = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+    if (m) {
+        const a = +m[1], b = +m[2];
+        if (a === 0 || a === 10 || a === 127) return true;
+        if (a === 169 && b === 254) return true;
+        if (a === 172 && b >= 16 && b <= 31) return true;
+        if (a === 192 && b === 168) return true;
+    }
+    if (h === '::1' || h.startsWith('fc') || h.startsWith('fd') || h.startsWith('fe80')) return true;
+    return false;
+}
+
+function htmlToText(html) {
+    return (html || '')
+        .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+        .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+        .replace(/<!--[\s\S]*?-->/g, ' ')
+        .replace(/<\/(p|div|li|h[1-6]|tr|section|article|header|footer)>/gi, '\n')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/&amp;/gi, '&').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>')
+        .replace(/&quot;/gi, '"').replace(/&#39;/gi, "'")
+        .replace(/[ \t\f\v]+/g, ' ')
+        .replace(/\n[ \t]+/g, '\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+}
+
+async function fetchAndExtract(rawUrl) {
+    let u;
+    try { u = new URL(rawUrl); } catch { const e = new Error('URL inválido'); e.code = 'BAD_URL'; throw e; }
+    if (!/^https?:$/.test(u.protocol)) { const e = new Error('Apenas http/https são suportados'); e.code = 'BAD_URL'; throw e; }
+    if (isPrivateHost(u.hostname)) { const e = new Error('Endereço não permitido'); e.code = 'BAD_URL'; throw e; }
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 12000);
+    let resp;
+    try {
+        resp = await fetch(u.toString(), {
+            signal: controller.signal,
+            redirect: 'follow',
+            headers: {
+                'User-Agent': 'ToS-Privacy-Summarizer/1.0 (+https://tos-privacy-summarizer.vercel.app)',
+                'Accept': 'text/html,application/xhtml+xml,text/plain,*/*'
+            }
+        });
+    } catch (e) {
+        const err = new Error('Não foi possível obter a página'); err.code = 'FETCH_FAILED'; throw err;
+    } finally {
+        clearTimeout(timer);
+    }
+    // Proteção contra redireção para host interno.
+    if (resp.url) {
+        try { if (isPrivateHost(new URL(resp.url).hostname)) { const e = new Error('Redireção não permitida'); e.code = 'BAD_URL'; throw e; } }
+        catch (e) { if (e.code === 'BAD_URL') throw e; }
+    }
+    if (!resp.ok) { const e = new Error(`A página respondeu ${resp.status}`); e.code = 'FETCH_FAILED'; throw e; }
+    const ctype = resp.headers.get('content-type') || '';
+    if (!/text\/html|application\/xhtml|text\/plain/i.test(ctype)) { const e = new Error('A página não é HTML'); e.code = 'NOT_HTML'; throw e; }
+
+    const raw = (await resp.text()).slice(0, 2000000);
+    const titleMatch = raw.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+    const title = titleMatch ? htmlToText(titleMatch[1]).slice(0, 300) : '';
+    const text = htmlToText(raw).slice(0, 100000);
+    return { text, title };
+}
 
 // Função para chamar a API Gemini
 async function callGeminiAPI(text, language = 'pt') {

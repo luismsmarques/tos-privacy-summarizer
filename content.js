@@ -214,6 +214,40 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; // Manter canal aberto para resposta assíncrona
 });
 
+// Deteta links de Termos/Privacidade na página atual (multilíngue).
+// Devolve até 6 links únicos, excluindo a própria página.
+function findLegalLinks() {
+    try {
+        const pattern = /(terms?\b|terms of (service|use)|termos|condi(c|ç)(o|õ)es|privacy|privacidad|privacidade|pol[ií]tica de privacidade|data protection|prote(c|ç)(a|ã)o de dados|datenschutz|confidentialit[eé]|aviso legal|legal notice|gdpr|rgpd|cookie)/i;
+        const current = location.href.split('#')[0];
+        const seen = new Set();
+        const links = [];
+
+        document.querySelectorAll('a[href]').forEach((a) => {
+            const href = a.href;
+            if (!href || !/^https?:/i.test(href)) return;
+            const text = (a.textContent || '').trim().replace(/\s+/g, ' ');
+            const hay = `${text} ${href}`;
+            if (!pattern.test(hay)) return;
+
+            const norm = href.split('#')[0];
+            if (norm === current || seen.has(norm)) return;
+            seen.add(norm);
+
+            let type = 'legal';
+            if (/privac|datenschutz|confidential|prote(c|ç)(a|ã)o|gdpr|rgpd|data protection|dados/i.test(hay)) type = 'privacy';
+            else if (/terms?|termos|condi/i.test(hay)) type = 'terms';
+
+            links.push({ text: (text || href).slice(0, 80), href, type });
+        });
+
+        return links.slice(0, 6);
+    } catch (error) {
+        console.warn('findLegalLinks falhou:', error);
+        return [];
+    }
+}
+
 // Função para analisar a página
 function analyzePage() {
     try {
@@ -243,7 +277,8 @@ function analyzePage() {
             complexity: complexity,
             timestamp: new Date().toISOString(),
             domain: window.location.hostname,
-            language: pageLanguage
+            language: pageLanguage,
+            legalLinks: findLegalLinks()
         };
         
         console.log('Content script: Análise concluída:', analysis);

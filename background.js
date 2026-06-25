@@ -8,6 +8,7 @@ const BACKEND_BASE_URL = 'https://tos-privacy-summarizer.vercel.app';
 
 const API_ENDPOINTS = {
     PROXY: `${BACKEND_BASE_URL}/api/gemini/proxy`,
+    SUMMARIZE_URL: `${BACKEND_BASE_URL}/api/gemini/summarize-url`,
     CREDITS: `${BACKEND_BASE_URL}/api/credits`,
     USERS: `${BACKEND_BASE_URL}/api/users`,
     STRIPE: `${BACKEND_BASE_URL}/api/stripe`
@@ -81,7 +82,84 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // Responder imediatamente para evitar erro de canal fechado
     sendResponse({ status: 'processing' });
   }
+
+  if (request.action === 'summarizeUrl') {
+    Logger.log('Recebido URL para resumir:', { url: request.url, language: request.language || 'pt' });
+
+    processUrlSummaryAsync(request.url, request.language || 'pt')
+      .catch(error => {
+        Logger.error('Erro no processamento de URL:', error);
+        chrome.runtime.sendMessage({
+          action: 'displaySummary',
+          summary: `Erro interno: ${error.message}`
+        });
+      });
+
+    sendResponse({ status: 'processing' });
+  }
 });
+
+// Resume uma página a partir do URL (deteção de links de Termos/Privacidade).
+// O texto é extraído no servidor; usa sempre o backend partilhado.
+async function processUrlSummaryAsync(url, language = 'pt') {
+  try {
+    if (!url || typeof url !== 'string') {
+      throw new Error('URL inválido');
+    }
+
+    chrome.runtime.sendMessage({ action: 'progressUpdate', step: 1, text: 'A obter a página…', progress: 25 });
+
+    const result = await new Promise((resolve) => {
+      chrome.storage.local.get(['userId'], resolve);
+    });
+    let userId = result.userId || await createOrGetUserId();
+
+    chrome.runtime.sendMessage({ action: 'progressUpdate', step: 2, text: 'A enviar para análise IA', progress: 50 });
+
+    const summary = await RetryManager.executeWithRetry(
+      () => summarizeUrlWithBackend(url, userId, language),
+      'summarizeUrlWithBackend'
+    );
+
+    chrome.runtime.sendMessage({ action: 'progressUpdate', step: 4, text: 'Processamento concluído', progress: 100 });
+
+    setTimeout(() => {
+      chrome.runtime.sendMessage({
+        action: 'displaySummary',
+        summary: summary.summary || summary,
+        ratings: summary.ratings,
+        documentType: summary.documentType
+      });
+    }, 500);
+  } catch (error) {
+    Logger.error('Erro ao resumir URL:', error);
+    chrome.runtime.sendMessage({ action: 'displaySummary', summary: `Erro: ${error.message}` });
+  }
+}
+
+// Chama o backend para resumir um URL (o servidor busca e extrai o texto).
+async function summarizeUrlWithBackend(url, userId, language = 'pt') {
+  const response = await fetch(API_ENDPOINTS.SUMMARIZE_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, url, language })
+  });
+
+  if (!response.ok) {
+    let errorData;
+    try { errorData = await response.json(); } catch (e) { errorData = { error: `Erro HTTP: ${response.status}` }; }
+    throw new Error(errorData.error || `Erro HTTP: ${response.status}`);
+  }
+
+  const result = await response.json();
+  if (result.credits !== undefined) {
+    chrome.storage.local.set({ sharedCredits: result.credits });
+  }
+  if (result.ratings) {
+    chrome.storage.local.set({ lastRatings: result.ratings, lastDocumentType: result.documentType || 'unknown' });
+  }
+  return { summary: result.summary, ratings: result.ratings, documentType: result.documentType };
+}
 
 // Função assíncrona para processar o resumo
 async function processSummaryAsync(text, url = '', title = '', language = 'pt') {

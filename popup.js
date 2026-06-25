@@ -191,6 +191,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log('Análise recebida com sucesso:', response.analysis);
                     pageAnalysis = response.analysis;
                     updateContextUI(response.analysis);
+                    renderLegalLinks(response.analysis);
                 } else {
                     console.log('Análise não disponível ou falhou:', response);
                     updateContextUI(null);
@@ -659,6 +660,94 @@ document.addEventListener('DOMContentLoaded', function() {
             
         } catch (error) {
             console.error('Erro ao iniciar resumo:', error);
+            showError('Erro ao iniciar análise: ' + error.message);
+            resetButton();
+        }
+    }
+
+    // Mostrar links de Termos/Privacidade detetados na página (quando a página
+    // atual não é, ela própria, um documento legal).
+    function renderLegalLinks(analysis) {
+        const existing = document.getElementById('legalLinksZone');
+        if (existing) existing.remove();
+
+        const links = (analysis && analysis.legalLinks) || [];
+        if (!links.length || (analysis && analysis.isLegalPage)) return;
+
+        if (!document.getElementById('legalLinksStyles')) {
+            const s = document.createElement('style');
+            s.id = 'legalLinksStyles';
+            s.textContent = `
+                .legal-links-zone { margin: 8px 12px; padding: 10px 12px; border:1px solid rgba(128,128,128,0.25); border-radius:10px; }
+                .legal-links-title { font-size:12px; font-weight:600; margin-bottom:8px; opacity:0.85; }
+                .legal-links-list { display:flex; flex-direction:column; gap:6px; }
+                .legal-link-btn { display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:8px 10px; border:1px solid rgba(128,128,128,0.25); border-radius:8px; background:transparent; color:inherit; cursor:pointer; font-size:13px; font-family:inherit; }
+                .legal-link-btn:hover { background: rgba(128,128,128,0.12); }
+                .legal-link-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+            `;
+            document.head.appendChild(s);
+        }
+
+        const zone = document.createElement('div');
+        zone.id = 'legalLinksZone';
+        zone.className = 'legal-links-zone';
+        zone.innerHTML = `<div class="legal-links-title">📄 Documentos legais nesta página</div><div class="legal-links-list"></div>`;
+
+        const list = zone.querySelector('.legal-links-list');
+        const lang = (analysis && analysis.language) || 'pt';
+        links.forEach((link) => {
+            const btn = document.createElement('button');
+            btn.className = 'legal-link-btn';
+            btn.title = link.href;
+            const icon = link.type === 'privacy' ? '🔒' : '📜';
+            const iconSpan = document.createElement('span');
+            iconSpan.textContent = icon;
+            const textSpan = document.createElement('span');
+            textSpan.className = 'legal-link-text';
+            textSpan.textContent = link.text;
+            btn.appendChild(iconSpan);
+            btn.appendChild(textSpan);
+            btn.addEventListener('click', () => handleSummarizeUrl(link.href, lang));
+            list.appendChild(btn);
+        });
+
+        const anchor = document.querySelector('.action-zone') || document.querySelector('.context-zone');
+        if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(zone, anchor);
+        else document.body.appendChild(zone);
+    }
+
+    // Analisar um link detetado (o servidor busca e extrai o texto da página).
+    async function handleSummarizeUrl(url, language) {
+        if (isProcessing) return;
+        try {
+            const result = await chrome.storage.local.get(['sharedCredits', 'geminiApiKey']);
+            const credits = result.sharedCredits || 5;
+            const hasApiKey = !!result.geminiApiKey && result.geminiApiKey !== 'SHARED_API';
+            if (!hasApiKey && credits <= 0) {
+                showCreditsModal();
+                return;
+            }
+
+            isProcessing = true;
+            if (actionButton) actionButton.disabled = true;
+            if (actionButtonText) actionButtonText.textContent = 'Processando...';
+            showProgress();
+
+            chrome.runtime.sendMessage({ action: 'summarizeUrl', url, language: language || 'pt' }, () => {
+                if (chrome.runtime.lastError) {
+                    showError('Erro ao iniciar a análise do link.');
+                    resetButton();
+                } else {
+                    setTimeout(() => {
+                        if (isProcessing) {
+                            showError('Timeout: o resumo demorou demasiado. Tente novamente.');
+                            resetButton();
+                        }
+                    }, 45000);
+                }
+            });
+        } catch (error) {
+            console.error('Erro ao iniciar análise do link:', error);
             showError('Erro ao iniciar análise: ' + error.message);
             resetButton();
         }
