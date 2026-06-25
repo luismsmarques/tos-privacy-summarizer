@@ -470,115 +470,81 @@ function detectDocumentType(text) {
     }
 }
 
-// Função para extrair texto da página
+// Função para extrair texto da página (estilo "readability": foca o conteúdo
+// principal e remove ruído como menus, rodapés, anúncios e barras laterais).
+// Devolve sempre uma string (limite de 100000 caracteres).
 function extractPageText() {
   try {
-    Logger.log('Iniciando extração de texto...');
-    
-    // Tentar diferentes métodos de extração
-    let pageText = '';
+    Logger.log('Iniciando extração de texto (readability)...');
+
     let extractionMethod = 'unknown';
-    
-    // Método 1: Tentar extrair de elementos específicos primeiro
-    const contentSelectors = [
-      'main',
-      '[role="main"]',
-      '.content',
-      '.main-content',
-      '.terms',
-      '.privacy',
-      '.legal',
-      'article',
-      '.page-content',
-      '.document-content',
-      '.policy-content',
-      '.terms-content',
-      '#content',
-      '#main-content',
-      '.container .content',
-      '.wrapper .content'
-    ];
-    
-    for (const selector of contentSelectors) {
-      const element = document.querySelector(selector);
-      if (element) {
-        pageText = element.innerText || element.textContent || '';
-        if (pageText.length > 500) {
-          extractionMethod = `selector: ${selector}`;
-          Logger.log(`Texto extraído usando seletor '${selector}': ${pageText.length} caracteres`);
-          break;
-        }
+    let pageText = '';
+
+    // Método 1: preferir o contentor principal explícito.
+    const mainEl = document.querySelector('main, article, [role="main"]');
+    if (mainEl) {
+      pageText = mainEl.innerText || mainEl.textContent || '';
+      if (pageText.trim().length > 0) {
+        extractionMethod = 'main_container';
       }
     }
-    
-    // Método 2: Se não encontrou conteúdo suficiente, usar o corpo da página
-    if (pageText.length < 500) {
-      Logger.log('Usando método de extração do corpo da página...');
-      extractionMethod = 'body_extraction';
-      
-      // Remover elementos desnecessários que podem conter texto irrelevante
-      const elementsToRemove = document.querySelectorAll(
-        'script, style, nav, header, footer, aside, .advertisement, .ads, .sidebar, .menu, .navigation, .breadcrumb, .social-share, .comments, .related-posts'
-      );
-      const originalElements = [];
-      
-      // Guardar elementos originais e removê-los temporariamente
-      elementsToRemove.forEach(element => {
-        originalElements.push({
-          element: element,
-          parent: element.parentNode,
-          nextSibling: element.nextSibling
-        });
-        element.remove();
-      });
-      
-      // Extrair texto do corpo da página
+
+    // Método 2: heurística — clonar o body, remover ruído e ler o que sobra.
+    if (pageText.trim().length === 0 && document.body) {
+      extractionMethod = 'cloned_body_heuristic';
+      try {
+        const clone = document.body.cloneNode(true);
+        clone.querySelectorAll(
+          'script, style, noscript, nav, header, footer, aside, form, button, ' +
+          '[role="navigation"], [aria-hidden="true"], .nav, .menu, .sidebar, ' +
+          '.footer, .header, .cookie, .ad, .ads, .advertisement'
+        ).forEach((el) => el.remove());
+        // O clone não está no DOM; innerText pode não estar disponível em
+        // todos os motores, por isso há fallback para textContent.
+        pageText = clone.innerText || clone.textContent || '';
+      } catch (cloneError) {
+        Logger.warn('Falha na heurística do clone, a usar body.innerText', cloneError);
+        pageText = '';
+      }
+    }
+
+    // Fallback final: body.innerText (garante que não perdemos texto).
+    if (pageText.trim().length === 0 && document.body) {
+      extractionMethod = 'body_innertext_fallback';
       pageText = document.body.innerText || document.body.textContent || '';
-      
-      // Restaurar elementos originais
-      originalElements.forEach(({ element, parent, nextSibling }) => {
-        if (parent) {
-          if (nextSibling) {
-            parent.insertBefore(element, nextSibling);
-          } else {
-            parent.appendChild(element);
-          }
-        }
-      });
     }
-    
-    // Método 3: Fallback - tentar extrair de todos os parágrafos
-    if (pageText.length < 100) {
-      Logger.log('Usando método de fallback - extração de parágrafos...');
-      extractionMethod = 'paragraph_fallback';
-      
-      const paragraphs = document.querySelectorAll('p, div, span');
-      pageText = Array.from(paragraphs)
-        .map(p => p.innerText || p.textContent || '')
-        .filter(text => text.trim().length > 10)
-        .join(' ');
-    }
-    
+
     // Limpar e formatar o texto
     const cleanedText = pageText
-      .replace(/\s+/g, ' ') // Substituir múltiplos espaços por um único
-      .replace(/\n\s*\n/g, '\n') // Remover linhas vazias desnecessárias
+      .replace(/[ \t\f\v]+/g, ' ') // Colapsar espaços horizontais
+      .replace(/[ \t]*\n[ \t]*/g, '\n') // Limpar espaços à volta de quebras
       .replace(/[\u200B-\u200D\uFEFF]/g, '') // Remover caracteres invisíveis
-      .trim();
-    
+      .replace(/\n{3,}/g, '\n\n') // Máximo de uma linha em branco
+      .trim()
+      .slice(0, 100000); // Limite de caracteres (reduz custo de tokens)
+
     Logger.log(`Texto final extraído: ${cleanedText.length} caracteres usando método: ${extractionMethod}`);
     Logger.log('Primeiros 200 caracteres:', cleanedText.substring(0, 200));
-    
+
     // Validar qualidade do texto extraído
     if (cleanedText.length < 50) {
       Logger.warn('Texto extraído muito curto', { length: cleanedText.length, method: extractionMethod });
     }
-    
+
     return cleanedText;
-    
+
   } catch (error) {
     Logger.error('Erro ao extrair texto da página:', error);
-    return 'Erro ao extrair texto da página';
+    // Robustez: devolver pelo menos o body.innerText em caso de erro.
+    try {
+      return ((document.body && document.body.innerText) || '')
+        .replace(/[ \t\f\v]+/g, ' ')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim()
+        .slice(0, 100000);
+    } catch (fallbackError) {
+      return '';
+    }
   }
 }
 

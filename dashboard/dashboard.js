@@ -2989,11 +2989,40 @@ document.addEventListener('DOMContentLoaded', () => {
             createAnalyticsCharts();
             loadTopUrls();
             generateInsights();
+            loadCohorts();
         } catch (err) {
             console.error('❌ Erro ao carregar analytics:', err);
             if (typeof showNotification === 'function') {
                 showNotification('❌ Não foi possível carregar os analytics', 'error');
             }
+        }
+    }
+
+    async function loadCohorts() {
+        const tbody = document.getElementById('cohortsTableBody');
+        if (!tbody) return;
+        try {
+            const resp = await window.dashboard.fetchData('/api/analytics/cohorts');
+            const rows = (resp && resp.cohorts) || [];
+            if (!rows.length) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px">Sem dados de coortes.</td></tr>';
+                return;
+            }
+            const bar = (pct) => {
+                const color = pct >= 50 ? 'var(--md-sys-color-tertiary)' : pct >= 20 ? '#f5a623' : 'var(--md-sys-color-error)';
+                return `<div style="display:flex;align-items:center;gap:8px"><div style="flex:1;max-width:90px;height:6px;border-radius:3px;background:var(--md-sys-color-surface-variant);overflow:hidden"><div style="width:${Math.min(pct,100)}%;height:100%;background:${color}"></div></div><span style="font-weight:600">${pct}%</span></div>`;
+            };
+            tbody.innerHTML = rows.map((c) => `
+                <tr>
+                    <td>${new Date(c.cohort + 'T00:00:00').toLocaleDateString('pt-PT', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                    <td>${Number(c.users).toLocaleString('pt-PT')}</td>
+                    <td>${Number(c.activated).toLocaleString('pt-PT')} (${c.activation_pct}%)</td>
+                    <td>${Number(c.active_30d).toLocaleString('pt-PT')}</td>
+                    <td>${bar(c.retention_pct)}</td>
+                </tr>`).join('');
+        } catch (err) {
+            console.error('❌ Erro ao carregar coortes:', err);
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px">Não foi possível carregar as coortes.</td></tr>';
         }
     }
     
@@ -3626,23 +3655,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    function clearData(type) {
+    async function clearData(type) {
         const confirmMessage = {
-            users: 'Tem a certeza que deseja limpar todos os utilizadores inativos? Esta ação é irreversível!',
-            summaries: 'Tem a certeza que deseja limpar todos os resumos antigos? Esta ação é irreversível!',
-            logs: 'Tem a certeza que deseja limpar todos os logs de sistema? Esta ação é irreversível!',
-            cache: 'Tem a certeza que deseja limpar todos os caches? Esta ação é irreversível!'
+            users: 'Limpar todos os utilizadores inativos (sem atividade há +90 dias) e os seus dados? Irreversível!',
+            summaries: 'Limpar todos os resumos com mais de 1 ano? Irreversível!',
+            logs: 'Limpar os logs de auditoria com mais de 90 dias? Irreversível!',
+            cache: 'Limpar todo o cache de resumos? Irreversível!'
         };
-        
-        if (confirm(confirmMessage[type])) {
-            console.log(`🗑️ Limpando dados: ${type}`);
-            
-            // Simular limpeza (em produção, fazer chamada à API)
-            showNotification(`🧹 Limpando ${type}...`, 'info');
-            
-            setTimeout(() => {
-                showNotification(`✅ ${type} limpos com sucesso!`, 'success');
-            }, 2000);
+        const targetMap = { users: 'inactive_users', summaries: 'old_summaries', logs: 'logs', cache: 'cache' };
+        const target = targetMap[type];
+        if (!target) return;
+
+        if (!confirm(confirmMessage[type])) return;
+
+        try {
+            showNotification(`🧹 A limpar ${type}...`, 'info');
+            const resp = await window.dashboard.fetchData('/api/analytics/cleanup', {
+                method: 'POST',
+                body: JSON.stringify({ target })
+            });
+            if (resp && resp.success) {
+                showNotification(`✅ ${resp.deleted} registo(s) removido(s) (${type}).`, 'success');
+            } else {
+                showNotification(`❌ Falha ao limpar ${type}.`, 'error');
+            }
+        } catch (error) {
+            console.error('Erro ao limpar dados:', error);
+            showNotification(`❌ Erro ao limpar ${type}.`, 'error');
         }
     }
     

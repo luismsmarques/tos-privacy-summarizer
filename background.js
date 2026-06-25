@@ -110,14 +110,59 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 // Função injetada na PÁGINA (executeScript) — extrai o texto JÁ renderizado.
-// Tem de ser autónoma (sem refs externas).
+// Tem de ser autónoma (sem refs externas). Estilo "readability": foca o
+// conteúdo principal e remove ruído (menus, rodapés, anúncios, barras laterais).
 function pageTextExtractor() {
+  // Normaliza espaços/linhas em excesso e aplica o limite de caracteres.
+  var clean = function (raw) {
+    return (raw || '')
+      .replace(/[​-‍﻿]/g, '')   // caracteres invisíveis
+      .replace(/[ \t\f\v]+/g, ' ')             // colapsar espaços horizontais
+      .replace(/[ \t]*\n[ \t]*/g, '\n')        // limpar espaços à volta de quebras
+      .replace(/\n{3,}/g, '\n\n')              // máximo de uma linha em branco
+      .trim()
+      .slice(0, 100000);
+  };
+
   try {
-    const main = document.querySelector('main, article, [role="main"]');
-    let t = (main && main.innerText) || (document.body && document.body.innerText) || '';
-    return t.replace(/[ \t\f\v]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, 100000);
+    var pageText = '';
+
+    // Método 1: preferir o contentor principal explícito.
+    var main = document.querySelector('main, article, [role="main"]');
+    if (main) {
+      pageText = main.innerText || main.textContent || '';
+    }
+
+    // Método 2: heurística — clonar o body, remover ruído e ler o que sobra.
+    if ((!pageText || pageText.trim().length === 0) && document.body) {
+      try {
+        var cloneBody = document.body.cloneNode(true);
+        var noise = cloneBody.querySelectorAll(
+          'script, style, noscript, nav, header, footer, aside, form, button, ' +
+          '[role="navigation"], [aria-hidden="true"], .nav, .menu, .sidebar, ' +
+          '.footer, .header, .cookie, .ad, .ads, .advertisement'
+        );
+        for (var i = 0; i < noise.length; i++) {
+          noise[i].remove();
+        }
+        pageText = cloneBody.innerText || cloneBody.textContent || '';
+      } catch (cloneError) {
+        pageText = '';
+      }
+    }
+
+    // Fallback final: body.innerText (garante que não perdemos texto).
+    if ((!pageText || pageText.trim().length === 0) && document.body) {
+      pageText = document.body.innerText || document.body.textContent || '';
+    }
+
+    return clean(pageText);
   } catch (e) {
-    return '';
+    try {
+      return clean((document.body && document.body.innerText) || '');
+    } catch (fallbackError) {
+      return '';
+    }
   }
 }
 

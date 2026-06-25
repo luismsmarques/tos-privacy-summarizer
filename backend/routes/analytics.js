@@ -1109,6 +1109,79 @@ router.put('/settings', async (req, res) => {
   }
 });
 
+// ===== LIMPEZA DE DADOS (danger zone) =====
+// Ações destrutivas: cada uma fica registada na auditoria (severidade crítica).
+router.post('/cleanup', async (req, res) => {
+  try {
+    if (!db.isConnected) await db.connect();
+    const target = (req.body && req.body.target) || '';
+    let deleted = 0;
+
+    if (target === 'inactive_users') {
+      // Inativos: sem atividade há mais de 90 dias.
+      const cond = `last_seen IS NOT NULL AND last_seen < NOW() - INTERVAL '90 days'`;
+      const sub = `(SELECT user_id FROM users WHERE ${cond})`;
+      for (const t of ['credits_history', 'summaries', 'requests', 'processed_payments', 'api_costs']) {
+        await db.query(`DELETE FROM ${t} WHERE user_id IN ${sub}`).catch(() => {});
+      }
+      deleted = (await db.query(`DELETE FROM users WHERE ${cond}`)).rowCount || 0;
+    } else if (target === 'old_summaries') {
+      deleted = (await db.query(`DELETE FROM summaries WHERE created_at < NOW() - INTERVAL '365 days'`)).rowCount || 0;
+    } else if (target === 'logs') {
+      await auditLogger.ensureAuditTable();
+      deleted = (await db.query(`DELETE FROM audit_logs WHERE timestamp < NOW() - INTERVAL '90 days'`)).rowCount || 0;
+    } else if (target === 'cache') {
+      await db.ensureSummaryCacheTable().catch(() => {});
+      deleted = (await db.query(`DELETE FROM summary_cache`)).rowCount || 0;
+    } else {
+      return res.status(400).json({ success: false, error: 'Alvo de limpeza inválido' });
+    }
+
+    auditLogger.logUserAction(req.user?.userId || 'admin', `cleanup_${target}`, { target, deleted }, { critical: true })
+      .catch((e) => console.error('audit cleanup falhou:', e.message));
+    res.json({ success: true, target, deleted });
+  } catch (error) {
+    console.error('❌ Erro no cleanup:', error);
+    res.status(500).json({ success: false, error: 'Erro ao limpar dados: ' + error.message });
+  }
+});
+
+// Coortes semanais de novos utilizadores + retenção e ativação.
+router.get('/cohorts', async (req, res) => {
+  try {
+    if (!db.isConnected) await db.connect();
+    const rows = (await db.query(`
+      SELECT
+        to_char(date_trunc('week', created_at), 'YYYY-MM-DD') AS cohort,
+        COUNT(*)                                               AS users,
+        COUNT(*) FILTER (WHERE summaries_generated > 0)        AS activated,
+        COUNT(*) FILTER (WHERE last_seen >= NOW() - INTERVAL '30 days') AS active_30d
+      FROM users
+      WHERE created_at >= NOW() - INTERVAL '180 days'
+      GROUP BY 1 ORDER BY 1
+    `)).rows;
+
+    const num = (v) => (v == null ? 0 : Number(v));
+    res.json({
+      success: true,
+      cohorts: rows.map((r) => {
+        const users = num(r.users);
+        return {
+          cohort: r.cohort,
+          users,
+          activated: num(r.activated),
+          active_30d: num(r.active_30d),
+          activation_pct: users > 0 ? +((num(r.activated) / users) * 100).toFixed(0) : 0,
+          retention_pct: users > 0 ? +((num(r.active_30d) / users) * 100).toFixed(0) : 0
+        };
+      })
+    });
+  } catch (error) {
+    console.error('❌ Erro ao obter coortes:', error);
+    res.status(500).json({ success: false, error: 'Erro ao obter coortes: ' + error.message });
+  }
+});
+
 // ===== AUDITORIA & SEGURANÇA =====
 
 // Resumo de auditoria: totais, distribuição por tipo/severidade, série diária

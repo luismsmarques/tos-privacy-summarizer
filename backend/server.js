@@ -7,7 +7,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
-import { logSystemEvent } from './utils/audit-logger.js';
+import { logSystemEvent, logApiRequest } from './utils/audit-logger.js';
 
 dotenv.config();
 
@@ -112,6 +112,25 @@ import { router as analyticsRoutes } from './routes/analytics.js';
 import authRoutes from './routes/auth.js';
 import db from './utils/database.js';
 import auth from './utils/auth.js';
+
+// Auditoria de pedidos à API (best-effort). Honra a setting `accessLogs` do
+// dashboard (default ligado). Para não inundar audit_logs: regista SEMPRE os
+// erros (>=400) e apenas ~5% dos pedidos bem-sucedidos (amostragem).
+app.use('/api', (req, res, next) => {
+    const start = Date.now();
+    res.on('finish', () => {
+        const isError = res.statusCode >= 400;
+        if (!isError && Math.random() > 0.05) return;
+        (async () => {
+            try {
+                const enabled = await db.getSetting('accessLogs', true);
+                if (enabled === false) return;
+                await logApiRequest(req, res, Date.now() - start, null);
+            } catch (e) { /* best-effort, nunca afeta a resposta */ }
+        })();
+    });
+    next();
+});
 
 // Rotas da API
 app.use('/api/auth', authRoutes);
