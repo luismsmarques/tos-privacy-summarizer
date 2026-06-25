@@ -149,12 +149,13 @@ router.post('/verify-payment',
 
             console.log('Pagamento verificado:', { credits, packageName, price });
 
-            // Atualizar créditos do utilizador no banco de dados
+            // Creditar de forma idempotente (verify-payment e webhook podem
+            // ambos disparar para o mesmo pagamento — só credita uma vez).
             const db = await import('../utils/database.js');
-            const newBalance = await db.default.updateUserCredits(userId, credits);
+            const { credited, newBalance } = await db.default.creditUserForPayment(userId, sessionId, credits);
 
             // Log da transação
-            console.log(`Créditos adicionados: ${credits} para utilizador ${userId}. Novo saldo: ${newBalance}`);
+            console.log(`Créditos: ${credited ? 'adicionados' : 'já processados'} (${credits}) para ${userId}. Saldo: ${newBalance}`);
 
             // Enviar email de confirmação (se email disponível)
             try {
@@ -227,10 +228,10 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
                 const price = parseFloat(session.metadata.price);
                 
                 if (session.payment_status === 'paid' && userId && credits) {
-                    // Atualizar créditos no banco de dados
+                    // Creditar de forma idempotente (ver verify-payment).
                     const db = await import('../utils/database.js');
-                    const newBalance = await db.default.updateUserCredits(userId, credits);
-                    console.log(`✅ Webhook: Créditos adicionados para ${userId}. Novo saldo: ${newBalance}`);
+                    const { credited, newBalance } = await db.default.creditUserForPayment(userId, session.id, credits);
+                    console.log(`✅ Webhook: Créditos ${credited ? 'adicionados' : 'já processados'} para ${userId}. Saldo: ${newBalance}`);
                     
                     // Enviar email de confirmação
                     try {
