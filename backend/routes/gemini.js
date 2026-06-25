@@ -58,6 +58,25 @@ export function stripClassificacao(responseText) {
     return responseText;
 }
 
+// Normaliza os alertas de privacidade do resumo:
+// - remove entradas sem `texto` válido (evita renderizar "undefined" na extensão);
+// - remove o marcador "sem_alertas" (a extensão esconde a secção se a lista ficar vazia).
+// Resiliente: se não for JSON válido, devolve a string inalterada.
+export function normalizeSummaryAlerts(summaryJson) {
+    try {
+        const parsed = JSON.parse(summaryJson);
+        if (parsed && Array.isArray(parsed.alertas_privacidade)) {
+            parsed.alertas_privacidade = parsed.alertas_privacidade.filter(
+                (a) => a && typeof a.texto === 'string' && a.texto.trim() && a.tipo !== 'sem_alertas'
+            );
+            return JSON.stringify(parsed);
+        }
+    } catch (error) {
+        // não é JSON válido — devolver tal como veio
+    }
+    return summaryJson;
+}
+
 // Rate limit partilhado para o endpoint caro (por utilizador, fallback IP).
 const proxyRateLimit = dbRateLimit({
     windowMs: 60 * 1000,
@@ -116,7 +135,7 @@ router.post('/proxy', [
         if (cached) {
             // Cache hit — servir sem chamar o Gemini.
             success = true;
-            summaryJson = cached.summary;
+            summaryJson = normalizeSummaryAlerts(cached.summary);
             documentType = cached.document_type || 'unknown';
             const cachedRatings = typeof cached.ratings === 'string'
                 ? JSON.parse(cached.ratings)
@@ -140,7 +159,7 @@ router.post('/proxy', [
             // Resumo limpo (sem o bloco classificacao) para devolver e guardar.
             // Guardamos a string JSON tal e qual — sem JSON.stringify extra, que
             // antes a double-encodava.
-            summaryJson = stripClassificacao(geminiResponse);
+            summaryJson = normalizeSummaryAlerts(stripClassificacao(geminiResponse));
 
             // Guardar no cache para pedidos futuros idênticos (se ativado).
             if (cacheEnabled) {
