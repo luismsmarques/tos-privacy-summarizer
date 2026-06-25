@@ -4,594 +4,590 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bem-vindo - ToS & Privacy Summarizer</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+    <link rel="stylesheet" href="design-system.css" />
     <style>
-        :root {
-            /* Light theme colors */
-            --md-sys-color-primary: #6750A4;
-            --md-sys-color-on-primary: #FFFFFF;
-            --md-sys-color-primary-container: #EADDFF;
-            --md-sys-color-on-primary-container: #21005D;
-            --md-sys-color-secondary: #625B71;
-            --md-sys-color-on-secondary: #FFFFFF;
-            --md-sys-color-secondary-container: #E8DEF8;
-            --md-sys-color-on-secondary-container: #1D192B;
-            --md-sys-color-tertiary: #7D5260;
-            --md-sys-color-on-tertiary: #FFFFFF;
-            --md-sys-color-tertiary-container: #FFD8E4;
-            --md-sys-color-on-tertiary-container: #31111D;
-            --md-sys-color-error: #BA1A1A;
-            --md-sys-color-on-error: #FFFFFF;
-            --md-sys-color-error-container: #FFDAD6;
-            --md-sys-color-on-error-container: #410002;
-            --md-sys-color-surface: #FFFBFE;
-            --md-sys-color-on-surface: #1C1B1F;
-            --md-sys-color-surface-variant: #E7E0EC;
-            --md-sys-color-on-surface-variant: #49454F;
-            --md-sys-color-outline: #79747E;
-            --md-sys-color-outline-variant: #CAC4D0;
-            --md-sys-color-shadow: #000000;
-            --md-sys-color-scrim: #000000;
-            --md-sys-color-inverse-surface: #313033;
-            --md-sys-color-inverse-on-surface: #F4EFF4;
-            --md-sys-color-inverse-primary: #D0BCFF;
-            --md-sys-color-surface-container-lowest: #FFFFFF;
-            --md-sys-color-surface-container-low: #F7F2FA;
-            --md-sys-color-surface-container: #F3EDF7;
-            --md-sys-color-surface-container-high: #ECE6F0;
-            --md-sys-color-surface-container-highest: #E6E0E9;
-            --md-sys-color-success: #4CAF50;
-            --md-sys-color-warning: #FF9800;
-        }
-
-        /* Dark theme */
-        [data-theme="dark"] {
-            --md-sys-color-primary: #D0BCFF;
-            --md-sys-color-on-primary: #381E72;
-            --md-sys-color-primary-container: #4F378B;
-            --md-sys-color-on-primary-container: #EADDFF;
-            --md-sys-color-secondary: #CCC2DC;
-            --md-sys-color-on-secondary: #332D41;
-            --md-sys-color-secondary-container: #4A4458;
-            --md-sys-color-on-secondary-container: #E8DEF8;
-            --md-sys-color-tertiary: #EFB8C8;
-            --md-sys-color-on-tertiary: #492532;
-            --md-sys-color-tertiary-container: #633B48;
-            --md-sys-color-on-tertiary-container: #FFD8E4;
-            --md-sys-color-error: #FFB4AB;
-            --md-sys-color-on-error: #690005;
-            --md-sys-color-error-container: #93000A;
-            --md-sys-color-on-error-container: #FFDAD6;
-            --md-sys-color-surface: #1C1B1F;
-            --md-sys-color-on-surface: #E6E0E9;
-            --md-sys-color-surface-variant: #49454F;
-            --md-sys-color-on-surface-variant: #CAC4D0;
-            --md-sys-color-outline: #938F99;
-            --md-sys-color-outline-variant: #49454F;
-            --md-sys-color-shadow: #000000;
-            --md-sys-color-scrim: #000000;
-            --md-sys-color-inverse-surface: #E6E0E9;
-            --md-sys-color-inverse-on-surface: #313033;
-            --md-sys-color-inverse-primary: #6750A4;
-            --md-sys-color-surface-container-lowest: #0F0D13;
-            --md-sys-color-surface-container-low: #1C1B1F;
-            --md-sys-color-surface-container: #211F26;
-            --md-sys-color-surface-container-high: #2B2930;
-            --md-sys-color-surface-container-highest: #36343B;
-            --md-sys-color-success: #81C784;
-            --md-sys-color-warning: #FFB74D;
-        }
+        * { box-sizing: border-box; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: var(--ds-font);
             margin: 0;
             padding: 0;
-            background: var(--md-sys-color-surface);
+            background: var(--ds-bg);
             min-height: 100vh;
-            color: var(--md-sys-color-on-surface);
-            overflow-x: hidden;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            color: var(--ds-ink);
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
         }
-        
+
+        /* ---- App bar ---- */
+        .page-header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 64px;
+            background: var(--ds-surface);
+            border-bottom: 1px solid var(--ds-hairline);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 999;
+        }
+
+        .page-header-brand {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+        }
+
+        .page-header-logo {
+            width: 32px; height: 32px;
+            border-radius: 9px;
+            background: var(--ds-grad-icon);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .page-title {
+            font: 700 15px/1 var(--ds-font);
+            color: var(--ds-ink);
+            margin: 0;
+        }
+
+        .theme-toggle {
+            width: 44px; height: 44px;
+            border-radius: var(--ds-r-sm);
+            background: var(--ds-surface);
+            border: 1px solid var(--ds-border-2);
+            color: var(--ds-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .15s ease;
+        }
+        .theme-toggle:hover { background: var(--ds-surface-soft); }
+        .theme-toggle .material-icons { font-size: 22px; }
+
+        /* ---- Layout ---- */
         .onboarding-container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            min-height: 100vh;
+            max-width: 720px;
+            margin: 64px auto 0;
+            padding: 40px 24px 56px;
+            min-height: calc(100vh - 64px);
             display: flex;
             flex-direction: column;
             justify-content: center;
         }
-        
+
+        /* ---- Progress bar ---- */
+        .progress-bar {
+            height: 7px;
+            border-radius: var(--ds-r-pill);
+            background: var(--ds-hairline);
+            overflow: hidden;
+            margin-bottom: 28px;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: var(--ds-r-pill);
+            background: var(--ds-grad-btn);
+            transition: width .3s ease;
+            width: 0%;
+        }
+
+        /* ---- Step card ---- */
         .step {
-            background: var(--md-sys-color-surface-container);
-            border-radius: 16px;
-            padding: 40px;
-            border: 1px solid var(--md-sys-color-outline-variant);
-            margin-bottom: 20px;
+            background: var(--ds-surface);
+            border: 1px solid var(--ds-border);
+            border-radius: var(--ds-r-lg);
+            box-shadow: var(--ds-shadow-card);
+            overflow: hidden;
             display: none;
-            animation: fadeIn 0.5s ease-in-out;
-            box-shadow: 0 4px 12px var(--md-sys-color-shadow);
-            transition: background-color 0.3s ease, border-color 0.3s ease;
+            animation: fadeIn 0.4s ease-in-out;
         }
-        
-        .step.active {
-            display: block;
-        }
-        
+        .step.active { display: block; }
+
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
+            from { opacity: 0; transform: translateY(16px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        
+
+        .step-body {
+            padding: 48px 56px 40px;
+            text-align: center;
+        }
+
+        /* ---- Welcome badge ---- */
+        .step-badge {
+            display: inline-block;
+            font: 600 12px/1 var(--ds-font);
+            color: var(--ds-brand);
+            background: var(--ds-tint);
+            padding: 7px 13px;
+            border-radius: var(--ds-r-pill);
+            margin-bottom: 18px;
+        }
+
         .step-icon {
-            font-size: 48px;
+            font-size: 40px;
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 14px;
         }
-        
+
         .step-title {
-            font-size: 28px;
-            font-weight: 700;
-            text-align: center;
-            margin-bottom: 15px;
-            color: var(--md-sys-color-on-surface);
-            transition: color 0.3s ease;
+            font-family: var(--ds-serif);
+            font-weight: 600;
+            font-size: 34px;
+            line-height: 1.2;
+            letter-spacing: -.015em;
+            color: var(--ds-ink);
+            margin: 0 auto 12px;
+            max-width: 560px;
+            text-wrap: balance;
         }
-        
+
         .step-description {
-            font-size: 16px;
-            line-height: 1.6;
+            font: 400 16px/1.55 var(--ds-font);
             text-align: center;
-            margin-bottom: 30px;
-            color: var(--md-sys-color-on-surface-variant);
-            transition: color 0.3s ease;
+            color: var(--ds-muted);
+            max-width: 520px;
+            margin: 0 auto 32px;
         }
-        
-        .step-content {
-            margin-bottom: 30px;
+
+        .step-content { margin-bottom: 8px; text-align: left; }
+
+        /* ---- Section label ---- */
+        .section-label {
+            font: 700 11px/1 var(--ds-font);
+            color: var(--ds-faint);
+            letter-spacing: .07em;
+            text-transform: uppercase;
+            margin: 36px 0 14px;
+            text-align: left;
         }
-        
+
+        /* ---- Step cards grid (Browse / Click / Read) ---- */
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+            text-align: left;
+        }
+        .feature-card {
+            background: var(--ds-surface-soft);
+            border: 1px solid var(--ds-border);
+            border-radius: 15px;
+            padding: 24px 22px;
+        }
+        .feature-card-num {
+            width: 38px; height: 38px;
+            border-radius: 11px;
+            background: var(--ds-surface);
+            border: 1px solid var(--ds-border-2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--ds-serif);
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--ds-brand);
+        }
+        .feature-card-title {
+            font: 700 16px/1.3 var(--ds-font);
+            color: var(--ds-ink);
+            margin-top: 16px;
+        }
+        .feature-card-desc {
+            font: 400 13.5px/1.5 var(--ds-font);
+            color: var(--ds-muted-2);
+            margin-top: 6px;
+        }
+
+        /* ---- Start options (Free credits / My key) ---- */
+        .start-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            text-align: left;
+        }
+        .start-option-icon {
+            width: 40px; height: 40px;
+            border-radius: 11px;
+            background: var(--ds-surface-soft);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .ds-option.is-selected .start-option-icon { background: var(--ds-tint); }
+        .start-option-title {
+            font: 700 16px/1.3 var(--ds-font);
+            color: var(--ds-ink);
+            margin-top: 14px;
+        }
+        .start-option-desc {
+            font: 400 13.5px/1.5 var(--ds-font);
+            color: var(--ds-muted-2);
+            margin-top: 6px;
+        }
+
+        /* ---- Feature list (bulleted) ---- */
         .feature-list {
             list-style: none;
             padding: 0;
-            margin: 20px 0;
+            margin: 18px 0 0;
         }
-        
         .feature-list li {
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 9px 0;
+            border-bottom: 1px solid var(--ds-hairline);
             display: flex;
             align-items: center;
+            font: 400 14px/1.45 var(--ds-font);
+            color: var(--ds-ink-2);
         }
-        
-        .feature-list li:last-child {
-            border-bottom: none;
-        }
-        
+        .feature-list li:last-child { border-bottom: none; }
         .feature-icon {
-            font-size: 20px;
-            margin-right: 15px;
-            width: 30px;
-            text-align: center;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            font-size: 14px;
-        }
-        
-        .form-group input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid var(--md-sys-color-outline);
-            border-radius: 8px;
-            background: var(--md-sys-color-surface-container-lowest);
-            color: var(--md-sys-color-on-surface);
-            font-size: 14px;
-            box-sizing: border-box;
-            transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
-        }
-        
-        .form-group input:focus {
-            outline: none;
-            border-color: var(--md-sys-color-primary);
-            box-shadow: 0 0 0 2px var(--md-sys-color-primary-container);
-        }
-        
-        .help-text {
-            font-size: 12px;
-            color: var(--md-sys-color-on-surface-variant);
-            margin-top: 5px;
-            line-height: 1.4;
-            transition: color 0.3s ease;
-        }
-        
-        .button-group {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-top: 30px;
-        }
-        
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            min-width: 120px;
-        }
-        
-        .btn-primary {
-            background: var(--md-sys-color-primary);
-            color: var(--md-sys-color-on-primary);
-            border: 1px solid var(--md-sys-color-primary);
-        }
-        
-        .btn-primary:hover {
-            background: var(--md-sys-color-primary-container);
-            color: var(--md-sys-color-on-primary-container);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px var(--md-sys-color-shadow);
-        }
-        
-        .btn-secondary {
-            background: var(--md-sys-color-secondary-container);
-            color: var(--md-sys-color-on-secondary-container);
-            border: 1px solid var(--md-sys-color-outline);
-        }
-        
-        .btn-secondary:hover {
-            background: var(--md-sys-color-surface-container-high);
-            border-color: var(--md-sys-color-primary);
-        }
-        
-        .btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-        
-        .progress-bar {
-            width: 100%;
-            height: 4px;
-            background: var(--md-sys-color-outline-variant);
-            border-radius: 2px;
-            margin-bottom: 30px;
-            overflow: hidden;
-            transition: background-color 0.3s ease;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(45deg, #27ae60, #2ecc71);
-            border-radius: 2px;
-            transition: width 0.3s ease;
-            width: 0%;
-        }
-        
-        .step-indicator {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        
-        .step-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: var(--md-sys-color-outline-variant);
-            transition: all 0.3s ease;
-        }
-        
-        .step-dot.active {
-            background: #27ae60;
-            transform: scale(1.2);
-        }
-        
-        .step-dot.completed {
-            background: #2ecc71;
-        }
-        
-        .demo-section {
-            background: var(--md-sys-color-surface-container-low);
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-            transition: background-color 0.3s ease;
-        }
-        
-        .demo-title {
             font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 15px;
-            color: var(--md-sys-color-on-surface);
-            transition: color 0.3s ease;
-        }
-        
-        .demo-steps {
-            list-style: none;
-            padding: 0;
-        }
-        
-        .demo-steps li {
-            padding: 8px 0;
-            display: flex;
-            align-items: center;
-        }
-        
-        .demo-steps li::before {
-            content: counter(step-counter);
-            counter-increment: step-counter;
-            background: #3498db;
-            color: white;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: bold;
-            margin-right: 15px;
+            margin-right: 14px;
+            width: 26px;
+            text-align: center;
             flex-shrink: 0;
         }
-        
-        .demo-steps {
-            counter-reset: step-counter;
-        }
-        
-        .success-message {
-            background: rgba(39, 174, 96, 0.2);
-            color: #2ecc71;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid rgba(46, 204, 113, 0.3);
-            margin: 20px 0;
-            text-align: center;
-        }
-        
-        .error-message {
-            background: rgba(231, 76, 60, 0.2);
-            color: #e74c3c;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid rgba(231, 76, 60, 0.3);
-            margin: 20px 0;
-            text-align: center;
-        }
-        
-        .skip-link {
-            text-align: center;
-            margin-top: 20px;
-        }
-        
-        .skip-link a {
-            color: var(--md-sys-color-on-surface-variant);
-            text-decoration: none;
-            font-size: 14px;
-            transition: color 0.3s ease;
-        }
-        
-        .skip-link a:hover {
-            color: var(--md-sys-color-primary);
-            text-decoration: underline;
-        }
 
-        /* Estilos para opções de API */
+        /* ---- API option cards (step 2) ---- */
         .api-option {
-            background: var(--md-sys-color-surface-container-low);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            border: 2px solid var(--md-sys-color-outline-variant);
-            transition: all 0.3s ease;
+            background: var(--ds-surface);
+            border: 1.5px solid var(--ds-border-2);
+            border-radius: 15px;
+            padding: 22px;
+            margin-bottom: 18px;
+            position: relative;
+            transition: border-color .15s ease;
         }
-
-        .api-option:hover {
-            border-color: var(--md-sys-color-outline);
-            transform: translateY(-2px);
-        }
-
+        .api-option:hover { border-color: var(--ds-border); }
         .api-option.selected {
-            border-color: var(--md-sys-color-primary);
-            background: var(--md-sys-color-primary-container);
+            border: 2px solid var(--ds-brand);
+            padding: 21.5px;
         }
 
         .option-header {
             display: flex;
             align-items: center;
-            margin-bottom: 15px;
-            gap: 15px;
+            margin-bottom: 12px;
+            gap: 14px;
         }
-
         .option-icon {
-            font-size: 32px;
+            width: 44px; height: 44px;
+            border-radius: 11px;
+            background: var(--ds-surface-soft);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
             flex-shrink: 0;
         }
-
-        .option-title {
-            flex: 1;
-        }
-
+        .api-option.selected .option-icon { background: var(--ds-tint); }
+        .option-title { flex: 1; }
         .option-title h3 {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--md-sys-color-on-surface);
-            margin: 0 0 5px 0;
-            transition: color 0.3s ease;
+            font: 700 17px/1.3 var(--ds-font);
+            color: var(--ds-ink);
+            margin: 0 0 4px 0;
         }
-
         .option-subtitle {
-            font-size: 14px;
-            color: var(--md-sys-color-on-surface-variant);
+            font: 400 13.5px/1.4 var(--ds-font);
+            color: var(--ds-muted-2);
             margin: 0;
-            transition: color 0.3s ease;
         }
-
         .option-badge {
-            background: linear-gradient(45deg, #27ae60, #2ecc71);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
+            font: 700 10.5px/1 var(--ds-font);
+            color: #fff;
+            background: var(--ds-brand);
+            padding: 6px 11px;
+            border-radius: var(--ds-r-pill);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: .04em;
+            flex-shrink: 0;
         }
-
         .option-badge.advanced {
-            background: linear-gradient(45deg, #e67e22, #f39c12);
+            color: var(--ds-muted);
+            background: var(--ds-surface-soft);
+            border: 1px solid var(--ds-border-2);
         }
 
-        .option-features {
-            margin-bottom: 20px;
-        }
+        .option-features { margin-bottom: 18px; }
 
+        /* ---- Credits info ---- */
         .credits-info {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 15px;
+            background: var(--ds-surface-soft);
+            border: 1px solid var(--ds-border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
         }
-
         .credits-display {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
         }
-
-        .credits-explanation-text {
-            font-size: 12px;
-            color: var(--md-sys-color-on-surface-variant);
-            margin-top: 10px;
-            line-height: 1.4;
-            transition: color 0.3s ease;
+        .credits-label {
+            font: 500 14px/1 var(--ds-font);
+            color: var(--ds-muted);
         }
-
         .credits-count {
-            font-size: 24px;
+            font-family: var(--ds-serif);
             font-weight: 700;
-            color: #2ecc71;
+            font-size: 24px;
+            color: var(--ds-brand);
         }
-
         .credits-actions {
             display: flex;
             gap: 10px;
         }
-
         .credits-actions .btn {
             flex: 1;
-            padding: 10px 16px;
-            font-size: 14px;
+            min-width: 0;
         }
+        .credits-explanation-text {
+            font: 400 12px/1.5 var(--ds-font);
+            color: var(--ds-muted-2);
+            margin-top: 12px;
+        }
+        .credits-explanation-text strong { color: var(--ds-ink-2); }
 
+        /* ---- API key section ---- */
         .api-key-section {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 18px;
+            padding-top: 18px;
+            border-top: 1px solid var(--ds-hairline);
         }
 
-        .option-actions {
-            margin-top: 15px;
-        }
+        .option-actions { margin-top: 16px; }
+        .option-actions .btn { width: 100%; }
 
-        .option-actions .btn {
-            width: 100%;
-            padding: 12px 20px;
+        /* ---- Demo / info sections ---- */
+        .demo-section {
+            background: var(--ds-surface-soft);
+            border: 1px solid var(--ds-border);
+            border-radius: 13px;
+            padding: 20px;
+            margin: 18px 0;
+            text-align: left;
         }
-
-        /* Theme toggle button */
-        .theme-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            width: 48px;
-            height: 48px;
+        .demo-title {
+            font: 700 16px/1.3 var(--ds-font);
+            color: var(--ds-ink);
+            margin: 0 0 14px;
+        }
+        .demo-section p {
+            font: 400 14px/1.5 var(--ds-font);
+            color: var(--ds-muted);
+            margin: 0;
+        }
+        .demo-steps {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            counter-reset: step-counter;
+        }
+        .demo-steps li {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+            font: 400 14px/1.45 var(--ds-font);
+            color: var(--ds-ink-2);
+        }
+        .demo-steps li::before {
+            content: counter(step-counter);
+            counter-increment: step-counter;
+            background: var(--ds-brand);
+            color: #fff;
+            width: 24px; height: 24px;
             border-radius: 50%;
-            background: var(--md-sys-color-primary-container);
-            color: var(--md-sys-color-on-primary-container);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font: 700 12px/1 var(--ds-font);
+            margin-right: 14px;
+            flex-shrink: 0;
+        }
+
+        /* ---- Form ---- */
+        .form-group { margin-bottom: 18px; text-align: left; }
+        .form-group > label {
+            display: block;
+            margin-bottom: 8px;
+            font: 600 14px/1 var(--ds-font);
+            color: var(--ds-ink);
+        }
+        .form-group input[type="password"],
+        .form-group input[type="text"] {
+            width: 100%;
+            font: 500 13.5px/1 var(--ds-font);
+            color: var(--ds-ink);
+            background: var(--ds-surface-soft);
+            border: 1px solid var(--ds-border);
+            border-radius: var(--ds-r-sm);
+            padding: 13px 15px;
+            outline: none;
+        }
+        .form-group input[type="password"]:focus,
+        .form-group input[type="text"]:focus {
+            border-color: var(--ds-brand);
+        }
+        .help-text {
+            font: 400 12px/1.4 var(--ds-font);
+            color: var(--ds-muted-2);
+            margin-top: 6px;
+        }
+
+        /* Checkbox rows */
+        .check-row > label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font: 600 14px/1.3 var(--ds-font);
+            color: var(--ds-ink);
+            cursor: pointer;
+        }
+        .check-row input[type="checkbox"] {
+            width: 18px; height: 18px;
+            accent-color: var(--ds-brand);
+            flex-shrink: 0;
+        }
+        .check-row .help-text { margin-left: 28px; }
+
+        a { color: var(--ds-brand); }
+
+        /* ---- Buttons ---- */
+        .button-group {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 36px;
+        }
+        .btn {
+            font: 700 15px/1 var(--ds-font);
             border: none;
             cursor: pointer;
-            display: flex;
+            padding: 16px 32px;
+            border-radius: 12px;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 2px 8px var(--md-sys-color-shadow);
-            transition: all 0.3s ease;
-            z-index: 1000;
+            gap: 9px;
+            transition: filter .15s ease, transform .05s ease, background .15s ease;
+        }
+        .btn:active { transform: translateY(1px); }
+        .btn-primary {
+            background: var(--ds-grad-btn);
+            color: #fff;
+            box-shadow: var(--ds-shadow-btn);
+        }
+        .btn-primary:hover { filter: brightness(1.03); }
+        [data-theme="dark"] .btn-primary { color: #06140E; box-shadow: none; }
+        .btn-secondary {
+            background: var(--ds-surface);
+            color: var(--ds-muted);
+            border: 1px solid var(--ds-border-2);
+            font-weight: 600;
+        }
+        .btn-secondary:hover { background: var(--ds-surface-soft); }
+        .btn:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            filter: none;
         }
 
-        .theme-toggle:hover {
-            background: var(--md-sys-color-primary);
-            color: var(--md-sys-color-on-primary);
-            transform: scale(1.1);
-        }
-
-        .theme-toggle .material-symbols-outlined,
-        .theme-toggle .material-icons {
-            font-size: 24px;
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-
-        /* Header with theme toggle integrated */
-        .page-header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 60px;
-            background: var(--md-sys-color-surface-container);
-            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+        /* ---- Pagination dots ---- */
+        .step-indicator {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
-            z-index: 999;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-        }
-
-        .page-header .theme-toggle {
-            position: static;
-            width: 40px;
-            height: 40px;
-            margin: 0;
-        }
-
-        .page-title {
-            font-size: 18px;
-            font-weight: 500;
-            color: var(--md-sys-color-on-surface);
-            margin: 0;
-        }
-
-        .onboarding-container {
-            max-width: 600px;
-            margin: 80px auto 20px;
-            padding: 20px;
-            min-height: calc(100vh - 100px);
-            display: flex;
-            flex-direction: column;
             justify-content: center;
+            gap: 7px;
+            margin-top: 24px;
+        }
+        .step-dot {
+            width: 6px; height: 6px;
+            border-radius: var(--ds-r-pill);
+            background: var(--ds-border-2);
+            transition: all .3s ease;
+        }
+        .step-dot.active {
+            width: 24px;
+            background: var(--ds-brand);
+        }
+        .step-dot.completed {
+            background: var(--ds-brand);
+            opacity: .55;
+        }
+
+        /* ---- Skip link ---- */
+        .skip-link {
+            text-align: center;
+            margin-top: 18px;
+        }
+        .skip-link a {
+            color: var(--ds-faint);
+            text-decoration: none;
+            font: 600 13px/1 var(--ds-font);
+        }
+        .skip-link a:hover {
+            color: var(--ds-brand);
+            text-decoration: underline;
+        }
+
+        /* ---- Status messages ---- */
+        .success-message {
+            background: var(--ds-low-bg);
+            color: var(--ds-low-text);
+            border: 1px solid var(--ds-low-border);
+            padding: 14px;
+            border-radius: 12px;
+            margin: 18px 0;
+            text-align: center;
+            font: 500 14px/1.5 var(--ds-font);
+        }
+        .error-message {
+            background: var(--ds-high-bg);
+            color: var(--ds-high-text);
+            border: 1px solid var(--ds-high-border);
+            padding: 14px;
+            border-radius: 12px;
+            margin: 18px 0;
+            text-align: center;
+            font: 500 14px/1.5 var(--ds-font);
+        }
+        .info-message {
+            background: var(--ds-tint);
+            color: var(--ds-brand);
+            border: 1px solid var(--ds-tint-border);
+            padding: 14px;
+            border-radius: 12px;
+            margin: 18px 0;
+            text-align: center;
+            font: 500 14px/1.5 var(--ds-font);
+        }
+
+        @media (max-width: 600px) {
+            .step-body { padding: 32px 24px 28px; }
+            .step-title { font-size: 26px; }
+            .steps-grid, .start-options { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
     <!-- Page Header -->
     <div class="page-header">
-        <h1 class="page-title">ToS & Privacy Summarizer</h1>
+        <div class="page-header-brand">
+            <div class="page-header-logo">
+                <svg width="20" height="20" viewBox="0 0 36 36" fill="none"><path d="M18 5.5l9 3.2v6.8c0 5.7-3.8 9.7-9 11.2-5.2-1.5-9-5.5-9-11.2V8.7l9-3.2z" fill="#fff" fill-opacity=".18" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><path d="M13.6 17.8l3 3 6-6.4" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <h1 class="page-title">ToS &amp; Privacy Summarizer</h1>
+        </div>
         <button class="theme-toggle" id="themeToggle" title="Alternar tema">
             <span class="material-icons">dark_mode</span>
         </button>
@@ -602,8 +598,328 @@
         <div class="progress-bar">
             <div class="progress-fill" id="progressFill"></div>
         </div>
-        
-        <!-- Indicadores de Passo -->
+
+        <!-- Passo 1: Boas-vindas -->
+        <div class="step active" id="step1">
+            <div class="step-body">
+                <div class="step-badge">Bem-vindo</div>
+                <h2 class="step-title">Leia o que importa. Ignore o resto.</h2>
+                <p class="step-description">
+                    Em três passos simples, transforme páginas legais densas em resumos claros com alertas de risco.
+                </p>
+
+                <div class="step-content">
+                    <!-- 3 passos: Browse / Click the icon / Read the summary -->
+                    <div class="steps-grid">
+                        <div class="feature-card">
+                            <div class="feature-card-num">1</div>
+                            <div class="feature-card-title">Navegue</div>
+                            <div class="feature-card-desc">Abra qualquer página de Termos ou Política de Privacidade.</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-card-num">2</div>
+                            <div class="feature-card-title">Clique no ícone</div>
+                            <div class="feature-card-desc">A IA extrai e analisa o texto em 10–30 segundos.</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-card-num">3</div>
+                            <div class="feature-card-title">Leia o resumo</div>
+                            <div class="feature-card-desc">Resumo, pontos-chave e níveis de risco, prontos a ler.</div>
+                        </div>
+                    </div>
+
+                    <!-- Duas opções de início -->
+                    <div class="section-label">Como gostaria de começar?</div>
+                    <div class="start-options">
+                        <div class="ds-option is-selected" id="welcomeSharedOption">
+                            <div class="ds-tag-rec">Recomendado</div>
+                            <div class="start-option-icon">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--ds-brand);"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg>
+                            </div>
+                            <div class="start-option-title">Créditos grátis</div>
+                            <div class="start-option-desc">Use a nossa API partilhada. Sem configuração — comece já com créditos incluídos.</div>
+                        </div>
+                        <div class="ds-option" id="welcomeOwnOption">
+                            <div class="start-option-icon">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--ds-muted);"><path d="M21 2l-2 2m-7.6 7.6a5 5 0 11-7.1 7.1 5 5 0 017.1-7.1zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3"/></svg>
+                            </div>
+                            <div class="start-option-title">A minha chave Gemini</div>
+                            <div class="start-option-desc">Use a sua própria chave Google Gemini para uso ilimitado e privado.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" id="startConfigBtn">Começar</button>
+                </div>
+
+                <div class="skip-link">
+                    <a href="#" id="skipOnboardingLink">Saltar configuração</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Passo 2: Configuração da API -->
+        <div class="step" id="step2">
+            <div class="step-body">
+                <div class="step-badge">Configuração</div>
+                <h2 class="step-title">Escolher método de API</h2>
+                <p class="step-description">
+                    Escolha como quer usar a extensão. Recomendamos começar com os créditos gratuitos!
+                </p>
+
+                <div class="step-content">
+                    <!-- Opção 1: Chave Compartilhada -->
+                    <div class="api-option" id="sharedApiOption">
+                        <div class="option-header">
+                            <div class="option-icon">🎁</div>
+                            <div class="option-title">
+                                <h3>Créditos gratuitos (recomendado)</h3>
+                                <p class="option-subtitle">Comece imediatamente sem configuração</p>
+                            </div>
+                            <div class="option-badge">Grátis</div>
+                        </div>
+
+                        <div class="option-features">
+                            <ul class="feature-list">
+                                <li>
+                                    <span class="feature-icon">✅</span>
+                                    <span>5 análises gratuitas incluídas</span>
+                                </li>
+                                <li>
+                                    <span class="feature-icon">⚡</span>
+                                    <span>Começar a usar imediatamente</span>
+                                </li>
+                                <li>
+                                    <span class="feature-icon">🛡️</span>
+                                    <span>Sem necessidade de conta Google</span>
+                                </li>
+                                <li>
+                                    <span class="feature-icon">💳</span>
+                                    <span>Comprar mais créditos quando necessário</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="credits-info">
+                            <div class="credits-display">
+                                <span class="credits-label">Créditos disponíveis:</span>
+                                <span class="credits-count" id="sharedCreditsCount">5</span>
+                            </div>
+                            <div class="credits-actions">
+                                <button class="btn btn-primary" id="useSharedApiBtn">Usar Créditos Gratuitos</button>
+                                <button class="btn btn-secondary" id="buyCreditsBtn">Comprar Mais Créditos</button>
+                            </div>
+                            <div class="credits-explanation">
+                                <p class="credits-explanation-text">
+                                    <strong>Porquê Pagar?</strong> Cada resumo de alta precisão requer o uso do modelo avançado Google Gemini, processamento em backend seguro (Vercel) e gestão de base de dados. O nosso sistema de créditos cobre estes custos, garantindo a mais alta qualidade, velocidade e privacidade.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Opção 2: Chave Própria -->
+                    <div class="api-option" id="ownApiOption">
+                        <div class="option-header">
+                            <div class="option-icon">🔧</div>
+                            <div class="option-title">
+                                <h3>A sua própria chave da API</h3>
+                                <p class="option-subtitle">Para utilizadores avançados</p>
+                            </div>
+                            <div class="option-badge advanced">Avançado</div>
+                        </div>
+
+                        <div class="option-features">
+                            <ul class="feature-list">
+                                <li>
+                                    <span class="feature-icon">♾️</span>
+                                    <span>Uso ilimitado (conforme limites da sua conta)</span>
+                                </li>
+                                <li>
+                                    <span class="feature-icon">🔒</span>
+                                    <span>Controlo total sobre os seus dados</span>
+                                </li>
+                                <li>
+                                    <span class="feature-icon">⚙️</span>
+                                    <span>Configuração personalizada</span>
+                                </li>
+                                <li>
+                                    <span class="feature-icon">📊</span>
+                                    <span>Acesso aos seus próprios limites de API</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="api-key-section" id="apiKeySection" style="display: none;">
+                            <div class="demo-section">
+                                <h3 class="demo-title">Como obter a sua chave:</h3>
+                                <ol class="demo-steps">
+                                    <li>Vá para <a href="https://makersuite.google.com/app/apikey" target="_blank">Google AI Studio</a></li>
+                                    <li>Faça login com a sua conta Google</li>
+                                    <li>Clique em "Create API Key"</li>
+                                    <li>Copie a chave gerada</li>
+                                    <li>Cole-a no campo abaixo</li>
+                                </ol>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="apiKey">Chave da API Gemini:</label>
+                                <input type="password" id="apiKey" placeholder="Cole aqui a sua chave da API">
+                                <div class="help-text">
+                                    A chave será guardada localmente no seu navegador e nunca partilhada.
+                                </div>
+                            </div>
+
+                            <div id="apiKeyStatus"></div>
+                        </div>
+
+                        <div class="option-actions">
+                            <button class="btn btn-secondary" id="useOwnApiBtn">Usar Minha Chave</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-secondary" id="prevStep2Btn">Anterior</button>
+                    <button class="btn btn-primary" id="testAndNextBtn" style="display: none;">Testar e Continuar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Passo 3: Demonstração -->
+        <div class="step" id="step3">
+            <div class="step-body">
+                <div class="step-badge">Como funciona</div>
+                <h2 class="step-title">Como usar a extensão</h2>
+                <p class="step-description">
+                    Agora que está configurado, vamos mostrar-lhe como usar a extensão de forma eficaz.
+                </p>
+
+                <div class="step-content">
+                    <div class="demo-section">
+                        <h3 class="demo-title">Passos para analisar uma página:</h3>
+                        <ol class="demo-steps">
+                            <li>Navegue para uma página com Termos de Serviço ou Política de Privacidade</li>
+                            <li>Clique no ícone da extensão na barra de ferramentas</li>
+                            <li>Clique em "🔍 Extrair & Resumir"</li>
+                            <li>Aguarde alguns segundos para o processamento</li>
+                            <li>Leia o resumo estruturado com alertas de privacidade</li>
+                        </ol>
+                    </div>
+
+                    <div class="demo-section">
+                        <h3 class="demo-title">Tipos de alertas que encontrará:</h3>
+                        <ul class="feature-list">
+                            <li>
+                                <span class="feature-icon">👥</span>
+                                <span>Partilha de dados com terceiros</span>
+                            </li>
+                            <li>
+                                <span class="feature-icon">🖼️</span>
+                                <span>Propriedade do seu conteúdo</span>
+                            </li>
+                            <li>
+                                <span class="feature-icon">🔄</span>
+                                <span>Alterações unilaterais dos termos</span>
+                            </li>
+                            <li>
+                                <span class="feature-icon">🏛️</span>
+                                <span>Limitações legais e jurisdição</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-secondary" id="prevStep3Btn">Anterior</button>
+                    <button class="btn btn-primary" id="nextStep3Btn">Continuar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Passo 4: Configurações Avançadas -->
+        <div class="step" id="step4">
+            <div class="step-body">
+                <div class="step-badge">Preferências</div>
+                <h2 class="step-title">Configurações avançadas</h2>
+                <p class="step-description">
+                    Personalize a sua experiência com algumas configurações opcionais.
+                </p>
+
+                <div class="step-content">
+                    <div class="form-group check-row">
+                        <label>
+                            <input type="checkbox" id="autoDetect" checked>
+                            Detecção Automática de Páginas Legais
+                        </label>
+                        <div class="help-text">
+                            Detecta automaticamente se a página contém Termos de Serviço ou Política de Privacidade.
+                        </div>
+                    </div>
+
+                    <div class="form-group check-row">
+                        <label>
+                            <input type="checkbox" id="notifications" checked>
+                            Notificações de Sucesso
+                        </label>
+                        <div class="help-text">
+                            Mostra notificações quando o resumo é gerado com sucesso.
+                        </div>
+                    </div>
+
+                    <div class="demo-section">
+                        <h3 class="demo-title">Acesso às Configurações:</h3>
+                        <p>Pode sempre alterar estas configurações clicando no ícone da extensão e depois em "⚙️ Configurações".</p>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-secondary" id="prevStep4Btn">Anterior</button>
+                    <button class="btn btn-primary" id="nextStep4Btn">Continuar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Passo 5: Conclusão -->
+        <div class="step" id="step5">
+            <div class="step-body">
+                <div class="step-badge">Tudo pronto</div>
+                <h2 class="step-title">Configuração concluída!</h2>
+                <p class="step-description">
+                    Parabéns! A sua extensão está configurada e pronta para usar.
+                    Agora pode começar a analisar Termos de Serviço e Políticas de Privacidade.
+                </p>
+
+                <div class="step-content">
+                    <div class="success-message">
+                        ✅ Extensão configurada com sucesso!<br>
+                        ✅ Chave da API validada<br>
+                        ✅ Configurações personalizadas aplicadas
+                    </div>
+
+                    <div class="demo-section">
+                        <h3 class="demo-title">Próximos passos:</h3>
+                        <ol class="demo-steps">
+                            <li>Experimente a extensão numa página com Termos de Serviço</li>
+                            <li>Explore os diferentes tipos de alertas de privacidade</li>
+                            <li>Configure preferências adicionais se necessário</li>
+                            <li>Partilhe a extensão com amigos e colegas</li>
+                        </ol>
+                    </div>
+
+                    <div class="demo-section">
+                        <h3 class="demo-title">Precisa de ajuda?</h3>
+                        <p>Consulte a nossa <a href="privacy-policy.html">Política de Privacidade</a> e <a href="terms-of-service.html">Termos de Serviço</a> para mais informações.</p>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" id="completeOnboardingBtn">Começar a Usar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Indicadores de Passo (paginação partilhada) -->
         <div class="step-indicator">
             <div class="step-dot active" data-step="0"></div>
             <div class="step-dot" data-step="1"></div>
@@ -611,300 +927,8 @@
             <div class="step-dot" data-step="3"></div>
             <div class="step-dot" data-step="4"></div>
         </div>
-        
-        <!-- Passo 1: Boas-vindas -->
-        <div class="step active" id="step1">
-            <div class="step-icon">🎉</div>
-            <h2 class="step-title">Bem-vindo ao ToS & Privacy Summarizer!</h2>
-            <p class="step-description">
-                A sua nova ferramenta para entender rapidamente Termos de Serviço e Políticas de Privacidade. 
-                Vamos configurar tudo em poucos passos simples.
-            </p>
-            
-            <div class="step-content">
-                <h3 style="text-align: center; margin-bottom: 20px;">O que pode fazer:</h3>
-                <ul class="feature-list">
-                    <li>
-                        <span class="feature-icon">📄</span>
-                        <span>Analisar Termos de Serviço e Políticas de Privacidade</span>
-                    </li>
-                    <li>
-                        <span class="feature-icon">🤖</span>
-                        <span>Obter resumos inteligentes usando IA</span>
-                    </li>
-                    <li>
-                        <span class="feature-icon">⚠️</span>
-                        <span>Identificar alertas de privacidade importantes</span>
-                    </li>
-                    <li>
-                        <span class="feature-icon">⚡</span>
-                        <span>Economizar tempo na leitura de documentos legais</span>
-                    </li>
-                </ul>
-            </div>
-            
-            <div class="button-group">
-                <button class="btn btn-primary" id="startConfigBtn">Começar Configuração</button>
-            </div>
-            
-            <div class="skip-link">
-                <a href="#" id="skipOnboardingLink">Saltar configuração</a>
-            </div>
-        </div>
-        
-        <!-- Passo 2: Configuração da API -->
-        <div class="step" id="step2">
-            <div class="step-icon">🔑</div>
-            <h2 class="step-title">Escolher Método de API</h2>
-            <p class="step-description">
-                Escolha como quer usar a extensão. Recomendamos começar com os créditos gratuitos!
-            </p>
-            
-            <div class="step-content">
-                <!-- Opção 1: Chave Compartilhada -->
-                <div class="api-option" id="sharedApiOption">
-                    <div class="option-header">
-                        <div class="option-icon">🎁</div>
-                        <div class="option-title">
-                            <h3>Créditos Gratuitos (Recomendado)</h3>
-                            <p class="option-subtitle">Comece imediatamente sem configuração</p>
-                        </div>
-                        <div class="option-badge">GRÁTIS</div>
-                    </div>
-                    
-                    <div class="option-features">
-                        <ul class="feature-list">
-                            <li>
-                                <span class="feature-icon">✅</span>
-                                <span>5 análises gratuitas incluídas</span>
-                            </li>
-                            <li>
-                                <span class="feature-icon">⚡</span>
-                                <span>Começar a usar imediatamente</span>
-                            </li>
-                            <li>
-                                <span class="feature-icon">🛡️</span>
-                                <span>Sem necessidade de conta Google</span>
-                            </li>
-                            <li>
-                                <span class="feature-icon">💳</span>
-                                <span>Comprar mais créditos quando necessário</span>
-                            </li>
-                        </ul>
-                    </div>
-                    
-                    <div class="credits-info">
-                        <div class="credits-display">
-                            <span class="credits-label">Créditos disponíveis:</span>
-                            <span class="credits-count" id="sharedCreditsCount">5</span>
-                        </div>
-                        <div class="credits-actions">
-                            <button class="btn btn-primary" id="useSharedApiBtn">Usar Créditos Gratuitos</button>
-                            <button class="btn btn-secondary" id="buyCreditsBtn">Comprar Mais Créditos</button>
-                        </div>
-                        <div class="credits-explanation">
-                            <p class="credits-explanation-text">
-                                <strong>Porquê Pagar?</strong> Cada resumo de alta precisão requer o uso do modelo avançado Google Gemini, processamento em backend seguro (Vercel) e gestão de base de dados. O nosso sistema de créditos cobre estes custos, garantindo a mais alta qualidade, velocidade e privacidade.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Opção 2: Chave Própria -->
-                <div class="api-option" id="ownApiOption">
-                    <div class="option-header">
-                        <div class="option-icon">🔧</div>
-                        <div class="option-title">
-                            <h3>Sua Própria Chave da API</h3>
-                            <p class="option-subtitle">Para utilizadores avançados</p>
-                        </div>
-                        <div class="option-badge">AVANÇADO</div>
-                    </div>
-                    
-                    <div class="option-features">
-                        <ul class="feature-list">
-                            <li>
-                                <span class="feature-icon">♾️</span>
-                                <span>Uso ilimitado (conforme limites da sua conta)</span>
-                            </li>
-                            <li>
-                                <span class="feature-icon">🔒</span>
-                                <span>Controlo total sobre os seus dados</span>
-                            </li>
-                            <li>
-                                <span class="feature-icon">⚙️</span>
-                                <span>Configuração personalizada</span>
-                            </li>
-                            <li>
-                                <span class="feature-icon">📊</span>
-                                <span>Acesso aos seus próprios limites de API</span>
-                            </li>
-                        </ul>
-                    </div>
-                    
-                    <div class="api-key-section" id="apiKeySection" style="display: none;">
-                        <div class="demo-section">
-                            <h3 class="demo-title">Como obter a sua chave:</h3>
-                            <ol class="demo-steps">
-                                <li>Vá para <a href="https://makersuite.google.com/app/apikey" target="_blank" style="color: #3498db;">Google AI Studio</a></li>
-                                <li>Faça login com a sua conta Google</li>
-                                <li>Clique em "Create API Key"</li>
-                                <li>Copie a chave gerada</li>
-                                <li>Cole-a no campo abaixo</li>
-                            </ol>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="apiKey">Chave da API Gemini:</label>
-                            <input type="password" id="apiKey" placeholder="Cole aqui a sua chave da API">
-                            <div class="help-text">
-                                A chave será guardada localmente no seu navegador e nunca partilhada.
-                            </div>
-                        </div>
-                        
-                        <div id="apiKeyStatus"></div>
-                    </div>
-                    
-                    <div class="option-actions">
-                        <button class="btn btn-secondary" id="useOwnApiBtn">Usar Minha Chave</button>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="button-group">
-                <button class="btn btn-secondary" id="prevStep2Btn">Anterior</button>
-                <button class="btn btn-primary" id="testAndNextBtn" style="display: none;">Testar e Continuar</button>
-            </div>
-        </div>
-        
-        <!-- Passo 3: Demonstração -->
-        <div class="step" id="step3">
-            <div class="step-icon">🎯</div>
-            <h2 class="step-title">Como Usar a Extensão</h2>
-            <p class="step-description">
-                Agora que está configurado, vamos mostrar-lhe como usar a extensão de forma eficaz.
-            </p>
-            
-            <div class="step-content">
-                <div class="demo-section">
-                    <h3 class="demo-title">Passos para analisar uma página:</h3>
-                    <ol class="demo-steps">
-                        <li>Navegue para uma página com Termos de Serviço ou Política de Privacidade</li>
-                        <li>Clique no ícone da extensão na barra de ferramentas</li>
-                        <li>Clique em "🔍 Extrair & Resumir"</li>
-                        <li>Aguarde alguns segundos para o processamento</li>
-                        <li>Leia o resumo estruturado com alertas de privacidade</li>
-                    </ol>
-                </div>
-                
-                <div class="demo-section">
-                    <h3 class="demo-title">Tipos de alertas que encontrará:</h3>
-                    <ul class="feature-list">
-                        <li>
-                            <span class="feature-icon">👥</span>
-                            <span>Partilha de dados com terceiros</span>
-                        </li>
-                        <li>
-                            <span class="feature-icon">🖼️</span>
-                            <span>Propriedade do seu conteúdo</span>
-                        </li>
-                        <li>
-                            <span class="feature-icon">🔄</span>
-                            <span>Alterações unilaterais dos termos</span>
-                        </li>
-                        <li>
-                            <span class="feature-icon">🏛️</span>
-                            <span>Limitações legais e jurisdição</span>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-            
-            <div class="button-group">
-                <button class="btn btn-secondary" id="prevStep3Btn">Anterior</button>
-                <button class="btn btn-primary" id="nextStep3Btn">Continuar</button>
-            </div>
-        </div>
-        
-        <!-- Passo 4: Configurações Avançadas -->
-        <div class="step" id="step4">
-            <div class="step-icon">⚙️</div>
-            <h2 class="step-title">Configurações Avançadas</h2>
-            <p class="step-description">
-                Personalize a sua experiência com algumas configurações opcionais.
-            </p>
-            
-            <div class="step-content">
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="autoDetect" checked> 
-                        Detecção Automática de Páginas Legais
-                    </label>
-                    <div class="help-text">
-                        Detecta automaticamente se a página contém Termos de Serviço ou Política de Privacidade.
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="notifications" checked> 
-                        Notificações de Sucesso
-                    </label>
-                    <div class="help-text">
-                        Mostra notificações quando o resumo é gerado com sucesso.
-                    </div>
-                </div>
-                
-                <div class="demo-section">
-                    <h3 class="demo-title">Acesso às Configurações:</h3>
-                    <p>Pode sempre alterar estas configurações clicando no ícone da extensão e depois em "⚙️ Configurações".</p>
-                </div>
-            </div>
-            
-            <div class="button-group">
-                <button class="btn btn-secondary" id="prevStep4Btn">Anterior</button>
-                <button class="btn btn-primary" id="nextStep4Btn">Continuar</button>
-            </div>
-        </div>
-        
-        <!-- Passo 5: Conclusão -->
-        <div class="step" id="step5">
-            <div class="step-icon">🎉</div>
-            <h2 class="step-title">Configuração Concluída!</h2>
-            <p class="step-description">
-                Parabéns! A sua extensão está configurada e pronta para usar. 
-                Agora pode começar a analisar Termos de Serviço e Políticas de Privacidade.
-            </p>
-            
-            <div class="step-content">
-                <div class="success-message">
-                    ✅ Extensão configurada com sucesso!<br>
-                    ✅ Chave da API validada<br>
-                    ✅ Configurações personalizadas aplicadas
-                </div>
-                
-                <div class="demo-section">
-                    <h3 class="demo-title">Próximos passos:</h3>
-                    <ol class="demo-steps">
-                        <li>Experimente a extensão numa página com Termos de Serviço</li>
-                        <li>Explore os diferentes tipos de alertas de privacidade</li>
-                        <li>Configure preferências adicionais se necessário</li>
-                        <li>Partilhe a extensão com amigos e colegas</li>
-                    </ol>
-                </div>
-                
-                <div class="demo-section">
-                    <h3 class="demo-title">Precisa de ajuda?</h3>
-                    <p>Consulte a nossa <a href="privacy-policy.html" style="color: #3498db;">Política de Privacidade</a> e <a href="terms-of-service.html" style="color: #3498db;">Termos de Serviço</a> para mais informações.</p>
-                </div>
-            </div>
-            
-            <div class="button-group">
-                <button class="btn btn-primary" id="completeOnboardingBtn">Começar a Usar</button>
-            </div>
-        </div>
     </div>
-    
+
     <script src="onboarding.js"></script>
 </body>
 </html>

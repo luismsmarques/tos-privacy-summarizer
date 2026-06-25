@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resumo - ToS & Privacy Summarizer</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" />
+    <!-- Design system "Calm greens" (Redesign 2.0) -->
+    <link rel="stylesheet" href="design-system.css" />
     <style>
         * {
             margin: 0;
@@ -13,198 +14,177 @@
             box-sizing: border-box;
         }
 
-        body {
-            font-family: 'Roboto', sans-serif;
-            background: var(--md-sys-color-surface);
-            color: var(--md-sys-color-on-surface);
+        html, body {
+            font-family: var(--ds-font);
+            background: var(--ds-bg);
+            color: var(--ds-ink);
             line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
         }
 
-        :root {
-            /* Light theme colors */
-            --md-sys-color-primary: #6750A4;
-            --md-sys-color-on-primary: #FFFFFF;
-            --md-sys-color-primary-container: #EADDFF;
-            --md-sys-color-on-primary-container: #21005D;
-            --md-sys-color-secondary: #625B71;
-            --md-sys-color-on-secondary: #FFFFFF;
-            --md-sys-color-secondary-container: #E8DEF8;
-            --md-sys-color-on-secondary-container: #1D192B;
-            --md-sys-color-tertiary: #7D5260;
-            --md-sys-color-on-tertiary: #FFFFFF;
-            --md-sys-color-tertiary-container: #FFD8E4;
-            --md-sys-color-on-tertiary-container: #31111D;
-            --md-sys-color-error: #BA1A1A;
-            --md-sys-color-on-error: #FFFFFF;
-            --md-sys-color-error-container: #FFDAD6;
-            --md-sys-color-on-error-container: #410002;
-            --md-sys-color-surface: #FFFBFE;
-            --md-sys-color-on-surface: #1C1B1F;
-            --md-sys-color-surface-variant: #E7E0EC;
-            --md-sys-color-on-surface-variant: #49454F;
-            --md-sys-color-outline: #79747E;
-            --md-sys-color-outline-variant: #CAC4D0;
-            --md-sys-color-shadow: #000000;
-            --md-sys-color-scrim: #000000;
-            --md-sys-color-inverse-surface: #313033;
-            --md-sys-color-inverse-on-surface: #F4EFF4;
-            --md-sys-color-inverse-primary: #D0BCFF;
-            --md-sys-color-surface-container-lowest: #FFFFFF;
-            --md-sys-color-surface-container-low: #F7F2FA;
-            --md-sys-color-surface-container: #F3EDF7;
-            --md-sys-color-surface-container-high: #ECE6F0;
-            --md-sys-color-surface-container-highest: #E6E0E9;
-            --md-sys-color-success: #4CAF50;
-            --md-sys-color-warning: #FF9800;
-        }
-
-        /* Dark theme */
-        [data-theme="dark"] {
-            --md-sys-color-primary: #D0BCFF;
-            --md-sys-color-on-primary: #381E72;
-            --md-sys-color-primary-container: #4F378B;
-            --md-sys-color-on-primary-container: #EADDFF;
-            --md-sys-color-secondary: #CCC2DC;
-            --md-sys-color-on-secondary: #332D41;
-            --md-sys-color-secondary-container: #4A4458;
-            --md-sys-color-on-secondary-container: #E8DEF8;
-            --md-sys-color-tertiary: #EFB8C8;
-            --md-sys-color-on-tertiary: #492532;
-            --md-sys-color-tertiary-container: #633B48;
-            --md-sys-color-on-tertiary-container: #FFD8E4;
-            --md-sys-color-error: #FFB4AB;
-            --md-sys-color-on-error: #690005;
-            --md-sys-color-error-container: #93000A;
-            --md-sys-color-on-error-container: #FFDAD6;
-            --md-sys-color-surface: #1C1B1F;
-            --md-sys-color-on-surface: #E6E0E9;
-            --md-sys-color-surface-variant: #49454F;
-            --md-sys-color-on-surface-variant: #CAC4D0;
-            --md-sys-color-outline: #938F99;
-            --md-sys-color-outline-variant: #49454F;
-            --md-sys-color-shadow: #000000;
-            --md-sys-color-scrim: #000000;
-            --md-sys-color-inverse-surface: #E6E0E9;
-            --md-sys-color-inverse-on-surface: #313033;
-            --md-sys-color-inverse-primary: #6750A4;
-            --md-sys-color-surface-container-lowest: #0F0D13;
-            --md-sys-color-surface-container-low: #1C1B1F;
-            --md-sys-color-surface-container: #211F26;
-            --md-sys-color-surface-container-high: #2B2930;
-            --md-sys-color-surface-container-highest: #36343B;
-            --md-sys-color-success: #81C784;
-            --md-sys-color-warning: #FFB74D;
-        }
-
-        /* Header */
+        /* ---- Header / app bar ---- */
         .header {
-            background: var(--md-sys-color-primary-container);
-            color: var(--md-sys-color-on-primary-container);
-            padding: 20px 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background: var(--ds-surface);
+            border-bottom: 1px solid var(--ds-hairline);
             position: sticky;
             top: 0;
             z-index: 100;
         }
 
         .header-content {
-            max-width: 1200px;
+            max-width: 1000px;
             margin: 0 auto;
-            padding: 0 24px;
+            padding: 16px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         .header h1 {
-            font-size: 24px;
-            font-weight: 500;
+            font: 700 18px/1.2 var(--ds-font);
+            color: var(--ds-ink);
             margin: 0;
             display: flex;
             align-items: center;
             gap: 12px;
         }
 
+        .header h1 .ds-logo .material-symbols-outlined {
+            color: #fff;
+            font-size: 20px;
+        }
+
         .header-controls {
             display: flex;
-            gap: 12px;
+            gap: 10px;
             align-items: center;
         }
 
         .theme-toggle, .back-button {
-            background: none;
-            border: none;
-            color: var(--md-sys-color-on-primary-container);
+            font: 600 13.5px/1 var(--ds-font);
+            background: var(--ds-surface);
+            border: 1px solid var(--ds-border-2);
+            color: var(--ds-muted);
             cursor: pointer;
-            padding: 12px;
-            border-radius: 24px;
-            transition: background-color 0.2s;
+            padding: 0 14px;
+            height: 44px;
+            border-radius: var(--ds-r-sm);
+            transition: background-color 0.15s;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
-        }
-
-        .theme-toggle:hover, .back-button:hover {
-            background: var(--md-sys-color-primary);
-            color: var(--md-sys-color-on-primary);
-        }
-
-        /* Main Content */
-        .main-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 40px 24px;
-        }
-
-        /* Page Info */
-        .page-info {
-            background: var(--md-sys-color-surface-container);
-            border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 32px;
-            border: 1px solid var(--md-sys-color-outline-variant);
-        }
-
-        .page-info h2 {
-            font-size: 20px;
-            font-weight: 500;
-            color: var(--md-sys-color-primary);
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
             gap: 8px;
         }
 
-        .page-info p {
-            color: var(--md-sys-color-on-surface-variant);
-            margin: 8px 0;
+        .theme-toggle {
+            width: 46px;
+            padding: 0;
         }
 
-        .page-url {
-            font-family: monospace;
-            background: var(--md-sys-color-surface-container-high);
-            padding: 8px 12px;
-            border-radius: 8px;
-            word-break: break-all;
-            font-size: 14px;
+        .theme-toggle:hover, .back-button:hover {
+            background: var(--ds-surface-soft);
         }
 
-        /* Summary Content */
+        .theme-toggle .material-symbols-outlined,
+        .back-button .material-symbols-outlined {
+            font-size: 20px;
+        }
+
+        /* ---- Main / page shell ---- */
+        .main-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 32px 24px 48px;
+        }
+
+        /* The whole analysis card */
         .summary-content {
-            background: var(--md-sys-color-surface-container-lowest);
-            border-radius: 16px;
-            padding: 32px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-            border: 1px solid var(--md-sys-color-outline-variant);
+            background: var(--ds-surface);
+            border: 1px solid var(--ds-border);
+            border-radius: var(--ds-r-lg);
+            box-shadow: var(--ds-shadow-card);
+            overflow: hidden;
         }
 
+        /* ---- Doc header (avatar + title + risk badge) ---- */
+        .page-info {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 18px 28px;
+            border-bottom: 1px solid var(--ds-hairline);
+        }
+
+        .page-info .page-info-back {
+            color: var(--ds-faint);
+            display: flex;
+            align-items: center;
+        }
+
+        .page-info .page-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 11px;
+            background: var(--ds-grad-icon);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font: 800 18px/1 var(--ds-font);
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .page-info .page-meta {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .page-info .page-title {
+            font: 700 17px/1.2 var(--ds-font);
+            color: var(--ds-ink);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .page-info .page-sub {
+            font: 500 12.5px/1.3 var(--ds-font);
+            color: var(--ds-faint);
+            margin-top: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .page-info .page-sub .page-type-chip {
+            color: var(--ds-muted);
+            font-weight: 600;
+        }
+
+        /* ---- 2-column body ---- */
+        .analysis-body {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+        }
+
+        .analysis-main {
+            padding: 30px 30px 36px;
+            border-right: 1px solid var(--ds-hairline);
+        }
+
+        .analysis-side {
+            padding: 26px 24px;
+            background: var(--ds-surface-soft-2);
+        }
+
+        .analysis-side .ds-label {
+            display: block;
+        }
+
+        /* ---- Injected summary sections (written by summary-page.js) ---- */
         .summary-section {
-            margin-bottom: 32px;
-            padding: 24px;
-            background: var(--md-sys-color-surface-container);
-            border-radius: 12px;
-            border-left: 4px solid var(--md-sys-color-primary);
+            margin-bottom: 28px;
         }
 
         .summary-section:last-child {
@@ -212,76 +192,112 @@
         }
 
         .summary-section h3 {
-            margin: 0 0 16px 0;
-            font-size: 20px;
-            font-weight: 600;
-            color: var(--md-sys-color-primary);
+            font: 700 11px/1 var(--ds-font);
+            color: var(--ds-faint);
+            letter-spacing: .07em;
+            text-transform: uppercase;
+            margin: 0 0 12px 0;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
+        }
+
+        .summary-section h3 .material-symbols-outlined {
+            font-size: 16px;
         }
 
         .summary-section p {
             margin: 0;
-            font-size: 16px;
-            line-height: 1.7;
-            color: var(--md-sys-color-on-surface);
+            font: 400 15px/1.7 var(--ds-font);
+            color: var(--ds-ink-2);
         }
 
+        /* Key points list -> .ds-keypoint look */
         .key-points {
             margin: 0;
-            padding-left: 24px;
+            padding: 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 13px;
         }
 
         .key-points li {
-            margin: 12px 0;
-            font-size: 16px;
-            line-height: 1.6;
-            color: var(--md-sys-color-on-surface);
+            position: relative;
+            margin: 0;
+            padding-left: 29px;
+            font: 400 14.5px/1.55 var(--ds-font);
+            color: var(--ds-ink-2);
         }
 
+        .key-points li::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 2px;
+            width: 18px;
+            height: 18px;
+            background-color: var(--ds-low);
+            -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E") no-repeat center / contain;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E") no-repeat center / contain;
+        }
+
+        /* ---- Privacy alerts (injected) -> .ds-alert look ---- */
         .privacy-alerts {
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 12px;
         }
 
         .alert-item {
             display: flex;
+            gap: 12px;
             align-items: flex-start;
-            padding: 20px;
-            border-radius: 12px;
-            border-left: 4px solid;
-            background: var(--md-sys-color-surface-container-high);
+            padding: 16px 18px;
+            border-radius: 14px;
+            background: var(--ds-high-bg);
+            border: 1px solid var(--ds-high-border);
         }
 
         .alert-icon {
-            font-size: 24px;
-            margin-right: 16px;
+            font-size: 20px;
             flex-shrink: 0;
-            color: var(--md-sys-color-warning);
+            margin-top: 1px;
+            color: var(--ds-high);
         }
 
         .alert-text {
             flex: 1;
-            font-size: 16px;
-            line-height: 1.6;
-            color: var(--md-sys-color-on-surface);
+            font: 400 13.5px/1.5 var(--ds-font);
+            color: var(--ds-high-text);
+            opacity: .95;
         }
 
+        /* Alert type variants keep the same hooks but map to DS tones */
         .alert-partilha_dados {
-            border-left-color: var(--md-sys-color-error);
+            background: var(--ds-high-bg);
+            border-color: var(--ds-high-border);
         }
+        .alert-partilha_dados .alert-icon,
+        .alert-partilha_dados .alert-text { color: var(--ds-high-text); }
+        .alert-partilha_dados .alert-icon { color: var(--ds-high); }
 
         .alert-alteracoes_termos {
-            border-left-color: var(--md-sys-color-tertiary);
+            background: var(--ds-mid-bg);
+            border-color: var(--ds-mid-border);
         }
+        .alert-alteracoes_termos .alert-icon,
+        .alert-alteracoes_termos .alert-text { color: var(--ds-mid-text); }
+        .alert-alteracoes_termos .alert-icon { color: var(--ds-mid); }
 
         .alert-outros_riscos {
-            border-left-color: var(--md-sys-color-primary);
+            background: var(--ds-tint);
+            border-color: var(--ds-tint-border);
         }
+        .alert-outros_riscos .alert-icon { color: var(--ds-brand); }
+        .alert-outros_riscos .alert-text { color: var(--ds-brand-deep); }
 
-        /* Loading State */
+        /* ---- Loading state ---- */
         .loading-container {
             text-align: center;
             padding: 80px 24px;
@@ -290,24 +306,22 @@
         .loading-spinner {
             width: 40px;
             height: 40px;
-            border: 4px solid var(--md-sys-color-outline-variant);
-            border-top: 4px solid var(--md-sys-color-primary);
+            border: 3px solid transparent;
+            border-top-color: var(--ds-brand);
+            border-right-color: var(--ds-brand);
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            animation: ds-spin 0.9s linear infinite;
             margin: 0 auto 24px;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        @keyframes ds-spin { to { transform: rotate(360deg); } }
 
         .loading-text {
-            font-size: 18px;
-            color: var(--md-sys-color-on-surface-variant);
+            font: 500 16px/1.4 var(--ds-font);
+            color: var(--ds-muted);
         }
 
-        /* Material Icons */
+        /* ---- Material Icons ---- */
         .material-symbols-outlined {
             font-family: 'Material Symbols Outlined';
             font-weight: normal;
@@ -324,36 +338,38 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .header-content {
-                padding: 0 16px;
+        /* ---- Responsive ---- */
+        @media (max-width: 820px) {
+            .analysis-body {
+                grid-template-columns: 1fr;
             }
-            
-            .main-content {
-                padding: 24px 16px;
-            }
-            
-            .summary-content {
-                padding: 24px;
-            }
-            
-            .summary-section {
-                padding: 20px;
+            .analysis-main {
+                border-right: none;
+                border-bottom: 1px solid var(--ds-hairline);
             }
         }
 
-        .hidden {
+        @media (max-width: 600px) {
+            .header-content { padding: 14px 16px; }
+            .main-content { padding: 20px 16px 36px; }
+            .analysis-main { padding: 24px 20px 28px; }
+            .analysis-side { padding: 22px 20px; }
+            .back-button span:not(.material-symbols-outlined) { display: none; }
+        }
+
+        .hidden, .ds-hidden {
             display: none !important;
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
+    <!-- Header / app bar -->
     <div class="header">
         <div class="header-content">
             <h1>
-                <span class="material-symbols-outlined">summarize</span>
+                <span class="ds-logo ds-logo--lg">
+                    <span class="material-symbols-outlined">summarize</span>
+                </span>
                 Resumo - ToS Summarizer
             </h1>
             <div class="header-controls">
@@ -362,7 +378,7 @@
                 </button>
                 <button class="back-button" id="backButton" title="Voltar">
                     <span class="material-symbols-outlined">arrow_back</span>
-                    Voltar
+                    <span>Voltar</span>
                 </button>
             </div>
         </div>
@@ -376,21 +392,86 @@
             <div class="loading-text">Carregando resumo...</div>
         </div>
 
-        <!-- Page Info -->
-        <div id="pageInfo" class="page-info hidden">
-            <h2>
-                <span class="material-symbols-outlined">description</span>
-                Informações da Página
-            </h2>
-            <p><strong>Título:</strong> <span id="pageTitle">-</span></p>
-            <p><strong>Tipo:</strong> <span id="pageType">-</span></p>
-            <p><strong>URL:</strong></p>
-            <div class="page-url" id="pageUrl">-</div>
-        </div>
+        <!-- Analysis card: doc header + 2-column body -->
+        <div class="summary-content hidden" id="analysisCard">
+            <!-- Doc header (avatar + title + risk badge) -->
+            <div id="pageInfo" class="page-info hidden">
+                <span class="page-info-back" aria-hidden="true">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                </span>
+                <div class="page-avatar" id="pageAvatar">D</div>
+                <div class="page-meta">
+                    <div class="page-title" id="pageTitle">-</div>
+                    <div class="page-sub">
+                        <span id="pageUrl">-</span>
+                        <span class="page-type-chip"> · <span id="pageType">-</span></span>
+                    </div>
+                </div>
+            </div>
 
-        <!-- Summary Content -->
-        <div id="summaryContent" class="summary-content hidden">
-            <!-- Content will be populated by JavaScript -->
+            <div class="analysis-body">
+                <!-- Left column: injected summary / key points / alerts -->
+                <div class="analysis-main">
+                    <div id="summaryContent">
+                        <!-- Content will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Right column: rating, details, actions -->
+                <aside class="analysis-side">
+                    <span class="ds-label">Rating</span>
+                    <div class="ds-ratings" id="ratingsContainer" style="flex-direction:column;gap:12px;margin-top:14px;">
+                        <div class="ds-rating" style="text-align:left;padding:14px;">
+                            <div class="ds-row-between">
+                                <span style="font:600 13px/1 var(--ds-font);color:var(--ds-muted);">Risco</span>
+                                <span class="ds-rating-num">—<small>/10</small></span>
+                            </div>
+                            <div class="ds-meter"><i style="width:0%"></i></div>
+                        </div>
+                        <div class="ds-rating" style="text-align:left;padding:14px;">
+                            <div class="ds-row-between">
+                                <span style="font:600 13px/1 var(--ds-font);color:var(--ds-muted);">Complexidade</span>
+                                <span class="ds-rating-num">—<small>/10</small></span>
+                            </div>
+                            <div class="ds-meter"><i style="width:0%"></i></div>
+                        </div>
+                        <div class="ds-rating" style="text-align:left;padding:14px;">
+                            <div class="ds-row-between">
+                                <span style="font:600 13px/1 var(--ds-font);color:var(--ds-muted);">Boas práticas</span>
+                                <span class="ds-rating-num">—<small>/10</small></span>
+                            </div>
+                            <div class="ds-meter"><i style="width:0%"></i></div>
+                        </div>
+                    </div>
+
+                    <span class="ds-label" style="margin-top:24px;">Detalhes</span>
+                    <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
+                        <div class="ds-row-between" style="font:500 13px/1 var(--ds-font);">
+                            <span style="color:var(--ds-faint-2);">Tipo</span>
+                            <span id="detailType" style="color:var(--ds-ink-2);font-weight:600;">-</span>
+                        </div>
+                        <div class="ds-row-between" style="font:500 13px/1 var(--ds-font);">
+                            <span style="color:var(--ds-faint-2);">Tamanho</span>
+                            <span id="detailLength" style="color:var(--ds-ink-2);font-weight:600;">-</span>
+                        </div>
+                        <div class="ds-row-between" style="font:500 13px/1 var(--ds-font);">
+                            <span style="color:var(--ds-faint-2);">Modelo</span>
+                            <span id="detailModel" style="color:var(--ds-ink-2);font-weight:600;">-</span>
+                        </div>
+                    </div>
+
+                    <div style="display:flex;flex-direction:column;gap:9px;margin-top:24px;">
+                        <button class="ds-btn ds-btn-primary ds-btn-block" id="exportButton">
+                            <span class="material-symbols-outlined" style="font-size:18px;">download</span>
+                            Exportar
+                        </button>
+                        <button class="ds-btn ds-btn-ghost ds-btn-block" id="shareButton">
+                            <span class="material-symbols-outlined" style="font-size:18px;">share</span>
+                            Partilhar
+                        </button>
+                    </div>
+                </aside>
+            </div>
         </div>
     </div>
 

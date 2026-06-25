@@ -10,6 +10,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const successMessage = document.getElementById('successMessage');
     const loading = document.getElementById('loading');
     const themeToggle = document.getElementById('themeToggle');
+    const summaryPackLabel = document.getElementById('summaryPackLabel');
+    const summaryPackPrice = document.getElementById('summaryPackPrice');
+    const summaryTotal = document.getElementById('summaryTotal');
 
     // Estado da aplicação
     let selectedPackage = null;
@@ -92,7 +95,25 @@ document.addEventListener('DOMContentLoaded', function() {
             Comprar ${selectedPackage.credits} Créditos - €${selectedPackage.price.toFixed(2)}
         `;
 
+        // Atualizar resumo (Summary)
+        updateSummary();
+
         console.log('Pacote selecionado:', selectedPackage);
+    }
+
+    // Atualizar painel de resumo com o pacote selecionado
+    function updateSummary() {
+        if (!summaryPackLabel || !summaryPackPrice || !summaryTotal) return;
+        if (selectedPackage) {
+            const priceText = `€${selectedPackage.price.toFixed(2)}`;
+            summaryPackLabel.textContent = `${selectedPackage.credits} créditos`;
+            summaryPackPrice.textContent = priceText;
+            summaryTotal.textContent = priceText;
+        } else {
+            summaryPackLabel.textContent = 'Nenhum pacote selecionado';
+            summaryPackPrice.textContent = '—';
+            summaryTotal.textContent = '—';
+        }
     }
 
     // Handler para checkout

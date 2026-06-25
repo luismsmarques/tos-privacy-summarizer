@@ -3,13 +3,23 @@ console.log('Summary page script carregado');
 
 // Elementos do DOM
 const loadingContainer = document.getElementById('loadingContainer');
+const analysisCard = document.getElementById('analysisCard');
 const pageInfo = document.getElementById('pageInfo');
 const summaryContent = document.getElementById('summaryContent');
 const pageTitle = document.getElementById('pageTitle');
 const pageType = document.getElementById('pageType');
 const pageUrl = document.getElementById('pageUrl');
+const pageAvatar = document.getElementById('pageAvatar');
+const detailType = document.getElementById('detailType');
+const detailLength = document.getElementById('detailLength');
+const detailModel = document.getElementById('detailModel');
 const themeToggle = document.getElementById('themeToggle');
 const backButton = document.getElementById('backButton');
+
+// Mostra/esconde o cartão de análise completo (moldura de 2 colunas)
+function revealAnalysisCard() {
+    if (analysisCard) analysisCard.classList.remove('hidden');
+}
 
 // Estado da aplicação
 let summaryData = null;
@@ -99,15 +109,34 @@ async function loadSummaryData() {
 function displaySummary() {
     console.log('Exibindo resumo:', summaryData);
     
-    // Esconder loading
+    // Esconder loading e mostrar a moldura do cartão
     loadingContainer.classList.add('hidden');
-    
+    revealAnalysisCard();
+
     // Mostrar informações da página
     if (pageData) {
         pageTitle.textContent = pageData.title;
         pageType.textContent = pageData.type;
         pageUrl.textContent = pageData.url;
         pageInfo.classList.remove('hidden');
+
+        // Avatar: inicial do título (apenas estética)
+        if (pageAvatar) {
+            const initial = (pageData.title || 'D').trim().charAt(0).toUpperCase();
+            pageAvatar.textContent = initial || 'D';
+        }
+
+        // Detalhes (coluna direita) — usa os dados existentes, sem inventar valores
+        if (detailType) detailType.textContent = pageData.type || '-';
+        if (detailLength) {
+            detailLength.textContent = summaryData && summaryData.length_words
+                ? `${summaryData.length_words} palavras`
+                : (pageData.length || '-');
+        }
+        if (detailModel) {
+            detailModel.textContent =
+                (summaryData && summaryData.model) || pageData.model || '-';
+        }
     }
     
     // Renderizar resumo
@@ -190,6 +219,7 @@ function formatStructuredSummary(data) {
 // Mostrar mensagem de sem dados
 function showNoDataMessage() {
     loadingContainer.classList.add('hidden');
+    revealAnalysisCard();
     summaryContent.innerHTML = `
         <div class="summary-section">
             <h3>
@@ -205,6 +235,7 @@ function showNoDataMessage() {
 // Mostrar mensagem de erro
 function showErrorMessage(message) {
     loadingContainer.classList.add('hidden');
+    revealAnalysisCard();
     summaryContent.innerHTML = `
         <div class="summary-section">
             <h3>

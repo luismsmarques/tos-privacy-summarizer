@@ -4,484 +4,382 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Configurações - ToS & Privacy Summarizer</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+    <link rel="stylesheet" href="design-system.css" />
     <style>
-        :root {
-            /* Light theme colors */
-            --md-sys-color-primary: #6750A4;
-            --md-sys-color-on-primary: #FFFFFF;
-            --md-sys-color-primary-container: #EADDFF;
-            --md-sys-color-on-primary-container: #21005D;
-            --md-sys-color-secondary: #625B71;
-            --md-sys-color-on-secondary: #FFFFFF;
-            --md-sys-color-secondary-container: #E8DEF8;
-            --md-sys-color-on-secondary-container: #1D192B;
-            --md-sys-color-tertiary: #7D5260;
-            --md-sys-color-on-tertiary: #FFFFFF;
-            --md-sys-color-tertiary-container: #FFD8E4;
-            --md-sys-color-on-tertiary-container: #31111D;
-            --md-sys-color-error: #BA1A1A;
-            --md-sys-color-on-error: #FFFFFF;
-            --md-sys-color-error-container: #FFDAD6;
-            --md-sys-color-on-error-container: #410002;
-            --md-sys-color-surface: #FFFBFE;
-            --md-sys-color-on-surface: #1C1B1F;
-            --md-sys-color-surface-variant: #E7E0EC;
-            --md-sys-color-on-surface-variant: #49454F;
-            --md-sys-color-outline: #79747E;
-            --md-sys-color-outline-variant: #CAC4D0;
-            --md-sys-color-shadow: #000000;
-            --md-sys-color-scrim: #000000;
-            --md-sys-color-inverse-surface: #313033;
-            --md-sys-color-inverse-on-surface: #F4EFF4;
-            --md-sys-color-inverse-primary: #D0BCFF;
-            --md-sys-color-surface-container-lowest: #FFFFFF;
-            --md-sys-color-surface-container-low: #F7F2FA;
-            --md-sys-color-surface-container: #F3EDF7;
-            --md-sys-color-surface-container-high: #ECE6F0;
-            --md-sys-color-surface-container-highest: #E6E0E9;
-            --md-sys-color-success: #4CAF50;
-            --md-sys-color-warning: #FF9800;
-        }
-
-        /* Dark theme */
-        [data-theme="dark"] {
-            --md-sys-color-primary: #D0BCFF;
-            --md-sys-color-on-primary: #381E72;
-            --md-sys-color-primary-container: #4F378B;
-            --md-sys-color-on-primary-container: #EADDFF;
-            --md-sys-color-secondary: #CCC2DC;
-            --md-sys-color-on-secondary: #332D41;
-            --md-sys-color-secondary-container: #4A4458;
-            --md-sys-color-on-secondary-container: #E8DEF8;
-            --md-sys-color-tertiary: #EFB8C8;
-            --md-sys-color-on-tertiary: #492532;
-            --md-sys-color-tertiary-container: #633B48;
-            --md-sys-color-on-tertiary-container: #FFD8E4;
-            --md-sys-color-error: #FFB4AB;
-            --md-sys-color-on-error: #690005;
-            --md-sys-color-error-container: #93000A;
-            --md-sys-color-on-error-container: #FFDAD6;
-            --md-sys-color-surface: #1C1B1F;
-            --md-sys-color-on-surface: #E6E0E9;
-            --md-sys-color-surface-variant: #49454F;
-            --md-sys-color-on-surface-variant: #CAC4D0;
-            --md-sys-color-outline: #938F99;
-            --md-sys-color-outline-variant: #49454F;
-            --md-sys-color-shadow: #000000;
-            --md-sys-color-scrim: #000000;
-            --md-sys-color-inverse-surface: #E6E0E9;
-            --md-sys-color-inverse-on-surface: #313033;
-            --md-sys-color-inverse-primary: #6750A4;
-            --md-sys-color-surface-container-lowest: #0F0D13;
-            --md-sys-color-surface-container-low: #1C1B1F;
-            --md-sys-color-surface-container: #211F26;
-            --md-sys-color-surface-container-high: #2B2930;
-            --md-sys-color-surface-container-highest: #36343B;
-            --md-sys-color-success: #81C784;
-            --md-sys-color-warning: #FFB74D;
-        }
+        * { box-sizing: border-box; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: var(--ds-font);
             margin: 0;
-            padding: 20px;
-            background: var(--md-sys-color-surface);
+            padding: 0;
+            background: var(--ds-bg);
             min-height: 100vh;
-            color: var(--md-sys-color-on-surface);
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-        
-        /* Theme toggle button */
-        .theme-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: var(--md-sys-color-primary-container);
-            color: var(--md-sys-color-on-primary-container);
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 8px var(--md-sys-color-shadow);
-            transition: all 0.3s ease;
-            z-index: 1000;
+            color: var(--ds-ink);
+            -webkit-font-smoothing: antialiased;
         }
 
-        .theme-toggle:hover {
-            background: var(--md-sys-color-primary);
-            color: var(--md-sys-color-on-primary);
-            transform: scale(1.1);
-        }
-
-        .theme-toggle .material-symbols-outlined,
-        .theme-toggle .material-icons {
-            font-size: 24px;
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-
-        /* Header with theme toggle integrated */
+        /* ---- Page header ---- */
         .page-header {
-            position: fixed;
+            position: sticky;
             top: 0;
-            left: 0;
-            right: 0;
-            height: 60px;
-            background: var(--md-sys-color-surface-container);
-            border-bottom: 1px solid var(--md-sys-color-outline-variant);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 20px;
-            z-index: 999;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
+            padding: 14px 24px;
+            background: var(--ds-surface);
+            border-bottom: 1px solid var(--ds-hairline);
+            z-index: 50;
         }
+        .page-header .page-title {
+            font: 700 15px/1 var(--ds-font);
+            color: var(--ds-ink);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+        .page-header .ds-logo { width: 28px; height: 28px; border-radius: 8px; }
 
-        .page-header .theme-toggle {
-            position: static;
+        .theme-toggle {
             width: 40px;
             height: 40px;
-            margin: 0;
-            box-shadow: 0 1px 4px var(--md-sys-color-shadow);
-        }
-
-        .page-title {
-            font-size: 18px;
-            font-weight: 500;
-            color: var(--md-sys-color-on-surface);
-            margin: 0;
-        }
-
-        .container {
-            max-width: 600px;
-            margin: 80px auto 20px;
-            background: var(--md-sys-color-surface-container);
-            border-radius: 12px;
-            padding: 30px;
-            border: 1px solid var(--md-sys-color-outline-variant);
-            box-shadow: 0 4px 12px var(--md-sys-color-shadow);
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-        }
-        
-        h1 {
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 24px;
-            font-weight: 600;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            font-size: 14px;
-        }
-        
-        input[type="text"], input[type="password"] {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid var(--md-sys-color-outline);
-            border-radius: 8px;
-            background: var(--md-sys-color-surface-container-lowest);
-            color: var(--md-sys-color-on-surface);
-            font-size: 14px;
-            box-sizing: border-box;
-            transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
-        }
-        
-        input[type="text"]:focus, input[type="password"]:focus {
-            outline: none;
-            border-color: var(--md-sys-color-primary);
-            box-shadow: 0 0 0 2px var(--md-sys-color-primary-container);
-        }
-        
-        .help-text {
-            font-size: 12px;
-            color: var(--md-sys-color-on-surface-variant);
-            margin-top: 5px;
-            line-height: 1.4;
-            transition: color 0.3s ease;
-        }
-        
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 30px;
-        }
-        
-        button {
-            flex: 1;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary {
-            background: var(--md-sys-color-primary);
-            color: var(--md-sys-color-on-primary);
-            border: 1px solid var(--md-sys-color-primary);
-        }
-        
-        .btn-primary:hover {
-            background: var(--md-sys-color-primary-container);
-            color: var(--md-sys-color-on-primary-container);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px var(--md-sys-color-shadow);
-        }
-        
-        .btn-secondary {
-            background: var(--md-sys-color-secondary-container);
-            color: var(--md-sys-color-on-secondary-container);
-            border: 1px solid var(--md-sys-color-outline);
-        }
-        
-        .btn-secondary:hover {
-            background: var(--md-sys-color-surface-container-high);
-            border-color: var(--md-sys-color-primary);
-        }
-        
-        .status-message {
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 6px;
-            font-size: 13px;
-            text-align: center;
-        }
-        
-        .status-success {
-            background: var(--md-sys-color-success);
-            color: var(--md-sys-color-surface);
-            border: 1px solid var(--md-sys-color-success);
-        }
-        
-        .status-error {
-            background: var(--md-sys-color-error-container);
-            color: var(--md-sys-color-on-error-container);
-            border: 1px solid var(--md-sys-color-error);
-        }
-        
-        .status-warning {
-            background: var(--md-sys-color-warning);
-            color: var(--md-sys-color-surface);
-            border: 1px solid var(--md-sys-color-warning);
-        }
-        
-        .link {
-            color: var(--md-sys-color-primary);
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-        
-        .link:hover {
-            text-decoration: underline;
-            color: var(--md-sys-color-primary-container);
-        }
-        
-        .section {
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid var(--md-sys-color-outline-variant);
-            transition: border-color 0.3s ease;
-        }
-        
-        .section:last-child {
-            border-bottom: none;
-        }
-        
-        .section h2 {
-            font-size: 18px;
-            margin-bottom: 15px;
-            color: var(--md-sys-color-on-surface);
-            transition: color 0.3s ease;
-        }
-        
-        .toggle-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
-        
-        .toggle {
-            position: relative;
-            width: 50px;
-            height: 24px;
-            background: var(--md-sys-color-outline-variant);
-            border-radius: 12px;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-        
-        .toggle.active {
-            background: var(--md-sys-color-primary);
-        }
-        
-        .toggle-slider {
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 20px;
-            height: 20px;
-            background: var(--md-sys-color-surface-container-lowest);
             border-radius: 50%;
-            transition: transform 0.3s ease;
-        }
-        
-        .toggle.active .toggle-slider {
-            transform: translateX(26px);
-        }
-
-        /* Theme toggle button */
-        .theme-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: var(--md-sys-color-primary-container);
-            color: var(--md-sys-color-on-primary-container);
-            border: none;
+            background: var(--ds-surface-soft);
+            color: var(--ds-muted);
+            border: 1px solid var(--ds-border-2);
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 2px 8px var(--md-sys-color-shadow);
-            transition: all 0.3s ease;
-            z-index: 1000;
+            transition: background .15s ease, color .15s ease;
+        }
+        .theme-toggle:hover { background: var(--ds-tint); color: var(--ds-brand); }
+        .theme-toggle .material-icons { font-size: 22px; }
+
+        /* ---- Layout ---- */
+        .container {
+            max-width: 640px;
+            margin: 28px auto 48px;
+            padding: 0 20px;
         }
 
-        .theme-toggle:hover {
-            background: var(--md-sys-color-primary);
-            color: var(--md-sys-color-on-primary);
-            transform: scale(1.1);
+        .settings-card {
+            background: var(--ds-surface);
+            border: 1px solid var(--ds-border);
+            border-radius: var(--ds-r-lg);
+            box-shadow: var(--ds-shadow-card);
+            overflow: hidden;
         }
 
-        .theme-toggle .material-symbols-outlined,
-        .theme-toggle .material-icons {
+        .card-head {
+            padding: 24px 32px;
+            border-bottom: 1px solid var(--ds-hairline);
+        }
+        .card-head .title {
+            font-family: var(--ds-serif);
+            font-weight: 600;
             font-size: 24px;
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            color: var(--ds-ink);
+            letter-spacing: -.01em;
         }
+        .card-head .subtitle {
+            font: 500 13.5px/1.4 var(--ds-font);
+            color: var(--ds-faint);
+            margin-top: 6px;
+        }
+
+        .card-body { padding: 28px 32px 34px; }
+
+        .section-label { margin-bottom: 14px; }
+
+        .ds-hr { height: 1px; background: var(--ds-hairline); margin: 26px 0; }
+
+        /* ---- API mode option cards ---- */
+        .api-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        .api-options .ds-option { display: flex; gap: 13px; }
+        .ds-option .opt-title { font: 700 14.5px/1.2 var(--ds-font); color: var(--ds-ink); }
+        .ds-option .opt-desc { font: 400 12.5px/1.45 var(--ds-font); color: var(--ds-muted-2); margin-top: 5px; }
+        .ds-radio { margin-top: 2px; }
+
+        /* ---- API key row ---- */
+        .api-key-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 14px;
+            align-items: stretch;
+        }
+        .api-key-row .ds-input { flex: 1; letter-spacing: .02em; }
+        .api-key-row .ds-btn { padding: 0 20px; }
+
+        .help-text {
+            font: 400 12px/1.45 var(--ds-font);
+            color: var(--ds-faint);
+            margin-top: 8px;
+        }
+        .link { color: var(--ds-brand); text-decoration: none; font-weight: 600; }
+        .link:hover { text-decoration: underline; }
+
+        /* ---- Status message ---- */
+        .status-message {
+            margin-top: 14px;
+            padding: 11px 14px;
+            border-radius: var(--ds-r-sm);
+            font: 600 13px/1.4 var(--ds-font);
+            text-align: center;
+        }
+        .status-success { background: var(--ds-low-bg); color: var(--ds-low-text); border: 1px solid var(--ds-low-border); }
+        .status-error   { background: var(--ds-high-bg); color: var(--ds-high-text); border: 1px solid var(--ds-high-border); }
+        .status-warning { background: var(--ds-mid-bg); color: var(--ds-mid-text); border: 1px solid var(--ds-mid-border); }
+
+        /* ---- Preference rows ---- */
+        .pref-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--ds-hairline);
+        }
+        .pref-row:last-of-type { border-bottom: none; }
+        .pref-row .pref-name { font: 600 14.5px/1.2 var(--ds-font); color: var(--ds-ink); }
+        .pref-row .pref-help { font: 400 12.5px/1.35 var(--ds-font); color: var(--ds-faint-2); margin-top: 4px; }
+
+        .ds-segment { flex-shrink: 0; }
+
+        /* Bridge the JS toggle state (.active) onto the DS toggle visuals (.is-on) */
+        .ds-toggle.active { background: var(--ds-brand); }
+        .ds-toggle.active > i { left: 23px; }
+
+        /* Language select styled as DS dropdown */
+        .select-wrap {
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid var(--ds-border-2);
+            border-radius: 10px;
+            background: var(--ds-surface);
+            padding: 0;
+        }
+        .select-wrap select {
+            appearance: none;
+            -webkit-appearance: none;
+            border: none;
+            background: transparent;
+            font: 600 13.5px/1 var(--ds-font);
+            color: var(--ds-ink-2);
+            padding: 11px 36px 11px 14px;
+            cursor: pointer;
+            outline: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239AA89F' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 13px center;
+        }
+
+        /* ---- Danger / clear history box ---- */
+        .danger-box {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            background: var(--ds-high-bg);
+            border: 1px solid var(--ds-high-border);
+            border-radius: 13px;
+            padding: 15px 17px;
+            margin-top: 18px;
+        }
+        .danger-box .dz-title { font: 700 13.5px/1.2 var(--ds-font); color: var(--ds-high-text); }
+        .danger-box .dz-desc { font: 400 12.5px/1.4 var(--ds-font); color: var(--ds-high-text); margin-top: 4px; opacity: .9; }
+        .btn-danger {
+            border: 1px solid var(--ds-high-border);
+            background: var(--ds-surface);
+            color: var(--ds-high-text);
+            font: 600 13px/1 var(--ds-font);
+            padding: 10px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .btn-danger:hover { background: var(--ds-high-bg); }
+
+        /* ---- Extra action buttons ---- */
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 18px;
+        }
+        .action-grid .ds-btn { padding: 12px 0; }
+        .action-grid .span-2 { grid-column: 1 / -1; }
+
+        .info-block {
+            margin-top: 22px;
+            font: 400 12.5px/1.7 var(--ds-font);
+            color: var(--ds-muted);
+        }
+        .info-block strong { color: var(--ds-ink-2); }
     </style>
 </head>
 <body>
     <!-- Page Header -->
     <div class="page-header">
-        <h1 class="page-title">Configurações</h1>
-        <button class="theme-toggle" id="themeToggle" title="Alternar tema" style="display: flex;flex:0; align-items: center; justify-content: center;">
-            <span class="material-icons" style="font-size: 24px;">dark_mode</span>
+        <h1 class="page-title">
+            <span class="ds-logo" aria-hidden="true"></span>
+            <span data-i18n="ui.settings">Configurações</span>
+        </h1>
+        <button class="theme-toggle" id="themeToggle" title="Alternar tema" aria-label="Alternar tema">
+            <span class="material-icons">dark_mode</span>
         </button>
     </div>
 
     <div class="container">
-        <h1>⚙️ Configurações</h1>
-        
-        <div class="section">
-            <h2>🔑 Chave da API Gemini</h2>
-            <div class="form-group">
-                <label for="apiKey" data-i18n="settings.api_key">Chave da API:</label>
-                <input type="password" id="apiKey" data-i18n-placeholder="settings.api_key_placeholder" placeholder="Cole aqui a sua chave da API Gemini">
+        <div class="settings-card">
+            <div class="card-head">
+                <div class="title" data-i18n="ui.settings">Settings</div>
+                <div class="subtitle">Configure a análise, a sua chave da API e as preferências.</div>
+            </div>
+
+            <div class="card-body">
+
+                <!-- ============ API mode ============ -->
+                <div class="ds-label section-label">API mode</div>
+                <div class="api-options">
+                    <div class="ds-option is-selected" id="apiModeShared">
+                        <div class="ds-radio"></div>
+                        <div>
+                            <div class="opt-title">Shared API</div>
+                            <div class="opt-desc">Use os créditos. Sem configuração.</div>
+                        </div>
+                    </div>
+                    <div class="ds-option" id="apiModeOwn">
+                        <div class="ds-radio"></div>
+                        <div>
+                            <div class="opt-title">Own key</div>
+                            <div class="opt-desc">Ilimitado com a sua chave Gemini.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API key field + Test (own-key, stored locally) -->
+                <div class="api-key-row">
+                    <input type="password" id="apiKey" class="ds-input"
+                           data-i18n-placeholder="settings.api_key_placeholder"
+                           placeholder="Cole aqui a sua chave da API Gemini">
+                    <button id="testApiKey" class="ds-btn ds-btn-ghost" data-i18n="settings.test_key">Testar</button>
+                </div>
+                <div class="api-key-row">
+                    <button id="saveApiKey" class="ds-btn ds-btn-primary ds-btn-block" data-i18n="settings.save_key">Guardar Chave</button>
+                </div>
                 <div class="help-text">
-                    <span data-i18n="settings.get_api_key">Obtenha a sua chave gratuita em</span> <a href="https://makersuite.google.com/app/apikey" target="_blank" class="link">Google AI Studio</a>
+                    <span data-i18n="settings.get_api_key">Obtenha a sua chave gratuita em</span>
+                    <a href="https://makersuite.google.com/app/apikey" target="_blank" class="link">Google AI Studio</a>
                 </div>
-            </div>
-            
-            <div class="button-group">
-                <button id="saveApiKey" class="btn-primary" data-i18n="settings.save_key">💾 Guardar Chave</button>
-                <button id="testApiKey" class="btn-secondary" data-i18n="settings.test_key">🧪 Testar Chave</button>
-            </div>
-            
-            <div id="apiKeyStatus" class="status-message" style="display: none;"></div>
-        </div>
-        
-        <div class="section">
-            <h2>🎨 Preferências</h2>
-            
-            <div class="toggle-container">
-                <div>
-                    <label for="autoDetect" data-i18n="settings.auto_detect">Detecção Automática de Páginas Legais</label>
-                    <div class="help-text" data-i18n="settings.auto_detect_help">Detecta automaticamente se a página contém Termos de Serviço</div>
+
+                <div id="apiKeyStatus" class="status-message" style="display: none;"></div>
+
+                <div class="ds-hr"></div>
+
+                <!-- ============ Preferences ============ -->
+                <div class="ds-label section-label" data-i18n="settings.preferences">Preferences</div>
+
+                <!-- Default focus (segmented, decorative visual matching mockup) -->
+                <div class="pref-row">
+                    <div>
+                        <div class="pref-name">Default focus</div>
+                        <div class="pref-help">Aplicado a novas análises.</div>
+                    </div>
+                    <div class="ds-segment" id="defaultFocusSegment">
+                        <button type="button" class="is-active" data-focus="general">General</button>
+                        <button type="button" data-focus="privacy">Privacy</button>
+                        <button type="button" data-focus="terms">Terms</button>
+                    </div>
                 </div>
-                <div class="toggle" id="autoDetectToggle">
-                    <div class="toggle-slider"></div>
+
+                <!-- Auto-detect legal pages -->
+                <div class="pref-row">
+                    <div>
+                        <label class="pref-name" for="autoDetect" data-i18n="settings.auto_detect">Detecção Automática de Páginas Legais</label>
+                        <div class="pref-help" data-i18n="settings.auto_detect_help">Detecta automaticamente se a página contém Termos de Serviço</div>
+                    </div>
+                    <div class="ds-toggle" id="autoDetectToggle"><i></i></div>
                 </div>
-            </div>
-            
-            <div class="toggle-container">
-                <div>
-                    <label for="showNotifications" data-i18n="settings.notifications">Notificações de Sucesso</label>
-                    <div class="help-text" data-i18n="settings.notifications_help">Mostra notificações quando o resumo é gerado</div>
+
+                <!-- Notifications -->
+                <div class="pref-row">
+                    <div>
+                        <label class="pref-name" for="showNotifications" data-i18n="settings.notifications">Notificações de Sucesso</label>
+                        <div class="pref-help" data-i18n="settings.notifications_help">Mostra notificações quando o resumo é gerado</div>
+                    </div>
+                    <div class="ds-toggle" id="notificationsToggle"><i></i></div>
                 </div>
-                <div class="toggle" id="notificationsToggle">
-                    <div class="toggle-slider"></div>
+
+                <!-- Language -->
+                <div class="pref-row">
+                    <div>
+                        <label class="pref-name" for="languageSelect" data-i18n="settings.language">Idioma da Interface</label>
+                        <div class="pref-help">Idioma dos resumos gerados.</div>
+                    </div>
+                    <div class="select-wrap">
+                        <select id="languageSelect">
+                            <option value="pt">🇵🇹 Português</option>
+                            <option value="en">🇬🇧 English</option>
+                            <option value="es">🇪🇸 Español</option>
+                            <option value="fr">🇫🇷 Français</option>
+                        </select>
+                    </div>
                 </div>
-            </div>
-        </div>
-        
-        <div class="section">
-            <h2>🌍 Idioma / Language</h2>
-            
-            <div class="form-group">
-                <label for="languageSelect" data-i18n="settings.language">Idioma da Interface:</label>
-                <select id="languageSelect" class="form-control">
-                    <option value="pt">🇵🇹 Português</option>
-                    <option value="en">🇬🇧 English</option>
-                    <option value="es">🇪🇸 Español</option>
-                    <option value="fr">🇫🇷 Français</option>
-                </select>
-            </div>
-            
-            <div class="toggle-container">
-                <div>
-                    <label for="autoDetectLanguage" data-i18n="settings.auto_detect_language">Detectar idioma automaticamente</label>
-                    <div class="help-text">Detecta automaticamente o idioma da página e ajusta a análise</div>
+
+                <!-- Auto-detect language -->
+                <div class="pref-row">
+                    <div>
+                        <label class="pref-name" for="autoDetectLanguage" data-i18n="settings.auto_detect_language">Detectar idioma automaticamente</label>
+                        <div class="pref-help">Detecta automaticamente o idioma da página e ajusta a análise.</div>
+                    </div>
+                    <div class="ds-toggle" id="autoDetectLanguageToggle"><i></i></div>
                 </div>
-                <div class="toggle" id="autoDetectLanguageToggle">
-                    <div class="toggle-slider"></div>
+
+                <!-- Theme segment (visual) + functional toggle lives in header -->
+                <div class="pref-row">
+                    <div>
+                        <div class="pref-name" data-i18n="settings.theme">Tema</div>
+                        <div class="pref-help">Claro, escuro ou automático.</div>
+                    </div>
+                    <div class="ds-segment" id="themeSegment">
+                        <button type="button" data-theme-choice="light" data-i18n="settings.light_theme">Claro</button>
+                        <button type="button" data-theme-choice="dark" data-i18n="settings.dark_theme">Escuro</button>
+                        <button type="button" data-theme-choice="auto">Auto</button>
+                    </div>
                 </div>
+
+                <!-- Clear history / danger box -->
+                <div class="danger-box">
+                    <div style="flex:1;">
+                        <div class="dz-title" data-i18n="settings.reset_settings">Repor configurações</div>
+                        <div class="dz-desc">Remove permanentemente as configurações e a chave guardada.</div>
+                    </div>
+                    <button id="resetSettings" class="btn-danger">Limpar tudo</button>
+                </div>
+
+                <!-- Secondary actions -->
+                <div class="action-grid">
+                    <button id="exportSettings" class="ds-btn ds-btn-ghost">📤 Exportar Configurações</button>
+                    <button id="showOnboarding" class="ds-btn ds-btn-ghost">👋 Ver Guia de Início</button>
+                    <button id="viewPrivacyPolicy" class="ds-btn ds-btn-ghost" data-i18n="settings.privacy_policy">Política de Privacidade</button>
+                    <button id="viewTermsOfService" class="ds-btn ds-btn-ghost" data-i18n="settings.terms_of_service">Termos de Serviço</button>
+                </div>
+
+                <div class="info-block">
+                    <strong>Versão:</strong> 1.0<br>
+                    <strong>Desenvolvido por:</strong> ToS &amp; Privacy Summarizer Team<br>
+                    <strong>Última atualização:</strong> <span id="lastUpdate"></span>
+                </div>
+
             </div>
-        </div>
-        
-        <div class="section">
-            <h2>📊 Informações</h2>
-            <div class="help-text">
-                <strong>Versão:</strong> 1.0<br>
-                <strong>Desenvolvido por:</strong> ToS & Privacy Summarizer Team<br>
-                <strong>Última atualização:</strong> <span id="lastUpdate"></span>
-            </div>
-        </div>
-        
-        <div class="section">
-            <h2>📋 Documentos Legais</h2>
-            <div class="button-group">
-                <button id="viewPrivacyPolicy" class="btn-secondary">🔒 Política de Privacidade</button>
-                <button id="viewTermsOfService" class="btn-secondary">📄 Termos de Serviço</button>
-            </div>
-        </div>
-        
-        <div class="button-group">
-            <button id="resetSettings" class="btn-secondary">🔄 Repor Configurações</button>
-            <button id="exportSettings" class="btn-secondary">📤 Exportar Configurações</button>
-        </div>
-        
-        <div class="button-group">
-            <button id="showOnboarding" class="btn-secondary">👋 Ver Guia de Início</button>
         </div>
     </div>
-    
+
     <script src="i18n.js"></script>
     <script src="options.js"></script>
 </body>
