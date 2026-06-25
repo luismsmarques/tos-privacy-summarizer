@@ -23,7 +23,7 @@
             min-height: 100vh;
             height: auto;
             font-family: var(--ds-font);
-            background: var(--ds-bg);
+            background: var(--ds-surface);
             color: var(--ds-ink);
             overflow-x: hidden;
             overflow-y: auto;
@@ -31,7 +31,7 @@
             text-rendering: optimizeLegibility;
         }
 
-        /* ---------- Header / App bar ---------- */
+        /* ---------- Header / App bar (espelha o mockup) ---------- */
         .header {
             display: flex;
             align-items: center;
@@ -54,7 +54,7 @@
         }
 
         .header .app-logo .material-icons {
-            font-size: 18px;
+            font-size: 17px;
             color: #fff;
         }
 
@@ -67,14 +67,40 @@
 
         .header-controls {
             display: flex;
-            gap: 6px;
+            gap: 4px;
             align-items: center;
         }
+
+        /* Pill de créditos na app bar (mockup: "8 credits") */
+        .header-credits {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font: 700 12px/1 var(--ds-font);
+            color: var(--ds-brand);
+            background: var(--ds-tint);
+            border: 1px solid var(--ds-tint-border);
+            padding: 6px 10px;
+            border-radius: var(--ds-r-pill);
+            margin-right: 2px;
+        }
+
+        .header-credits .material-icons {
+            font-size: 13px;
+            color: var(--ds-brand);
+        }
+
+        .header-credits.premium {
+            color: var(--ds-mid-text);
+            background: var(--ds-mid-bg);
+            border-color: var(--ds-mid-border);
+        }
+        .header-credits.premium .material-icons { color: var(--ds-mid-text); }
 
         .theme-toggle, .settings-btn, .back-btn, .history-btn {
             background: none;
             border: none;
-            color: var(--ds-muted);
+            color: var(--ds-faint);
             cursor: pointer;
             padding: 7px;
             border-radius: 9px;
@@ -122,102 +148,28 @@
 
         /* ---------- Value zone ---------- */
         .value-zone {
-            padding: 16px 18px 0;
+            padding: 20px 18px 0;
         }
 
-        .credits-status {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            padding: 12px 14px;
-            background: var(--ds-surface-soft);
-            border: 1px solid var(--ds-border);
-            border-radius: var(--ds-r-md);
-        }
-
-        .credits-info {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font: 600 13px/1.3 var(--ds-font);
-            color: var(--ds-ink-2);
-        }
-
-        .credits-info .material-icons {
-            font-size: 20px;
-            color: var(--ds-brand);
-        }
-
-        .credits-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            font: 700 12px/1 var(--ds-font);
-            color: var(--ds-brand);
-            background: var(--ds-tint);
-            border: 1px solid var(--ds-tint-border);
-            padding: 6px 11px;
-            border-radius: var(--ds-r-pill);
-        }
-
-        .credits-badge.premium {
-            color: var(--ds-mid-text);
-            background: var(--ds-mid-bg);
-            border-color: var(--ds-mid-border);
-        }
-
-        /* Connection status card */
-        .connection-status {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 14px;
-            padding: 13px 14px;
-            background: var(--ds-surface-soft);
-            border: 1px solid var(--ds-border);
-            border-radius: var(--ds-r-md);
-        }
-
-        .connection-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .connection-info .material-icons {
-            font-size: 20px;
-            color: var(--ds-brand);
-        }
-
-        .connection-details {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .connection-type {
-            font: 700 14px/1.2 var(--ds-font);
-            color: var(--ds-ink);
-        }
-
-        .connection-description {
-            font: 500 12px/1.3 var(--ds-font);
-            color: var(--ds-muted);
-        }
-
-        .connection-badge {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background: var(--ds-tint);
-            color: var(--ds-brand);
-            border: 1px solid var(--ds-tint-border);
-            padding: 6px 11px;
-            border-radius: var(--ds-r-pill);
+        /* Section labels (mockup: "Page detected", "Analysis focus") */
+        .zone-label {
             font: 700 11px/1 var(--ds-font);
-            letter-spacing: .04em;
+            color: var(--ds-faint);
+            letter-spacing: .07em;
+            text-transform: uppercase;
         }
+
+        /* Connection status / créditos foram movidos para a app bar e para o
+           cartão do site; mantemos os elementos para a lógica do JS mas ocultos. */
+        .credits-status,
+        .connection-status {
+            display: none;
+        }
+
+        .credits-info { display: flex; align-items: center; gap: 8px; }
+        .credits-badge.premium { color: var(--ds-mid-text); }
+        .connection-info { display: flex; }
+        .connection-details { display: flex; flex-direction: column; }
 
         .status-indicator {
             width: 8px;
@@ -237,207 +189,214 @@
             100% { opacity: 1; }
         }
 
-        /* Risk score display (post analysis, inside value-zone) */
-        .risk-score-display {
-            background: var(--ds-surface);
-            border: 1px solid var(--ds-border);
-            border-radius: var(--ds-r-card);
-            padding: 16px;
-            margin-bottom: 14px;
-            box-shadow: var(--ds-shadow-card);
-        }
-
-        .risk-score-header {
+        /* ---------- Result header (mockup RESULT) ---------- */
+        .result-header {
             display: flex;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 12px;
-            font: 700 11px/1 var(--ds-font);
-            letter-spacing: .07em;
-            text-transform: uppercase;
-            color: var(--ds-faint);
+            gap: 10px;
         }
 
-        .risk-score-header .material-icons {
-            font-size: 18px;
-            color: var(--ds-brand);
-        }
-
-        .risk-score-content {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .risk-score-main {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 14px;
-            background: var(--ds-surface-soft);
-            border: 1px solid var(--ds-border);
-            border-radius: var(--ds-r-sm);
-        }
-
-        .risk-score-number {
-            font-family: var(--ds-serif);
-            font-weight: 700;
-            font-size: 26px;
-            line-height: 1;
-            color: var(--ds-muted);
-        }
-
-        .risk-score-label {
-            font: 600 13px/1.2 var(--ds-font);
-            color: var(--ds-muted);
-        }
-
-        .risk-score-main.low {
-            background: var(--ds-low-bg);
-            border-color: var(--ds-low-border);
-        }
-        .risk-score-main.low .risk-score-number,
-        .risk-score-main.low .risk-score-label { color: var(--ds-low-text); }
-
-        .risk-score-main.medium {
-            background: var(--ds-mid-bg);
-            border-color: var(--ds-mid-border);
-        }
-        .risk-score-main.medium .risk-score-number,
-        .risk-score-main.medium .risk-score-label { color: var(--ds-mid-text); }
-
-        .risk-score-main.high {
-            background: var(--ds-high-bg);
-            border-color: var(--ds-high-border);
-        }
-        .risk-score-main.high .risk-score-number,
-        .risk-score-main.high .risk-score-label { color: var(--ds-high-text); }
-
-        .risk-breakdown {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .risk-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font: 500 12px/1.3 var(--ds-font);
-            color: var(--ds-muted);
-        }
-
-        /* Rating bars (shared) */
-        .rating-bar {
-            width: 40px;
-            height: 6px;
-            background: var(--ds-hairline);
-            border-radius: var(--ds-r-pill);
-            overflow: hidden;
-        }
-
-        .rating-fill {
-            height: 100%;
+        .result-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 9px;
             background: var(--ds-brand);
-            border-radius: var(--ds-r-pill);
-            transition: width 0.3s ease;
-        }
-
-        .rating-fill.complexity { background: var(--ds-muted); }
-        .rating-fill.practices { background: var(--ds-low); }
-
-        /* ---------- Context zone ---------- */
-        .context-zone {
-            padding: 16px 18px 0;
-        }
-
-        .context-item {
             display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            margin-bottom: 10px;
-            padding: 13px 14px;
-            background: var(--ds-surface-soft);
-            border: 1px solid var(--ds-border);
-            border-radius: var(--ds-r-md);
+            align-items: center;
+            justify-content: center;
+            font: 800 14px/1 var(--ds-font);
+            color: #fff;
+            flex-shrink: 0;
+            text-transform: uppercase;
         }
 
-        .context-item:last-child {
+        .result-site { flex: 1; min-width: 0; }
+        .result-domain {
+            font: 700 14px/1.1 var(--ds-font);
+            color: var(--ds-ink);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .result-type {
+            font: 500 11px/1 var(--ds-font);
+            color: var(--ds-faint);
+            margin-top: 3px;
+        }
+
+        .risk-badge {
+            font: 700 12px/1 var(--ds-font);
+            padding: 7px 11px;
+            border-radius: var(--ds-r-pill);
+            border: 1px solid transparent;
+            flex-shrink: 0;
+        }
+        .risk-badge.low  { color: var(--ds-low-text);  background: var(--ds-low-bg);  border-color: var(--ds-low-border); }
+        .risk-badge.medium { color: var(--ds-mid-text); background: var(--ds-mid-bg); border-color: var(--ds-mid-border); }
+        .risk-badge.high { color: var(--ds-high-text); background: var(--ds-high-bg); border-color: var(--ds-high-border); }
+
+        /* Risk score display container (post analysis) */
+        .risk-score-display {
             margin-bottom: 0;
         }
 
-        .context-icon {
-            color: var(--ds-brand);
-            font-size: 20px;
-            margin-top: 2px;
+        .risk-score-header { display: none; }
+
+        /* 3-up rating cards (Risk / Complexity / Best practices) */
+        .rating-cards {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
         }
 
-        .context-content {
+        .rating-card {
+            flex: 1;
+            text-align: center;
+            background: var(--ds-surface-soft);
+            border: 1px solid var(--ds-border);
+            border-radius: var(--ds-r-sm);
+            padding: 11px 10px;
+        }
+
+        .rating-card .rating-num {
+            font-family: var(--ds-serif);
+            font-weight: 700;
+            font-size: 22px;
+            line-height: 1;
+            color: var(--ds-muted);
+        }
+        .rating-card .rating-num small { font-size: 12px; opacity: .7; }
+        .rating-card .rating-lbl {
+            font: 600 10px/1.2 var(--ds-font);
+            color: var(--ds-muted);
+            margin-top: 6px;
+        }
+
+        .rating-card.low  { background: var(--ds-low-bg);  border-color: var(--ds-low-border); }
+        .rating-card.low  .rating-num, .rating-card.low  .rating-lbl { color: var(--ds-low-text); }
+        .rating-card.medium { background: var(--ds-mid-bg); border-color: var(--ds-mid-border); }
+        .rating-card.medium .rating-num, .rating-card.medium .rating-lbl { color: var(--ds-mid-text); }
+        .rating-card.high { background: var(--ds-high-bg); border-color: var(--ds-high-border); }
+        .rating-card.high .rating-num, .rating-card.high .rating-lbl { color: var(--ds-high-text); }
+
+        /* Legacy risk-score-main / breakdown kept hidden (JS still writes to them) */
+        .risk-score-main, .risk-breakdown { display: none; }
+        .rating-bar { width: 40px; height: 6px; background: var(--ds-hairline); border-radius: var(--ds-r-pill); overflow: hidden; }
+        .rating-fill { height: 100%; background: var(--ds-brand); border-radius: var(--ds-r-pill); }
+        .rating-fill.complexity { background: var(--ds-muted); }
+        .rating-fill.practices { background: var(--ds-low); }
+
+        /* ---------- Context zone (cartão do site, mockup READY) ---------- */
+        .context-zone {
+            padding: 0 18px;
+        }
+
+        /* Cartão "Page detected": avatar + domínio + badge do tipo */
+        .site-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--ds-surface-soft);
+            border: 1px solid var(--ds-border);
+            border-radius: var(--ds-r-md);
+            padding: 13px 14px;
+        }
+
+        .site-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: var(--ds-brand);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font: 800 17px/1 var(--ds-font);
+            color: #fff;
+            flex-shrink: 0;
+            text-transform: uppercase;
+        }
+
+        .site-info {
             flex: 1;
             min-width: 0;
         }
 
-        .context-label {
-            font: 700 11px/1 var(--ds-font);
-            letter-spacing: .06em;
-            text-transform: uppercase;
-            color: var(--ds-faint);
-            margin-bottom: 5px;
-        }
-
-        .context-value {
-            font: 600 14px/1.3 var(--ds-font);
+        .site-domain {
+            font: 700 14px/1.2 var(--ds-font);
             color: var(--ds-ink);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
+        /* mantemos url-display para o JS (#pageUrl) escrever o URL completo,
+           usado como title/tooltip; visualmente mostramos só o domínio */
         .url-display {
-            word-break: break-all;
-            font-family: var(--ds-font);
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--ds-ink-2);
+            display: none;
         }
 
         .content-type-badge {
             display: inline-flex;
             align-items: center;
-            font: 600 12px/1 var(--ds-font);
-            color: var(--ds-brand);
-            background: var(--ds-tint);
-            border: 1px solid var(--ds-tint-border);
-            padding: 5px 11px;
+            gap: 5px;
+            margin-top: 5px;
+            font: 600 11px/1 var(--ds-font);
+            color: var(--ds-muted);
+            background: var(--ds-surface);
+            border: 1px solid var(--ds-border-2);
+            padding: 4px 8px;
             border-radius: var(--ds-r-pill);
         }
 
-        .complexity-bar {
-            display: flex;
-            align-items: center;
-            gap: 8px;
+        .content-type-badge .material-icons {
+            font-size: 12px;
+            color: var(--ds-brand);
         }
 
-        .complexity-indicator {
+        /* Segmented control "Analysis focus" (General / Privacy / Terms) */
+        .focus-segment {
             display: flex;
-            gap: 3px;
+            gap: 7px;
+            background: var(--ds-surface-soft);
+            padding: 4px;
+            border-radius: var(--ds-r-sm);
         }
 
+        .focus-segment button {
+            flex: 1;
+            text-align: center;
+            cursor: pointer;
+            font: 600 13px/1 var(--ds-font);
+            color: var(--ds-muted);
+            padding: 10px 0;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            transition: background .15s, color .15s;
+        }
+
+        .focus-segment button.is-active {
+            color: #fff;
+            background: var(--ds-brand);
+            box-shadow: 0 2px 6px rgba(14,124,90,.28);
+        }
+
+        [data-theme="dark"] .focus-segment button.is-active { color: #06140E; }
+
+        /* Elementos de complexidade — mantidos para o JS, ocultos no layout novo */
+        .complexity-bar { display: none; }
+        .complexity-indicator { display: flex; gap: 3px; }
         .complexity-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
+            width: 8px; height: 8px; border-radius: 50%;
             background: var(--ds-hairline);
         }
-
         .complexity-dot.active { background: var(--ds-brand); }
         .complexity-dot.high { background: var(--ds-mid-strong); }
-
-        .time-saved {
-            color: var(--ds-low-text);
-            font-weight: 700;
-        }
+        .time-saved { color: var(--ds-low-text); font-weight: 700; }
 
         /* ---------- Action zone ---------- */
         .action-zone {
-            padding: 18px;
+            padding: 0 18px 18px;
         }
 
         .action-button {
@@ -459,7 +418,8 @@
 
         [data-theme="dark"] .action-button { color: #06140E; box-shadow: none; }
 
-        .action-button .material-icons { font-size: 20px; }
+        .action-button .material-icons { font-size: 18px; }
+        #actionButtonCost { font-weight: 600; opacity: .85; }
 
         .action-button:hover { filter: brightness(1.03); }
         .action-button:active { transform: translateY(1px); }
@@ -479,21 +439,45 @@
             margin-top: 11px;
         }
 
-        /* ---------- Footer ---------- */
+        /* ---------- Footer (mockup: History / Settings inline) ---------- */
         .footer {
-            padding: 16px 18px;
-            text-align: center;
+            padding: 13px 18px 16px;
             border-top: 1px solid var(--ds-hairline);
             background: var(--ds-surface);
         }
 
-        .footer a {
+        .footer-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer-nav a {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            color: var(--ds-muted);
+            text-decoration: none;
+            font: 600 13px/1 var(--ds-font);
+            cursor: pointer;
+        }
+
+        .footer-nav a .material-icons { font-size: 16px; color: var(--ds-faint); }
+        .footer-nav a:hover { color: var(--ds-brand); }
+        .footer-nav a:hover .material-icons { color: var(--ds-brand); }
+
+        .footer-legal {
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        .footer-legal a {
             color: var(--ds-brand);
             text-decoration: none;
             font: 600 12px/1.6 var(--ds-font);
         }
 
-        .footer a:hover { text-decoration: underline; }
+        .footer-legal a:hover { text-decoration: underline; }
 
         .developer-credits {
             margin-top: 12px;
@@ -511,17 +495,12 @@
 
         .developer-credits a:hover { text-decoration: underline; }
 
-        /* ---------- Summary container ---------- */
+        /* ---------- Summary container (flush no cartão do popup) ---------- */
         .summary-container {
             flex: 1;
-            background: var(--ds-surface);
-            border: 1px solid var(--ds-border);
-            border-radius: var(--ds-r-card);
-            padding: 18px;
+            background: transparent;
+            padding: 0 18px 18px;
             overflow-y: auto;
-            margin: 16px 18px;
-            min-height: 280px;
-            box-shadow: var(--ds-shadow-card);
         }
 
         .summary-content {
@@ -545,7 +524,7 @@
         .summary-content li { margin: 4px 0; }
         .summary-content strong { color: var(--ds-brand); }
 
-        /* Structured summary */
+        /* Structured summary sections (mockup: Summary / Key points) */
         .summary-section {
             margin-bottom: 18px;
         }
@@ -581,7 +560,7 @@
         .key-points li {
             font: 400 13px/1.45 var(--ds-font);
             color: var(--ds-ink-2);
-            padding-left: 22px;
+            padding-left: 25px;
             position: relative;
         }
 
@@ -645,16 +624,64 @@
         .alert-outros_riscos .alert-icon,
         .alert-outros_riscos .alert-text { color: var(--ds-muted); }
 
-        /* ---------- Progress container ---------- */
+        /* ---------- Progress container (mockup ANALYZING) ---------- */
         .progress-container {
-            background: var(--ds-surface);
-            border: 1px solid var(--ds-border);
-            border-radius: var(--ds-r-card);
+            background: transparent;
             padding: 26px 22px 24px;
-            margin: 16px 18px;
-            box-shadow: var(--ds-shadow-card);
             text-align: center;
         }
+
+        .progress-subtitle {
+            text-align: center;
+            font: 500 13px/1.3 var(--ds-font);
+            color: var(--ds-faint-2);
+            margin-top: 6px;
+        }
+
+        /* 3 passos (Text extracted / Analyzing with AI / Calculating risk) */
+        .progress-steps {
+            margin-top: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            text-align: left;
+        }
+
+        .progress-steps .pstep {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+        }
+
+        .progress-steps .pstep .pdot {
+            width: 22px; height: 22px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            border: 2px solid var(--ds-border-2);
+        }
+        .progress-steps .pstep .pdot .material-icons { font-size: 13px; color: #fff; }
+
+        .progress-steps .pstep.done .pdot {
+            background: var(--ds-brand); border-color: var(--ds-brand);
+        }
+        .progress-steps .pstep.active .pdot {
+            border: 2.5px solid var(--ds-brand);
+            border-top-color: transparent;
+            animation: ds-spin .9s linear infinite;
+        }
+        .progress-steps .pstep.pending { opacity: .5; }
+
+        .progress-steps .pstep .plabel {
+            font: 600 13px/1 var(--ds-font);
+            color: var(--ds-ink);
+            flex: 1;
+        }
+        .progress-steps .pstep.pending .plabel { color: var(--ds-muted); }
+        .progress-steps .pstep .pmeta {
+            font: 500 12px/1 var(--ds-font);
+            color: var(--ds-faint);
+        }
+        .progress-steps .pstep.active .pmeta { color: var(--ds-brand); }
 
         .progress-spinner-wrap {
             display: flex;
@@ -730,6 +757,36 @@
             font: 700 17px/1.2 var(--ds-font);
             color: var(--ds-ink);
         }
+
+        /* ---------- No-document / error state (mockup NO-DOCUMENT) ---------- */
+        .nodoc-state {
+            padding: 34px 26px 26px;
+            text-align: center;
+        }
+        .nodoc-icon {
+            width: 74px; height: 74px; border-radius: 50%;
+            background: var(--ds-mid-bg);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto;
+        }
+        .nodoc-icon .material-icons { font-size: 34px; color: var(--ds-mid-text); }
+        .nodoc-title {
+            font: 700 18px/1.25 var(--ds-font);
+            color: var(--ds-ink);
+            margin-top: 20px;
+        }
+        .nodoc-text {
+            font: 400 13.5px/1.55 var(--ds-font);
+            color: var(--ds-faint-2);
+            margin-top: 9px;
+        }
+        .nodoc-tip {
+            display: flex; gap: 9px; align-items: flex-start; text-align: left;
+            background: var(--ds-surface-soft); border: 1px solid var(--ds-border);
+            border-radius: 12px; padding: 12px 13px; margin-top: 20px;
+        }
+        .nodoc-tip .material-icons { font-size: 16px; color: var(--ds-brand); flex-shrink: 0; margin-top: 1px; }
+        .nodoc-tip span { font: 400 12px/1.45 var(--ds-font); color: var(--ds-muted); }
 
         /* ---------- Error message ---------- */
         .error-message {
@@ -955,13 +1012,18 @@
     </style>
 </head>
 <body>
-    <!-- Header -->
+    <!-- Header / App bar -->
     <div class="header">
         <div class="app-logo">
             <span class="material-icons">verified_user</span>
         </div>
-        <h1>ToS Summarizer</h1>
+        <h1>Summarizer</h1>
         <div class="header-controls">
+            <!-- Pill de créditos (mockup: "8 credits") -->
+            <div class="header-credits" id="headerCredits" title="Créditos disponíveis">
+                <span class="material-icons">bolt</span>
+                <span id="headerCreditsText">—</span>
+            </div>
             <button class="back-btn hidden" id="backBtn" title="Voltar">
                 <span class="material-icons">arrow_back</span>
             </button>
@@ -979,108 +1041,101 @@
 
     <!-- Main Container -->
     <div class="main-container">
-        <!-- Value Communication Zone -->
+        <!-- Value Communication Zone (estado READY) -->
         <div class="value-zone">
-        <!-- Connection Status -->
-        <div class="connection-status">
-            <div class="connection-info">
-                <span class="material-icons" id="connectionIcon">cloud</span>
-                <div class="connection-details">
-                    <span class="connection-type" id="connectionType">API do Servidor</span>
-                    <span class="connection-description" id="connectionDescription">Conectado e pronto para análise</span>
-                </div>
-            </div>
-            <div class="connection-badge" id="connectionBadge">
-                <span class="status-indicator" id="statusIndicator"></span>
-                <span id="statusText">ATIVO</span>
-            </div>
-        </div>
-
-        <!-- Credits Status (Only shown for server API) -->
-        <div class="credits-status" id="creditsStatus" style="display: none;">
-            <div class="credits-info">
-                <span class="material-icons">account_balance_wallet</span>
-                <span id="creditsText">Créditos disponíveis</span>
-            </div>
-            <div class="credits-badge" id="creditsBadge">GRÁTIS</div>
-        </div>
-
-        <!-- Risk Score Display (Hidden by default, shown after analysis) -->
-        <div class="risk-score-display hidden" id="riskScoreDisplay">
-            <div class="risk-score-header">
-                <span class="material-icons">analytics</span>
-                <span>Análise de Risco</span>
-            </div>
-            <div class="risk-score-content">
-                <div class="risk-score-main" id="riskScoreMain">
-                    <span class="risk-score-number" id="riskScoreNumber">-</span>
-                    <span class="risk-score-label" id="riskScoreLabel">A calcular...</span>
-                </div>
-                <div class="risk-breakdown" id="riskBreakdown">
-                    <div class="risk-item">
-                        <span>Complexidade:</span>
-                        <div class="rating-bar">
-                            <div class="rating-fill complexity" id="complexityBar"></div>
-                        </div>
-                        <span id="complexityTextMain">-</span>
-                    </div>
-                    <div class="risk-item">
-                        <span>Boas Práticas:</span>
-                        <div class="rating-bar">
-                            <div class="rating-fill practices" id="practicesBar"></div>
-                        </div>
-                        <span id="practicesText">-</span>
+            <!-- Connection Status (oculto; mantido para o JS) -->
+            <div class="connection-status" id="connectionStatusCard">
+                <div class="connection-info">
+                    <span class="material-icons" id="connectionIcon">cloud</span>
+                    <div class="connection-details">
+                        <span class="connection-type" id="connectionType">API do Servidor</span>
+                        <span class="connection-description" id="connectionDescription">Conectado e pronto para análise</span>
                     </div>
                 </div>
+                <div class="connection-badge" id="connectionBadge">
+                    <span class="status-indicator" id="statusIndicator"></span>
+                    <span id="statusText">ATIVO</span>
+                </div>
+            </div>
+
+            <!-- Credits Status (oculto; mantido para o JS) -->
+            <div class="credits-status" id="creditsStatus">
+                <div class="credits-info">
+                    <span class="material-icons">account_balance_wallet</span>
+                    <span id="creditsText">Créditos disponíveis</span>
+                </div>
+                <div class="credits-badge" id="creditsBadge">GRÁTIS</div>
+            </div>
+
+            <!-- Label "Page detected" -->
+            <div class="zone-label" style="margin-bottom:12px;">Page detected</div>
+
+            <!-- Risk Score Display (oculto até análise; alimenta cartões de rating no resumo) -->
+            <div class="risk-score-display hidden" id="riskScoreDisplay">
+                <div class="risk-score-header">
+                    <span class="material-icons">analytics</span>
+                    <span>Análise de Risco</span>
+                </div>
+                <div class="risk-score-content">
+                    <div class="risk-score-main" id="riskScoreMain">
+                        <span class="risk-score-number" id="riskScoreNumber">-</span>
+                        <span class="risk-score-label" id="riskScoreLabel">A calcular...</span>
+                    </div>
+                    <div class="risk-breakdown" id="riskBreakdown">
+                        <div class="risk-item">
+                            <span>Complexidade:</span>
+                            <div class="rating-bar">
+                                <div class="rating-fill complexity" id="complexityBar"></div>
+                            </div>
+                            <span id="complexityTextMain">-</span>
+                        </div>
+                        <div class="risk-item">
+                            <span>Boas Práticas:</span>
+                            <div class="rating-bar">
+                                <div class="rating-fill practices" id="practicesBar"></div>
+                            </div>
+                            <span id="practicesText">-</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Context Data Zone -->
+    <!-- Context Data Zone — cartão do site (avatar + domínio + badge do tipo) -->
     <div class="context-zone">
-        <div class="context-item">
-            <span class="material-icons context-icon">link</span>
-            <div class="context-content">
-                <div class="context-label">URL da Página</div>
-                <div class="context-value url-display" id="pageUrl">A carregar...</div>
+        <div class="site-card">
+            <div class="site-avatar" id="siteAvatar">?</div>
+            <div class="site-info">
+                <div class="site-domain" id="siteDomain">A carregar...</div>
+                <span class="content-type-badge" id="contentType">
+                    <span class="material-icons">description</span>
+                    <span id="contentTypeText" data-i18n="document_types.analyzing">A analisar...</span>
+                </span>
             </div>
         </div>
 
-        <div class="context-item">
-            <span class="material-icons context-icon">description</span>
-            <div class="context-content">
-                <div class="context-label">Tipo de Conteúdo Detetado</div>
-                <div class="context-value">
-                    <span class="content-type-badge" id="contentType" data-i18n="document_types.analyzing">A analisar...</span>
-                </div>
+        <!-- URL completo (oculto; usado pelo JS via #pageUrl) -->
+        <div class="url-display" id="pageUrl">A carregar...</div>
+
+        <!-- Elementos de complexidade (ocultos; mantidos para o JS) -->
+        <div class="complexity-bar">
+            <div class="complexity-indicator" id="complexityIndicator">
+                <div class="complexity-dot"></div>
+                <div class="complexity-dot"></div>
+                <div class="complexity-dot"></div>
+                <div class="complexity-dot"></div>
+                <div class="complexity-dot"></div>
             </div>
+            <span id="complexityText">A calcular...</span>
+            <span class="time-saved" id="timeSaved">A calcular...</span>
         </div>
 
-        <div class="context-item">
-            <span class="material-icons context-icon">trending_up</span>
-            <div class="context-content">
-                <div class="context-label">Complexidade do Documento</div>
-                <div class="context-value">
-                    <div class="complexity-bar">
-                        <div class="complexity-indicator" id="complexityIndicator">
-                            <div class="complexity-dot"></div>
-                            <div class="complexity-dot"></div>
-                            <div class="complexity-dot"></div>
-                            <div class="complexity-dot"></div>
-                            <div class="complexity-dot"></div>
-                        </div>
-                        <span id="complexityText">A calcular...</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="context-item">
-            <span class="material-icons context-icon">schedule</span>
-            <div class="context-content">
-                <div class="context-label">Tempo Poupança Estimada</div>
-                <div class="context-value time-saved" id="timeSaved">A calcular...</div>
-            </div>
+        <!-- Analysis focus -->
+        <div class="zone-label" style="margin:20px 0 10px;">Analysis focus</div>
+        <div class="focus-segment" id="focusSegment" role="tablist">
+            <button type="button" class="is-active" data-focus="general">General</button>
+            <button type="button" data-focus="privacy">Privacy</button>
+            <button type="button" data-focus="terms">Terms</button>
         </div>
     </div>
 
@@ -1088,7 +1143,7 @@
     <div class="action-zone">
         <button class="action-button" id="actionButton">
             <span class="material-icons">search</span>
-            <span id="actionButtonText" data-i18n="analysis.extract_summarize">Extrair & Resumir</span>
+            <span id="actionButtonText" data-i18n="analysis.extract_summarize">Analyze page</span>
             <span id="actionButtonCost">(1 Crédito)</span>
         </button>
         <div class="action-meta">≈ 1 crédito · 10–30 segundos</div>
@@ -1099,7 +1154,7 @@
         <div id="summaryContent" class="summary-content"></div>
     </div>
 
-    <!-- Progress Container (Hidden by default) -->
+    <!-- Progress Container (estado ANALYZING) -->
     <div id="progressContainer" class="progress-container hidden">
         <div class="progress-spinner-wrap">
             <div class="progress-spinner-ring">
@@ -1107,13 +1162,31 @@
             </div>
         </div>
         <div class="progress-step">
-            <span class="material-icons progress-step-icon">analytics</span>
-            <span class="progress-title">Processando conteúdo...</span>
+            <span class="progress-title">Analyzing document…</span>
         </div>
+        <div class="progress-subtitle" id="progressSubtitle">A analisar…</div>
+
+        <!-- 3 passos -->
+        <div class="progress-steps">
+            <div class="pstep done">
+                <span class="pdot"><span class="material-icons">check</span></span>
+                <span class="plabel">Text extracted</span>
+            </div>
+            <div class="pstep active">
+                <span class="pdot"></span>
+                <span class="plabel">Analyzing with AI</span>
+                <span class="pmeta">in progress</span>
+            </div>
+            <div class="pstep pending">
+                <span class="pdot"></span>
+                <span class="plabel">Calculating risk</span>
+            </div>
+        </div>
+
         <div class="progress-bar">
             <div class="progress-fill" id="progressFill"></div>
         </div>
-        <div class="progress-text" id="progressText">A analisar...</div>
+        <div class="progress-text" id="progressText">Processing continues even if you close this.</div>
     </div>
 
     <!-- Error Container (Hidden by default) -->
@@ -1183,11 +1256,21 @@
 
     </div>
 
-    <!-- Footer -->
+    <!-- Footer (mockup: History / Settings inline) -->
     <div class="footer">
-        <a href="#" id="privacyLink">Política de Privacidade</a> •
-        <a href="#" id="termsLink">Termos de Serviço</a> •
-        <a href="#" id="buyCreditsLink">Comprar Mais Créditos</a>
+        <div class="footer-nav">
+            <a id="footerHistory">
+                <span class="material-icons">history</span>History
+            </a>
+            <a id="footerSettings">
+                Settings<span class="material-icons">chevron_right</span>
+            </a>
+        </div>
+        <div class="footer-legal">
+            <a href="#" id="privacyLink">Política de Privacidade</a> •
+            <a href="#" id="termsLink">Termos de Serviço</a> •
+            <a href="#" id="buyCreditsLink">Comprar Mais Créditos</a>
+        </div>
         <div class="developer-credits">
             Made by <a href="https://atlasinvencivel.pt/" target="_blank" rel="noopener noreferrer">Luis Marques</a> coded by AI
         </div>

@@ -37,11 +37,40 @@ document.addEventListener('DOMContentLoaded', function() {
     // Context elements
     const pageUrl = document.getElementById('pageUrl');
     const contentType = document.getElementById('contentType');
+    const contentTypeText = document.getElementById('contentTypeText');
+    const siteDomain = document.getElementById('siteDomain');
+    const siteAvatar = document.getElementById('siteAvatar');
     const complexityIndicator = document.getElementById('complexityIndicator');
     const complexityText = document.getElementById('complexityText');
     const timeSaved = document.getElementById('timeSaved');
     const creditsText = document.getElementById('creditsText');
     const creditsBadge = document.getElementById('creditsBadge');
+
+    // App bar credits pill (mockup)
+    const headerCredits = document.getElementById('headerCredits');
+    const headerCreditsText = document.getElementById('headerCreditsText');
+
+    // Helper: avatar (letra + cor a partir do domínio) e domínio curto
+    const AVATAR_COLORS = ['#1DB954', '#E2716A', '#C2882A', '#0E7C5A', '#5A6B63', '#15A06F', '#2E9E6E', '#D5564E'];
+    function domainFromUrl(rawUrl) {
+        try {
+            return new URL(rawUrl).hostname.replace(/^www\./, '');
+        } catch (e) {
+            return rawUrl || '';
+        }
+    }
+    function applySiteIdentity(rawUrl) {
+        const domain = domainFromUrl(rawUrl);
+        if (siteDomain) siteDomain.textContent = domain || 'Página atual';
+        if (siteDomain) siteDomain.title = rawUrl || '';
+        if (siteAvatar) {
+            const letter = (domain || '?').charAt(0).toUpperCase();
+            siteAvatar.textContent = letter;
+            let hash = 0;
+            for (let i = 0; i < domain.length; i++) hash = (hash * 31 + domain.charCodeAt(i)) >>> 0;
+            siteAvatar.style.background = AVATAR_COLORS[hash % AVATAR_COLORS.length];
+        }
+    }
     
     // Connection Status elements
     const connectionIcon = document.getElementById('connectionIcon');
@@ -133,10 +162,13 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('URL da aba:', tab.url);
             console.log('Título da aba:', tab.title);
             
-            // Atualizar URL na UI
+            // Atualizar URL na UI (elemento oculto, usado como fonte/tooltip)
             if (pageUrl) {
                 pageUrl.textContent = tab.url || 'URL não disponível';
             }
+
+            // Identidade visual do site (avatar + domínio) — cartão READY
+            applySiteIdentity(tab.url || '');
             
             // ATUALIZAÇÃO DIRETA: Definir complexidade padrão imediatamente
             if (complexityText) {
@@ -249,7 +281,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateUIWithAnalysis(fallbackAnalysis);
             } else {
                 console.log('Fallback falhou, definindo textos padrão');
-                if (contentType) contentType.textContent = 'A analisar...';
+                if (contentTypeText) contentTypeText.textContent = 'A analisar...';
                 if (complexityText) complexityText.textContent = 'A calcular...';
                 if (timeSaved) timeSaved.textContent = 'A calcular...';
             }
@@ -268,9 +300,9 @@ document.addEventListener('DOMContentLoaded', function() {
             'privacy_policy': window.i18n.t('document_types.privacy_policy'),
             'unknown': window.i18n.t('document_types.unknown')
         };
-        if (contentType) {
-            contentType.textContent = typeMap[analysis.type] || window.i18n.t('document_types.unknown');
-            console.log('Tipo de conteúdo definido como:', contentType.textContent);
+        if (contentTypeText) {
+            contentTypeText.textContent = typeMap[analysis.type] || window.i18n.t('document_types.unknown');
+            console.log('Tipo de conteúdo definido como:', contentTypeText.textContent);
         }
 
         // Complexidade
@@ -448,6 +480,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Usando API própria - esconder seção de créditos
                 if (creditsStatus) creditsStatus.style.display = 'none';
                 if (actionButtonCost) actionButtonCost.textContent = '(Gratuito)';
+                // Pill da app bar: chave própria => "API"
+                if (headerCreditsText) headerCreditsText.textContent = 'API';
+                if (headerCredits) headerCredits.classList.add('premium');
             } else {
                 // Usando créditos grátis - mostrar seção de créditos
                 if (creditsStatus) creditsStatus.style.display = 'flex';
@@ -457,6 +492,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     creditsBadge.classList.remove('premium');
                 }
                 if (actionButtonCost) actionButtonCost.textContent = `(${credits > 0 ? '1' : '0'} Crédito)`;
+                // Pill da app bar: nº de créditos (mockup: "8 credits")
+                if (headerCreditsText) headerCreditsText.textContent = `${credits} credits`;
+                if (headerCredits) headerCredits.classList.remove('premium');
             }
             
             // Desabilitar botão se não há créditos
@@ -526,6 +564,27 @@ document.addEventListener('DOMContentLoaded', function() {
         // Botão de histórico
         if (historyBtn) {
             historyBtn.addEventListener('click', openHistory);
+        }
+
+        // Footer: History / Settings (mockup)
+        const footerHistory = document.getElementById('footerHistory');
+        if (footerHistory) {
+            footerHistory.addEventListener('click', (e) => { e.preventDefault(); openHistory(); });
+        }
+        const footerSettings = document.getElementById('footerSettings');
+        if (footerSettings) {
+            footerSettings.addEventListener('click', (e) => { e.preventDefault(); openSettings(); });
+        }
+
+        // Segmented control "Analysis focus" (estado visual ativo)
+        const focusSegment = document.getElementById('focusSegment');
+        if (focusSegment) {
+            focusSegment.querySelectorAll('button[data-focus]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    focusSegment.querySelectorAll('button[data-focus]').forEach(b => b.classList.remove('is-active'));
+                    btn.classList.add('is-active');
+                });
+            });
         }
         
         // Links do footer
@@ -864,7 +923,39 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Mostrar container do resumo
         summaryContainer.classList.remove('hidden');
-        
+
+        // Cabeçalho do resultado (mockup RESULT): avatar + domínio + tipo + badge de risco.
+        // Inserido antes do #summaryContent; recriado a cada render.
+        const oldHeader = document.getElementById('resultHeader');
+        if (oldHeader) oldHeader.remove();
+
+        const typeLabels = {
+            'terms_of_service': window.i18n ? window.i18n.t('document_types.terms_of_service') : 'Termos de Serviço',
+            'privacy_policy': window.i18n ? window.i18n.t('document_types.privacy_policy') : 'Política de Privacidade',
+            'unknown': window.i18n ? window.i18n.t('document_types.unknown') : 'Documento'
+        };
+        const docType = parsedSummary.documentType || (pageAnalysis && pageAnalysis.type) || 'unknown';
+        const domain = domainFromUrl(currentTab && currentTab.url ? currentTab.url : '');
+        const letter = (domain || '?').charAt(0).toUpperCase();
+        let avBg = '#0E7C5A';
+        if (siteAvatar && siteAvatar.style.background) avBg = siteAvatar.style.background;
+
+        const header = document.createElement('div');
+        header.id = 'resultHeader';
+        header.style.padding = '0 18px 0';
+        header.innerHTML = `
+            <div class="result-header">
+                <div class="result-avatar" style="background:${avBg}">${letter}</div>
+                <div class="result-site">
+                    <div class="result-domain">${domain || 'Página atual'}</div>
+                    <div class="result-type">${typeLabels[docType] || typeLabels.unknown}</div>
+                </div>
+                <div class="risk-badge" id="resultRiskBadge" style="display:none;"></div>
+            </div>
+            <div class="rating-cards" id="resultRatingCards" style="display:none;"></div>
+        `;
+        summaryContainer.parentNode.insertBefore(header, summaryContainer);
+
         // Renderizar resumo baseado na estrutura
         if (parsedSummary.resumo_conciso || parsedSummary.summary) {
             console.log('Renderizando resumo com estrutura:', Object.keys(parsedSummary));
