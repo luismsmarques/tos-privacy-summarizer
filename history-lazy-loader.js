@@ -541,8 +541,27 @@ class HistoryLazyLoader extends LazyLoadingManager {
     updateCounters() {
         const totalElement = document.getElementById('totalSummaries');
         if (totalElement) {
-            totalElement.textContent = this.filteredSummaries.length;
+            totalElement.textContent = this.summaries.length;
         }
+        this.updateChipCounts();
+    }
+
+    // Atualiza os contadores nos chips (All · N / Privacy · N / Terms · N / High risk · N)
+    updateChipCounts() {
+        const all = this.summaries;
+        const counts = {
+            '': all.length,
+            'privacy_policy': all.filter(s => s.document_type === 'privacy_policy').length,
+            'terms_of_service': all.filter(s => s.document_type === 'terms_of_service').length,
+            'high': all.filter(s => (s.risk_score || 5) >= 8).length
+        };
+
+        const chips = document.querySelectorAll('#filterChips .chip');
+        chips.forEach(chip => {
+            const key = chip.dataset.risk === 'high' ? 'high' : (chip.dataset.type || '');
+            const countEl = chip.querySelector('.chip-count');
+            if (countEl) countEl.textContent = String(counts[key] ?? 0);
+        });
     }
 
     // Helper methods

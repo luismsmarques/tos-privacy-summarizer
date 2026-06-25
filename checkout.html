@@ -84,6 +84,16 @@
             margin-top: 6px;
         }
 
+        /* ---- Credits badge (header) — matches mockup scale ---- */
+        .checkout-head .ds-credits {
+            gap: 9px;
+            font: 700 14px/1 var(--ds-font);
+            padding: 11px 16px;
+            border: 1px solid var(--ds-tint-border);
+            border-radius: var(--ds-r-md);
+        }
+        .checkout-head .ds-credits svg { width: 17px; height: 17px; flex-shrink: 0; }
+
         /* ---- 2-column body ---- */
         .checkout-body { display: grid; grid-template-columns: 1fr 300px; }
         .col-packs { padding: 28px 30px; border-right: 1px solid var(--ds-hairline); }
@@ -145,14 +155,6 @@
             color: var(--ds-ink);
         }
         .package-unit { font: 500 11px/1 var(--ds-font); color: var(--ds-faint); margin-top: 3px; }
-
-        .package-features { list-style: none; padding: 0; margin: 0; }
-        .package-features li {
-            display: flex; align-items: center; gap: 8px;
-            font: 400 12.5px/1.5 var(--ds-font);
-            color: var(--ds-muted);
-        }
-        .package-features .material-icons { font-size: 15px; color: var(--ds-brand); }
 
         .why-pay { margin-top: 20px; }
 
@@ -247,13 +249,8 @@
                         <div class="package ds-option" data-package="starter" data-price="2.99" data-credits="20">
                             <div class="ds-radio"></div>
                             <div class="package-info">
-                                <div class="package-name">Pacote Starter</div>
-                                <div class="package-details">20 créditos • €0.15 por crédito</div>
-                                <ul class="package-features" style="margin-top:8px;">
-                                    <li><span class="material-icons">check</span>20 análises completas</li>
-                                    <li><span class="material-icons">check</span>Suporte por email</li>
-                                    <li><span class="material-icons">check</span>Créditos não expiram</li>
-                                </ul>
+                                <div class="package-name">20 créditos</div>
+                                <div class="package-details">Para uso ocasional</div>
                             </div>
                             <div class="package-pricing">
                                 <div class="package-price">€2.99</div>
@@ -265,14 +262,8 @@
                             <span class="ds-tag-rec">MOST POPULAR</span>
                             <div class="ds-radio"></div>
                             <div class="package-info">
-                                <div class="package-name">Pacote Professional</div>
-                                <div class="package-details">100 créditos • €0.10 por crédito • Poupa 33%</div>
-                                <ul class="package-features" style="margin-top:8px;">
-                                    <li><span class="material-icons">check</span>100 análises completas</li>
-                                    <li><span class="material-icons">check</span>Suporte prioritário</li>
-                                    <li><span class="material-icons">check</span>Créditos não expiram</li>
-                                    <li><span class="material-icons">check</span>Desconto de 33%</li>
-                                </ul>
+                                <div class="package-name">100 créditos</div>
+                                <div class="package-details">Poupa 33% · melhor valor</div>
                             </div>
                             <div class="package-pricing">
                                 <div class="package-price">€9.99</div>
@@ -283,15 +274,8 @@
                         <div class="package ds-option" data-package="business" data-price="19.99" data-credits="250">
                             <div class="ds-radio"></div>
                             <div class="package-info">
-                                <div class="package-name">Pacote Business</div>
-                                <div class="package-details">250 créditos • €0.08 por crédito • Poupa 47%</div>
-                                <ul class="package-features" style="margin-top:8px;">
-                                    <li><span class="material-icons">check</span>250 análises completas</li>
-                                    <li><span class="material-icons">check</span>Suporte prioritário</li>
-                                    <li><span class="material-icons">check</span>Créditos não expiram</li>
-                                    <li><span class="material-icons">check</span>Desconto de 47%</li>
-                                    <li><span class="material-icons">check</span>Relatórios detalhados</li>
-                                </ul>
+                                <div class="package-name">250 créditos</div>
+                                <div class="package-details">Para uso intenso</div>
                             </div>
                             <div class="package-pricing">
                                 <div class="package-price">€19.99</div>
