@@ -149,6 +149,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 }
                 break;
                 
+            case 'getLegalLinks':
+                // Caminho leve: só deteta links legais (rápido, não extrai a página).
+                try {
+                    sendResponse({ success: true, links: findLegalLinks() });
+                } catch (error) {
+                    sendResponse({ success: false, links: [], error: error.message });
+                }
+                break;
+
             case 'summarizeText':
                 try {
                     const text = extractPageText();
@@ -218,30 +227,42 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // Devolve até 6 links únicos, excluindo a própria página.
 function findLegalLinks() {
     try {
-        const pattern = /(terms?\b|terms of (service|use)|termos|condi(c|ç)(o|õ)es|privacy|privacidad|privacidade|pol[ií]tica de privacidade|data protection|prote(c|ç)(a|ã)o de dados|datenschutz|confidentialit[eé]|aviso legal|legal notice|gdpr|rgpd|cookie)/i;
-        const current = location.href.split('#')[0];
+        // Texto do link (multilíngue): inclui "user agreement", "eula", etc.
+        const TEXT = /\b(terms?(\s+(of\s+)?(service|use|conditions))?|terms\s*&?\s*conditions|user\s+agreement|agreement|eula|conditions|content\s+policy|acceptable\s+use|legal|disclaimer|cookies?(\s+policy)?|privacy(\s+(policy|notice|statement|center))?|data\s+(policy|protection)|gdpr|ccpa|termos(\s+(de\s+)?(servi[çc]o|uso))?|condi[çc][õo]es(\s+gerais)?|pol[íi]tica\s+de\s+privacidade|privacidade|aviso\s+legal|prote[çc][ãa]o\s+de\s+dados|rgpd|datenschutz|nutzungsbedingungen|confidentialit[ée]|mentions\s+l[ée]gales|condiciones|t[ée]rminos|aviso\s+de\s+privacidad)\b/i;
+        // Caminho do URL (alta confiança) — apanha mesmo quando o texto não bate
+        const URLP = /\/(terms|tos|terms-of-service|terms-of-use|terms-and-conditions|terms_conditions|conditions|eula|legal|disclaimer|user-agreement|useragreement|content-policy|acceptable-use|aup|privacy|privacy-policy|privacypolicy|privacy-notice|data-policy|datapolicy|cookie|cookies|cookie-policy|gdpr|ccpa|policies|termos|condicoes|privacidade|politica-de-privacidade|aviso-legal|datenschutz|nutzungsbedingungen|confidentialite|mentions-legales|condiciones|terminos|legal-notice)(\/|$|[?.#-])/i;
+
+        const current = location.href.split('#')[0].replace(/\/+$/, '');
         const seen = new Set();
-        const links = [];
+        const out = [];
 
         document.querySelectorAll('a[href]').forEach((a) => {
             const href = a.href;
             if (!href || !/^https?:/i.test(href)) return;
-            const text = (a.textContent || '').trim().replace(/\s+/g, ' ');
-            const hay = `${text} ${href}`;
-            if (!pattern.test(hay)) return;
+            const text = (a.textContent || a.getAttribute('aria-label') || a.title || '').trim().replace(/\s+/g, ' ');
+            let path = '';
+            try { path = decodeURIComponent(new URL(href).pathname); } catch (e) { return; }
 
-            const norm = href.split('#')[0];
+            const matchUrl = URLP.test(path);
+            const matchText = text.length > 0 && text.length <= 60 && TEXT.test(text);
+            if (!matchUrl && !matchText) return;
+
+            const norm = href.split('#')[0].replace(/\/+$/, '');
             if (norm === current || seen.has(norm)) return;
             seen.add(norm);
 
+            const hay = `${text} ${path}`.toLowerCase();
             let type = 'legal';
-            if (/privac|datenschutz|confidential|prote(c|ç)(a|ã)o|gdpr|rgpd|data protection|dados/i.test(hay)) type = 'privacy';
-            else if (/terms?|termos|condi/i.test(hay)) type = 'terms';
+            if (/privac|datenschutz|confidential|prote[çc]|gdpr|rgpd|ccpa|data.?(policy|protection)|cookie|dados/.test(hay)) type = 'privacy';
+            else if (/term|tos|eula|agreement|condi|nutzung|content.?policy|legal/.test(hay)) type = 'terms';
 
-            links.push({ text: (text || href).slice(0, 80), href, type });
+            // Confiança: caminho do URL vale mais que texto
+            const score = (matchUrl ? 2 : 0) + (matchText ? 1 : 0);
+            out.push({ text: (text || (type === 'privacy' ? 'Privacy' : 'Terms')).slice(0, 80), href, type, score });
         });
 
-        return links.slice(0, 6);
+        out.sort((a, b) => b.score - a.score);
+        return out.slice(0, 8).map(({ text, href, type }) => ({ text, href, type }));
     } catch (error) {
         console.warn('findLegalLinks falhou:', error);
         return [];

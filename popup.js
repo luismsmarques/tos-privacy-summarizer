@@ -199,12 +199,22 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Injetar content script se necessário
             await injectContentScript();
-            
+
+            // Caminho RÁPIDO e independente: detetar links de Termos/Privacidade já.
+            // Não depende da análise pesada (que em sites grandes como o reddit
+            // pode demorar e antes fazia os links nunca aparecerem).
+            chrome.tabs.sendMessage(currentTab.id, { action: 'getLegalLinks' }, (resp) => {
+                if (!chrome.runtime.lastError && resp && resp.success && Array.isArray(resp.links)) {
+                    console.log(`🔗 ${resp.links.length} links legais detetados`);
+                    renderLegalLinks({ legalLinks: resp.links, language: (pageAnalysis && pageAnalysis.language) || 'pt' });
+                }
+            });
+
             // Solicitar análise da página com timeout
             const timeoutId = setTimeout(() => {
                 console.log('Timeout na análise da página, usando fallback');
                 updateContextUI(null);
-            }, 3000); // 3 segundos de timeout
+            }, 6000); // 6 segundos (SPAs pesados podem passar dos 3s)
             
             chrome.tabs.sendMessage(currentTab.id, { action: 'analyzePage' }, (response) => {
                 clearTimeout(timeoutId);
@@ -731,7 +741,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (existing) existing.remove();
 
         const links = (analysis && analysis.legalLinks) || [];
-        if (!links.length || (analysis && analysis.isLegalPage)) return;
+        if (!links.length) return;
 
         if (!document.getElementById('legalLinksStyles')) {
             const s = document.createElement('style');
@@ -750,7 +760,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const zone = document.createElement('div');
         zone.id = 'legalLinksZone';
         zone.className = 'legal-links-zone';
-        zone.innerHTML = `<div class="legal-links-title">📄 Documentos legais nesta página</div><div class="legal-links-list"></div>`;
+        zone.innerHTML = `<div class="legal-links-title">📄 Termos &amp; Privacidade deste site</div><div class="legal-links-list"></div>`;
 
         const list = zone.querySelector('.legal-links-list');
         const lang = (analysis && analysis.language) || 'pt';
