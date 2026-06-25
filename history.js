@@ -352,9 +352,10 @@ class HistoryLazyLoader extends LazyLoadingManager {
         this.filters = {
             type: '',
             date: '',
-            search: ''
+            search: '',
+            risk: ''
         };
-        
+
         console.log(`🔄 History Lazy Loader initialized for user: ${userId}`);
     }
 
@@ -430,85 +431,63 @@ class HistoryLazyLoader extends LazyLoadingManager {
         this.updateCounters();
     }
 
-    // Create HTML for a summary item
+    // Create HTML for a summary item (Calm greens redesign — compact row)
     createSummaryHTML(summary) {
         const riskScore = summary.risk_score || 5;
-        const complexity = summary.rating_complexidade || 5;
-        const practices = summary.rating_boas_praticas || 5;
-        
-        const riskClass = riskScore <= 3 ? 'low' : riskScore <= 6 ? 'medium' : 'high';
-        const riskLabel = riskScore <= 3 ? 'Baixo' : riskScore <= 6 ? 'Médio' : 'Alto';
-        
+
+        // Rating -> cor: 1–3 low, 4–7 mid, 8–10 high
+        const riskClass = riskScore <= 3 ? 'is-low' : riskScore <= 7 ? 'is-mid' : 'is-high';
+
+        const domain = this.getDomain(summary.url);
+        const avatar = this.getAvatar(domain);
+        const typeLabel = this.getTypePillLabel(summary.document_type);
+
         return `
-            <div class="summary-item" data-id="${summary.id}">
-                <div class="risk-score ${riskClass}">
-                    <span class="risk-score-number">${riskScore}/10</span>
-                    <span class="risk-score-label">${riskLabel}</span>
+            <div class="ds-row summary-item" data-id="${summary.id}" onclick="viewSummary('${summary.id}')">
+                <div class="ds-avatar" style="background:${avatar.color};">${avatar.letter}</div>
+                <div class="ds-row-main">
+                    <div class="ds-row-domain">${domain}</div>
+                    <div class="ds-row-meta">${typeLabel} · ${this.formatDate(summary.created_at)}</div>
                 </div>
-                
-                <div class="summary-header">
-                    <div>
-                        <div class="summary-title">${summary.title || this.getDocumentTypeName(summary.document_type)}</div>
-                        <a href="${summary.url}" target="_blank" class="summary-url">${summary.url || 'URL não disponível'}</a>
-                    </div>
-                </div>
-                
-                <div class="rating-indicators">
-                    <div class="rating-item">
-                        <span>Complexidade:</span>
-                        <div class="rating-bar">
-                            <div class="rating-fill complexity" style="width: ${(complexity / 10) * 100}%"></div>
-                        </div>
-                        <span>${complexity}/10</span>
-                    </div>
-                    <div class="rating-item">
-                        <span>Boas Práticas:</span>
-                        <div class="rating-bar">
-                            <div class="rating-fill practices" style="width: ${(practices / 10) * 100}%"></div>
-                        </div>
-                        <span>${practices}/10</span>
-                    </div>
-                </div>
-                
-                <div class="summary-meta">
-                    <div class="meta-item">
-                        <span class="material-icons">schedule</span>
-                        <span>${this.formatDate(summary.created_at)}</span>
-                    </div>
-                    <div class="meta-item">
-                        <span class="material-icons">description</span>
-                        <span>${summary.word_count || 0} palavras</span>
-                    </div>
-                    <div class="meta-item">
-                        <span class="material-icons">timer</span>
-                        <span>${summary.processing_time || 0}s</span>
-                    </div>
-                    <div class="meta-item">
-                        <span class="material-icons">tune</span>
-                        <span>Geral</span>
-                    </div>
-                </div>
-                
-                <div class="summary-preview">
-                    ${summary.summary ? summary.summary.substring(0, 200) + '...' : 'Resumo não disponível'}
-                </div>
-                
-                <div class="summary-actions">
-                    <button class="action-btn" onclick="viewSummary('${summary.id}')">
-                        <span class="material-icons">visibility</span>
-                        Ver
-                    </button>
-                    <button class="action-btn" onclick="copySummary('${summary.id}')">
-                        <span class="material-icons">content_copy</span>
-                        Copiar
-                    </button>
-                    <button class="action-btn" onclick="exportSummary('${summary.id}')">
-                        <span class="material-icons">download</span>
-                        Exportar
-                    </button>
-                </div>
+                <span class="ds-pill">${typeLabel}</span>
+                <span class="ds-risk ${riskClass}">${riskScore}/10</span>
+                <button class="ds-row-menu" title="Opções" onclick="event.stopPropagation(); openRowMenu(event, '${summary.id}')">
+                    <span class="material-icons">more_vert</span>
+                </button>
             </div>
+            <div class="ds-hairline"></div>
         `;
+    }
+
+    // Extrair domínio limpo do URL
+    getDomain(url) {
+        if (!url) return 'Documento';
+        try {
+            return new URL(url).hostname.replace(/^www\./, '');
+        } catch (e) {
+            return url.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0] || url;
+        }
+    }
+
+    // Avatar: primeira letra + cor estável derivada do domínio
+    getAvatar(domain) {
+        const letter = (domain && domain[0] ? domain[0] : '?').toUpperCase();
+        const colors = ['#1DB954', '#FF5700', '#0A66C2', '#1A1A1A', '#4267B2', '#0E7C5A', '#C2882A', '#9E3A33', '#7E8C83'];
+        let hash = 0;
+        for (let i = 0; i < domain.length; i++) {
+            hash = (hash * 31 + domain.charCodeAt(i)) >>> 0;
+        }
+        return { letter, color: colors[hash % colors.length] };
+    }
+
+    // Rótulo curto do tipo para o chip
+    getTypePillLabel(type) {
+        const map = {
+            'privacy_policy': 'Privacidade',
+            'terms_of_service': 'Termos',
+            'unknown': 'Outro'
+        };
+        return map[type] || 'Documento';
     }
 
     // Apply filters to summaries
@@ -551,6 +530,14 @@ class HistoryLazyLoader extends LazyLoadingManager {
                 const urlMatch = summary.url && summary.url.toLowerCase().includes(searchValue);
                 const contentMatch = summary.summary && summary.summary.toLowerCase().includes(searchValue);
                 if (!urlMatch && !contentMatch) {
+                    return false;
+                }
+            }
+
+            // Risk filter (chip "Risco alto": 8–10)
+            if (this.filters.risk === 'high') {
+                const score = summary.risk_score || 5;
+                if (score < 8) {
                     return false;
                 }
             }
@@ -622,6 +609,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('searchInput');
     const refreshBtn = document.getElementById('refreshBtn');
     const userStats = document.getElementById('userStats');
+    const filtersBtn = document.getElementById('filtersBtn');
+    const filterControls = document.getElementById('filterControls');
+    const filterChips = document.getElementById('filterChips');
 
     // Estado da aplicação
     let userId = null;
@@ -777,6 +767,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 refreshHistory();
             });
         }
+
+        // Botão "Filtros" — mostra/esconde os selects avançados
+        if (filtersBtn && filterControls) {
+            filtersBtn.addEventListener('click', () => {
+                filterControls.classList.toggle('is-open');
+            });
+        }
+
+        // Chips rápidos (All / Privacy / Terms / High risk)
+        if (filterChips) {
+            const chips = filterChips.querySelectorAll('.chip');
+            chips.forEach(chip => {
+                chip.addEventListener('click', () => {
+                    chips.forEach(c => c.classList.remove('is-active'));
+                    chip.classList.add('is-active');
+
+                    if (chip.dataset.risk === 'high') {
+                        // Chip de risco alto: limpa o tipo, aplica filtro de risco
+                        lazyLoader?.setFilter('type', '');
+                        lazyLoader?.setFilter('risk', 'high');
+                        if (typeFilter) typeFilter.value = '';
+                    } else {
+                        // Chips de tipo (incluindo "Todos" com data-type vazio)
+                        lazyLoader?.setFilter('risk', '');
+                        lazyLoader?.setFilter('type', chip.dataset.type || '');
+                        if (typeFilter) typeFilter.value = chip.dataset.type || '';
+                    }
+                });
+            });
+        }
     }
 
     // Refresh histórico
@@ -809,6 +829,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!stats || !userStats) return;
         
         document.getElementById('totalSummaries').textContent = stats.total_summaries || 0;
+        const totalStat = document.getElementById('totalSummariesStat');
+        if (totalStat) totalStat.textContent = stats.total_summaries || 0;
         document.getElementById('privacyPolicies').textContent = stats.privacy_policies || 0;
         document.getElementById('termsOfService').textContent = stats.terms_of_service || 0;
         document.getElementById('avgProcessingTime').textContent = `${stats.avg_processing_time || 0}s`;
@@ -874,6 +896,88 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
+    // Menu de 3 pontos por linha — reutiliza as ações existentes (Ver/Copiar/Exportar)
+    window.openRowMenu = function(event, summaryId) {
+        // Remover menus abertos
+        const existing = document.querySelector('.row-menu-popup');
+        if (existing) {
+            const wasSame = existing.dataset.id === summaryId;
+            existing.remove();
+            if (wasSame) return;
+        }
+
+        const btn = event.currentTarget || event.target.closest('.ds-row-menu');
+        const rect = btn.getBoundingClientRect();
+
+        const popup = document.createElement('div');
+        popup.className = 'row-menu-popup';
+        popup.dataset.id = summaryId;
+        popup.style.cssText = `
+            position: fixed;
+            top: ${rect.bottom + 6}px;
+            left: ${Math.max(8, rect.right - 160)}px;
+            width: 160px;
+            background: var(--ds-surface);
+            border: 1px solid var(--ds-border);
+            border-radius: var(--ds-r-md);
+            box-shadow: var(--ds-shadow-card);
+            z-index: 2000;
+            overflow: hidden;
+            padding: 6px;
+        `;
+        popup.innerHTML = `
+            <button class="row-menu-item" data-action="view">
+                <span class="material-icons">visibility</span> Ver
+            </button>
+            <button class="row-menu-item" data-action="copy">
+                <span class="material-icons">content_copy</span> Copiar
+            </button>
+            <button class="row-menu-item" data-action="export">
+                <span class="material-icons">download</span> Exportar
+            </button>
+        `;
+
+        if (!document.getElementById('row-menu-styles')) {
+            const style = document.createElement('style');
+            style.id = 'row-menu-styles';
+            style.textContent = `
+                .row-menu-item {
+                    display: flex; align-items: center; gap: 8px; width: 100%;
+                    padding: 9px 10px; border: none; background: transparent;
+                    color: var(--ds-ink-2); font: 600 13px/1 var(--ds-font);
+                    border-radius: 8px; cursor: pointer; text-align: left;
+                }
+                .row-menu-item:hover { background: var(--ds-surface-soft); }
+                .row-menu-item .material-icons { font-size: 18px; color: var(--ds-muted); }
+            `;
+            document.head.appendChild(style);
+        }
+
+        popup.querySelectorAll('.row-menu-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const action = item.dataset.action;
+                popup.remove();
+                if (action === 'view') window.viewSummary(summaryId);
+                else if (action === 'copy') window.copySummary(summaryId);
+                else if (action === 'export') window.exportSummary(summaryId);
+            });
+        });
+
+        document.body.appendChild(popup);
+
+        // Fechar ao clicar fora
+        setTimeout(() => {
+            const closeHandler = (e) => {
+                if (!popup.contains(e.target)) {
+                    popup.remove();
+                    document.removeEventListener('click', closeHandler);
+                }
+            };
+            document.addEventListener('click', closeHandler);
+        }, 0);
+    };
+
     // Funções globais para botões
     window.viewSummary = function(summaryId) {
         const summary = lazyLoader?.summaries.find(s => s.id === summaryId);
@@ -921,16 +1025,20 @@ document.addEventListener('DOMContentLoaded', function() {
             const text = `${getDocumentTypeName(summary.document_type)}\n\nURL: ${summary.url}\nData: ${formatDate(summary.created_at)}\n\n${summary.summary || 'Resumo não disponível'}`;
             
             navigator.clipboard.writeText(text).then(() => {
-                // Mostrar feedback visual
-                const button = event.target.closest('.action-btn');
-                const originalText = button.innerHTML;
-                button.innerHTML = '<span class="material-icons">check</span>Copiado!';
-                button.style.background = 'var(--md-sys-color-primary-container)';
-                
-                setTimeout(() => {
-                    button.innerHTML = originalText;
-                    button.style.background = '';
-                }, 2000);
+                // Mostrar feedback visual (se chamado a partir de um botão .action-btn)
+                const button = (typeof event !== 'undefined' && event.target)
+                    ? event.target.closest('.action-btn')
+                    : null;
+                if (button) {
+                    const originalText = button.innerHTML;
+                    button.innerHTML = '<span class="material-icons">check</span>Copiado!';
+                    button.style.background = 'var(--ds-tint)';
+
+                    setTimeout(() => {
+                        button.innerHTML = originalText;
+                        button.style.background = '';
+                    }, 2000);
+                }
             }).catch(err => {
                 console.error('Erro ao copiar:', err);
             });

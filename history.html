@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Histórico de Resumos - ToS & Privacy Summarizer</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" />
     <link rel="stylesheet" href="material-design-tokens.css">
+    <link rel="stylesheet" href="design-system.css">
     <style>
         * {
             margin: 0;
@@ -14,47 +14,26 @@
             box-sizing: border-box;
         }
 
-        /* Theme toggle button */
-        .theme-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: var(--md-sys-color-primary-container);
-            color: var(--md-sys-color-on-primary-container);
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 8px var(--md-sys-color-shadow);
-            transition: all 0.3s ease;
-            z-index: 1000;
+        body {
+            font-family: var(--ds-font);
+            background: var(--ds-bg);
+            color: var(--ds-ink);
+            min-height: 100vh;
+            padding: 76px 20px 40px;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        .theme-toggle:hover {
-            background: var(--md-sys-color-primary);
-            color: var(--md-sys-color-on-primary);
-            transform: scale(1.1);
-        }
-
-        .theme-toggle .material-symbols-outlined,
-        .theme-toggle .material-icons {
-            font-size: 24px;
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-
-        /* Header with theme toggle integrated */
+        /* Top app bar */
         .page-header {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            height: 60px;
-            background: var(--md-sys-color-surface-container);
-            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+            height: 56px;
+            background: var(--ds-surface);
+            border-bottom: 1px solid var(--ds-hairline);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -63,397 +42,473 @@
             transition: background-color 0.3s ease, border-color 0.3s ease;
         }
 
-        .page-header .theme-toggle {
-            position: static;
-            width: 40px;
-            height: 40px;
-            margin: 0;
+        .page-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .page-header .ds-logo {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: var(--ds-grad-icon);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .page-title {
-            font-size: 18px;
-            font-weight: 500;
-            color: var(--md-sys-color-on-surface);
+            font: 700 14px/1 var(--ds-font);
+            color: var(--ds-ink);
             margin: 0;
         }
 
-        body {
-            font-family: 'Roboto', sans-serif;
-            background: var(--md-sys-color-surface);
-            color: var(--md-sys-color-on-surface);
-            min-height: 100vh;
-            padding: 80px 20px 20px;
-            transition: background-color 0.3s ease, color 0.3s ease;
+        /* Theme toggle button */
+        .theme-toggle {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--ds-r-sm);
+            background: var(--ds-surface);
+            color: var(--ds-muted);
+            border: 1px solid var(--ds-border-2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .theme-toggle:hover {
+            background: var(--ds-surface-soft);
+        }
+
+        .theme-toggle .material-icons {
+            font-size: 20px;
         }
 
         .container {
-            max-width: 1000px;
+            max-width: 920px;
             margin: 0 auto;
-            background: var(--md-sys-color-surface-container);
-            border-radius: 16px;
-            padding: 32px;
-            box-shadow: 0 4px 12px var(--md-sys-color-shadow);
-            border: 1px solid var(--md-sys-color-outline-variant);
-            transition: background-color 0.3s ease, border-color 0.3s ease;
         }
 
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 32px;
-            padding-bottom: 16px;
-            border-bottom: 2px solid var(--md-sys-color-outline-variant);
-        }
-
-        .header h1 {
-            font-size: 28px;
-            font-weight: 500;
-            color: var(--md-sys-color-primary);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .header-controls {
-            display: flex;
-            gap: 12px;
-            align-items: center;
+        /* Back link */
+        .back-row {
+            margin-bottom: 16px;
         }
 
         .back-link {
             display: inline-flex;
             align-items: center;
-            color: var(--md-sys-color-primary);
+            gap: 6px;
+            color: var(--ds-muted);
             text-decoration: none;
-            font-weight: 500;
-            padding: 8px 16px;
-            border-radius: 8px;
+            font: 600 13px/1 var(--ds-font);
+            padding: 8px 12px;
+            border-radius: var(--ds-r-sm);
+            border: 1px solid var(--ds-border-2);
+            background: var(--ds-surface);
             transition: all 0.2s;
         }
 
         .back-link:hover {
-            background: var(--md-sys-color-primary-container);
-            color: var(--md-sys-color-on-primary-container);
+            background: var(--ds-surface-soft);
         }
 
         .back-link .material-icons {
-            margin-right: 8px;
-            font-size: 20px;
+            font-size: 18px;
         }
 
-        .filter-controls {
+        /* The history card shell */
+        .history-card {
+            background: var(--ds-surface);
+            border: 1px solid var(--ds-border);
+            border-radius: var(--ds-r-lg);
+            box-shadow: var(--ds-shadow-card);
+            overflow: hidden;
+        }
+
+        .history-head {
+            padding: 24px 28px 20px;
+            border-bottom: 1px solid var(--ds-hairline);
+        }
+
+        .history-head-top {
             display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
             gap: 16px;
-            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .history-title {
+            font-family: var(--ds-serif);
+            font-weight: 600;
+            font-size: 24px;
+            letter-spacing: -.01em;
+            color: var(--ds-ink);
+        }
+
+        .history-subtitle {
+            font: 500 13.5px/1 var(--ds-font);
+            color: var(--ds-faint);
+            margin-top: 6px;
+        }
+
+        .history-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        /* Search */
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--ds-bg);
+            border: 1px solid var(--ds-border-2);
+            border-radius: var(--ds-r-sm);
+            padding: 8px 14px;
+            width: 240px;
+            transition: border-color 0.2s;
+        }
+
+        .search-box:focus-within {
+            border-color: var(--ds-brand);
+        }
+
+        .search-box .material-icons {
+            font-size: 18px;
+            color: var(--ds-faint);
+        }
+
+        .search-box input {
+            border: none;
+            outline: none;
+            background: transparent;
+            font: 500 13.5px/1 var(--ds-font);
+            color: var(--ds-ink);
+            width: 100%;
+        }
+
+        .search-box input::placeholder {
+            color: var(--ds-faint);
+        }
+
+        /* Filters button */
+        .filters-btn {
+            border: 1px solid var(--ds-border-2);
+            background: var(--ds-surface);
+            color: var(--ds-muted);
+            font: 600 13px/1 var(--ds-font);
+            padding: 10px 14px;
+            border-radius: var(--ds-r-sm);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            transition: all 0.2s;
+        }
+
+        .filters-btn:hover {
+            background: var(--ds-surface-soft);
+        }
+
+        .filters-btn .material-icons {
+            font-size: 18px;
+        }
+
+        .refresh-btn {
+            border: 1px solid var(--ds-border-2);
+            background: var(--ds-surface);
+            color: var(--ds-muted);
+            border-radius: var(--ds-r-sm);
+            padding: 0;
+            width: 40px;
+            height: 38px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .refresh-btn:hover {
+            background: var(--ds-surface-soft);
+        }
+
+        .refresh-btn .material-icons {
+            font-size: 18px;
+        }
+
+        /* Filter chips */
+        .filter-chips {
+            display: flex;
+            gap: 8px;
+            margin-top: 18px;
+            flex-wrap: wrap;
+        }
+
+        .chip {
+            font: 600 12.5px/1 var(--ds-font);
+            color: var(--ds-muted);
+            background: var(--ds-surface-soft);
+            border: 1px solid transparent;
+            padding: 8px 13px;
+            border-radius: var(--ds-r-pill);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .chip:hover {
+            filter: brightness(0.98);
+        }
+
+        .chip.is-active {
+            color: #fff;
+            background: var(--ds-brand);
+        }
+
+        [data-theme="dark"] .chip.is-active {
+            color: #06140E;
+        }
+
+        .chip.chip-risk {
+            color: var(--ds-high-text);
+            background: var(--ds-high-bg);
+        }
+
+        .chip.chip-risk.is-active {
+            color: #fff;
+            background: var(--ds-high);
+        }
+
+        [data-theme="dark"] .chip.chip-risk.is-active {
+            color: #06140E;
+        }
+
+        /* Advanced filter row (selects) — hidden by default, toggled by Filters btn */
+        .filter-controls {
+            display: none;
+            gap: 16px;
+            margin-top: 16px;
             padding: 16px;
-            background: var(--md-sys-color-surface-container-low);
-            border-radius: 12px;
+            background: var(--ds-surface-soft);
+            border: 1px solid var(--ds-border);
+            border-radius: var(--ds-r-md);
+            flex-wrap: wrap;
+        }
+
+        .filter-controls.is-open {
+            display: flex;
         }
 
         .filter-group {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
         }
 
         .filter-group label {
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--md-sys-color-on-surface-variant);
+            font: 600 11px/1 var(--ds-font);
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            color: var(--ds-faint);
         }
 
-        .filter-group select,
-        .filter-group input {
-            padding: 8px 12px;
-            border: 1px solid var(--md-sys-color-outline);
-            border-radius: 8px;
-            background: var(--md-sys-color-surface);
-            color: var(--md-sys-color-on-surface);
-            font-size: 14px;
-        }
-
-        .filter-group select:focus,
-        .filter-group input:focus {
+        .filter-group select {
+            padding: 9px 12px;
+            border: 1px solid var(--ds-border-2);
+            border-radius: var(--ds-r-sm);
+            background: var(--ds-surface);
+            color: var(--ds-ink);
+            font: 500 13px/1 var(--ds-font);
             outline: none;
-            border-color: var(--md-sys-color-primary);
         }
 
-        .refresh-btn {
-            background: var(--md-sys-color-primary);
-            color: var(--md-sys-color-on-primary);
-            border: none;
-            border-radius: 8px;
-            padding: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-top: 20px;
+        .filter-group select:focus {
+            border-color: var(--ds-brand);
         }
 
-        .refresh-btn:hover {
-            background: var(--md-sys-color-primary-container);
-            color: var(--md-sys-color-on-primary-container);
-        }
-
-        .refresh-btn .material-icons {
-            font-size: 20px;
-        }
-
-        /* Estatísticas do utilizador */
+        /* User stats */
         .user-stats {
-            background: var(--md-sys-color-surface-container-low);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 24px;
-            border: 1px solid var(--md-sys-color-outline-variant);
+            padding: 20px 28px;
+            border-bottom: 1px solid var(--ds-hairline);
         }
 
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 20px;
+            gap: 14px;
         }
 
         .stat-item {
             text-align: center;
             padding: 16px;
-            background: var(--md-sys-color-surface-container);
-            border-radius: 8px;
-            border: 1px solid var(--md-sys-color-outline-variant);
+            background: var(--ds-surface-soft);
+            border-radius: var(--ds-r-sm);
+            border: 1px solid var(--ds-border);
         }
 
         .stat-number {
+            font-family: var(--ds-serif);
             font-size: 24px;
-            font-weight: 600;
-            color: var(--md-sys-color-primary);
+            font-weight: 700;
+            color: var(--ds-brand);
             margin-bottom: 4px;
         }
 
         .stat-label {
-            font-size: 12px;
-            color: var(--md-sys-color-on-surface-variant);
-            font-weight: 500;
+            font: 600 11px/1.2 var(--ds-font);
+            color: var(--ds-faint);
+        }
+
+        /* Body / list area */
+        .history-body {
+            padding: 8px 14px 16px;
         }
 
         .summary-list {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
+            display: block;
         }
 
-        .summary-item {
-            background: var(--md-sys-color-surface-container-low);
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid var(--md-sys-color-outline-variant);
-            transition: all 0.2s;
+        /* History rows (built by JS) */
+        .ds-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px;
+            border-radius: var(--ds-r-md);
             cursor: pointer;
-            position: relative;
+            transition: background 0.15s;
         }
 
-        .summary-item:hover {
-            border-color: var(--md-sys-color-primary);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        .ds-row:hover {
+            background: var(--ds-surface-soft);
         }
 
-        /* Rating System Styles */
-        .risk-score {
-            position: absolute;
-            top: 16px;
-            right: 16px;
+        .ds-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 11px;
+            flex-shrink: 0;
             display: flex;
             align-items: center;
-            gap: 8px;
-            background: var(--md-sys-color-surface-container);
-            padding: 6px 12px;
-            border-radius: 20px;
-            border: 1px solid var(--md-sys-color-outline-variant);
+            justify-content: center;
+            font: 800 17px/1 var(--ds-font);
+            color: #fff;
+            background: var(--ds-brand);
         }
 
-        .risk-score.low {
-            background: rgba(76, 175, 80, 0.1);
-            border-color: rgba(76, 175, 80, 0.3);
-            color: #4CAF50;
+        .ds-row-main {
+            flex: 1;
+            min-width: 0;
         }
 
-        .risk-score.medium {
-            background: rgba(255, 152, 0, 0.1);
-            border-color: rgba(255, 152, 0, 0.3);
-            color: #FF9800;
-        }
-
-        .risk-score.high {
-            background: rgba(244, 67, 54, 0.1);
-            border-color: rgba(244, 67, 54, 0.3);
-            color: #F44336;
-        }
-
-        .risk-score-number {
-            font-weight: 600;
-            font-size: 14px;
-        }
-
-        .risk-score-label {
-            font-size: 12px;
-            opacity: 0.8;
-        }
-
-        .rating-indicators {
-            display: flex;
-            gap: 16px;
-            margin-top: 8px;
-            margin-bottom: 12px;
-        }
-
-        .rating-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 12px;
-            color: var(--md-sys-color-on-surface-variant);
-        }
-
-        .rating-bar {
-            width: 30px;
-            height: 4px;
-            background: var(--md-sys-color-surface-container-high);
-            border-radius: 2px;
+        .ds-row-domain {
+            font: 700 14.5px/1.2 var(--ds-font);
+            color: var(--ds-ink);
             overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
-        .rating-fill {
-            height: 100%;
-            background: var(--md-sys-color-primary);
-            border-radius: 2px;
-            transition: width 0.3s ease;
+        .ds-row-meta {
+            font: 500 12px/1 var(--ds-font);
+            color: var(--ds-faint);
+            margin-top: 4px;
         }
 
-        .rating-fill.complexity {
-            background: var(--md-sys-color-tertiary);
+        .ds-pill {
+            font: 600 11.5px/1 var(--ds-font);
+            color: var(--ds-muted);
+            background: var(--ds-surface-soft);
+            padding: 6px 10px;
+            border-radius: var(--ds-r-pill);
+            display: inline-flex;
+            align-items: center;
+            flex-shrink: 0;
         }
 
-        .rating-fill.practices {
-            background: var(--md-sys-color-success);
+        .ds-risk {
+            font: 700 12.5px/1 var(--ds-font);
+            padding: 7px 12px;
+            border-radius: var(--ds-r-pill);
+            border: 1px solid transparent;
+            text-align: center;
+            width: 78px;
+            flex-shrink: 0;
         }
 
-        .summary-header {
+        .ds-risk.is-low  { color: var(--ds-low-text);  background: var(--ds-low-bg);  border-color: var(--ds-low-border); }
+        .ds-risk.is-mid  { color: var(--ds-mid-text);  background: var(--ds-mid-bg);  border-color: var(--ds-mid-border); }
+        .ds-risk.is-high { color: var(--ds-high-text); background: var(--ds-high-bg); border-color: var(--ds-high-border); }
+
+        .ds-row-menu {
+            border: none;
+            background: transparent;
+            color: var(--ds-faint);
+            cursor: pointer;
+            padding: 4px;
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 12px;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            border-radius: 8px;
+            transition: background 0.15s;
         }
 
-        .summary-title {
+        .ds-row-menu:hover {
+            background: var(--ds-surface-soft);
+        }
+
+        .ds-row-menu .material-icons {
             font-size: 18px;
-            font-weight: 500;
-            color: var(--md-sys-color-on-surface);
-            margin-bottom: 4px;
         }
 
-        .summary-url {
-            font-size: 14px;
-            color: var(--md-sys-color-primary);
-            text-decoration: none;
-            word-break: break-all;
+        .ds-hairline {
+            height: 1px;
+            background: var(--ds-hairline);
+            margin: 0 14px;
         }
 
-        .summary-url:hover {
-            text-decoration: underline;
-        }
-
-        .summary-meta {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 12px;
-            font-size: 14px;
-            color: var(--md-sys-color-on-surface-variant);
-        }
-
-        .meta-item {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .meta-item .material-icons {
-            font-size: 16px;
-        }
-
-        .summary-preview {
-            font-size: 14px;
-            color: var(--md-sys-color-on-surface-variant);
-            line-height: 1.5;
-            margin-bottom: 12px;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .summary-actions {
-            display: flex;
-            gap: 8px;
-            justify-content: flex-end;
-        }
-
-        .action-btn {
-            padding: 6px 12px;
-            border: 1px solid var(--md-sys-color-outline);
-            border-radius: 6px;
-            background: var(--md-sys-color-surface);
-            color: var(--md-sys-color-on-surface);
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .action-btn:hover {
-            background: var(--md-sys-color-primary-container);
-            color: var(--md-sys-color-on-primary-container);
-            border-color: var(--md-sys-color-primary);
-        }
-
-        .action-btn .material-icons {
-            font-size: 16px;
-        }
-
+        /* Empty state */
         .empty-state {
             text-align: center;
             padding: 60px 20px;
-            color: var(--md-sys-color-on-surface-variant);
+            color: var(--ds-faint);
         }
 
         .empty-state .material-icons {
-            font-size: 64px;
+            font-size: 56px;
             margin-bottom: 16px;
             opacity: 0.5;
+            color: var(--ds-faint);
         }
 
         .empty-state h3 {
+            font-family: var(--ds-serif);
             font-size: 20px;
+            font-weight: 600;
             margin-bottom: 8px;
-            color: var(--md-sys-color-on-surface);
+            color: var(--ds-ink);
         }
 
         .empty-state p {
-            font-size: 14px;
+            font: 400 14px/1.5 var(--ds-font);
             margin-bottom: 24px;
         }
 
         .empty-state .btn {
-            padding: 12px 24px;
-            background: var(--md-sys-color-primary);
-            color: var(--md-sys-color-on-primary);
+            font: 700 14px/1 var(--ds-font);
+            padding: 13px 22px;
+            background: var(--ds-grad-btn);
+            color: #fff;
             border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 500;
+            border-radius: var(--ds-r-sm);
+            box-shadow: var(--ds-shadow-btn-sm);
             cursor: pointer;
             text-decoration: none;
             display: inline-flex;
@@ -461,175 +516,201 @@
             gap: 8px;
         }
 
-        .empty-state .btn:hover {
-            background: var(--md-sys-color-primary-container);
-            color: var(--md-sys-color-on-primary-container);
-        }
+        [data-theme="dark"] .empty-state .btn { color: #06140E; }
 
+        .empty-state .btn:hover { filter: brightness(1.03); }
+
+        /* Loading */
         .loading {
             text-align: center;
-            padding: 40px;
-            color: var(--md-sys-color-on-surface-variant);
+            padding: 48px 20px;
+            color: var(--ds-faint);
+            font: 500 13.5px/1 var(--ds-font);
         }
 
-        .loading .material-icons {
-            font-size: 32px;
-            animation: spin 1s linear infinite;
-            color: var(--md-sys-color-primary);
+        .loading .spinner {
+            width: 28px;
+            height: 28px;
+            margin: 0 auto 14px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            border-top-color: var(--ds-brand);
+            border-right-color: var(--ds-brand);
+            animation: ds-spin 0.9s linear infinite;
         }
 
-        @keyframes spin {
-            from { transform: rotate(0deg); }
+        @keyframes ds-spin {
             to { transform: rotate(360deg); }
         }
 
+        /* Error */
         .error-message {
-            background: var(--md-sys-color-error-container);
-            color: var(--md-sys-color-on-error-container);
-            padding: 16px;
-            border-radius: 8px;
+            background: var(--ds-high-bg);
+            color: var(--ds-high-text);
+            border: 1px solid var(--ds-high-border);
+            padding: 14px 16px;
+            border-radius: var(--ds-r-md);
             margin-bottom: 16px;
+            font: 500 13.5px/1.4 var(--ds-font);
             display: none;
-        }
-
-        /* Dark theme */
-        [data-theme="dark"] {
-            --md-sys-color-surface: #1c1b1f;
-            --md-sys-color-surface-container: #2b2930;
-            --md-sys-color-surface-container-low: #25232a;
-            --md-sys-color-on-surface: #e6e0e9;
-            --md-sys-color-on-surface-variant: #cac4d0;
-            --md-sys-color-primary: #d0bcff;
-            --md-sys-color-primary-container: #4f378b;
-            --md-sys-color-on-primary-container: #eaddff;
-            --md-sys-color-outline-variant: #49454f;
-            --md-sys-color-error-container: #601410;
-            --md-sys-color-on-error-container: #ffdad6;
         }
 
         /* Responsive */
         @media (max-width: 768px) {
-            .container {
-                padding: 16px;
+            .history-head {
+                padding: 20px 16px 16px;
             }
-            
-            .header {
+
+            .history-body {
+                padding: 8px 6px 12px;
+            }
+
+            .history-head-top {
                 flex-direction: column;
-                gap: 16px;
-                align-items: flex-start;
+                align-items: stretch;
             }
-            
+
+            .history-controls {
+                width: 100%;
+            }
+
+            .search-box {
+                flex: 1;
+                width: auto;
+            }
+
             .filter-controls {
                 flex-direction: column;
-                gap: 12px;
             }
-            
-            .summary-header {
-                flex-direction: column;
-                gap: 8px;
-            }
-            
-            .summary-meta {
-                flex-direction: column;
-                gap: 8px;
+
+            .ds-row {
+                flex-wrap: wrap;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Page Header -->
+    <!-- Top app bar -->
     <div class="page-header">
-        <h1 class="page-title">Histórico de Resumos</h1>
+        <div class="page-header-left">
+            <div class="ds-logo">
+                <span class="material-icons" style="color:#fff;font-size:18px;">shield</span>
+            </div>
+            <h1 class="page-title">Histórico de Resumos</h1>
+        </div>
         <button class="theme-toggle" id="themeToggle" title="Alternar tema">
             <span class="material-icons">dark_mode</span>
         </button>
     </div>
 
     <div class="container">
-        <div class="header">
-            <h1>
-                <span class="material-icons">history</span>
-                Histórico de Resumos
-            </h1>
-            <div class="header-controls">
-                <a href="popup.html" class="back-link">
-                    <span class="material-icons">arrow_back</span>
-                    Voltar à Extensão
-                </a>
-            </div>
+        <div class="back-row">
+            <a href="popup.html" class="back-link">
+                <span class="material-icons">arrow_back</span>
+                Voltar à Extensão
+            </a>
         </div>
 
         <div class="error-message" id="errorMessage"></div>
 
-        <!-- Estatísticas do utilizador -->
-        <div class="user-stats" id="userStats" style="display: none;">
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <div class="stat-number" id="totalSummaries">0</div>
-                    <div class="stat-label">Total de Resumos</div>
+        <div class="history-card">
+            <!-- Header: serif title + count, search, filters -->
+            <div class="history-head">
+                <div class="history-head-top">
+                    <div>
+                        <div class="history-title">Histórico</div>
+                        <div class="history-subtitle">
+                            <span id="totalSummaries">0</span> documentos analisados
+                        </div>
+                    </div>
+                    <div class="history-controls">
+                        <div class="search-box">
+                            <span class="material-icons">search</span>
+                            <input type="text" id="searchInput" placeholder="Pesquisar domínio…">
+                        </div>
+                        <button class="filters-btn" id="filtersBtn" title="Filtros avançados">
+                            <span class="material-icons">filter_list</span>
+                            Filtros
+                        </button>
+                        <button class="refresh-btn" id="refreshBtn" title="Atualizar histórico">
+                            <span class="material-icons">refresh</span>
+                        </button>
+                    </div>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-number" id="privacyPolicies">0</div>
-                    <div class="stat-label">Políticas de Privacidade</div>
+
+                <!-- Quick filter chips -->
+                <div class="filter-chips" id="filterChips">
+                    <span class="chip is-active" data-type="">Todos</span>
+                    <span class="chip" data-type="privacy_policy">Privacidade</span>
+                    <span class="chip" data-type="terms_of_service">Termos</span>
+                    <span class="chip chip-risk" data-risk="high">Risco alto</span>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-number" id="termsOfService">0</div>
-                    <div class="stat-label">Termos de Serviço</div>
+
+                <!-- Advanced filters (toggled by Filtros button) -->
+                <div class="filter-controls" id="filterControls">
+                    <div class="filter-group">
+                        <label for="typeFilter">Tipo de Documento</label>
+                        <select id="typeFilter">
+                            <option value="">Todos</option>
+                            <option value="privacy_policy">Política de Privacidade</option>
+                            <option value="terms_of_service">Termos de Serviço</option>
+                            <option value="unknown">Outros</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="dateFilter">Período</label>
+                        <select id="dateFilter">
+                            <option value="">Todos</option>
+                            <option value="today">Hoje</option>
+                            <option value="week">Esta Semana</option>
+                            <option value="month">Este Mês</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-number" id="avgProcessingTime">0s</div>
-                    <div class="stat-label">Tempo Médio</div>
+            </div>
+
+            <!-- Estatísticas do utilizador -->
+            <div class="user-stats" id="userStats" style="display: none;">
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalSummariesStat">0</div>
+                        <div class="stat-label">Total de Resumos</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="privacyPolicies">0</div>
+                        <div class="stat-label">Políticas de Privacidade</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="termsOfService">0</div>
+                        <div class="stat-label">Termos de Serviço</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="avgProcessingTime">0s</div>
+                        <div class="stat-label">Tempo Médio</div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="filter-controls">
-            <div class="filter-group">
-                <label for="typeFilter">Tipo de Documento</label>
-                <select id="typeFilter">
-                    <option value="">Todos</option>
-                    <option value="privacy_policy">Política de Privacidade</option>
-                    <option value="terms_of_service">Termos de Serviço</option>
-                    <option value="unknown">Outros</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label for="dateFilter">Período</label>
-                <select id="dateFilter">
-                    <option value="">Todos</option>
-                    <option value="today">Hoje</option>
-                    <option value="week">Esta Semana</option>
-                    <option value="month">Este Mês</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label for="searchInput">Pesquisar</label>
-                <input type="text" id="searchInput" placeholder="Pesquisar por URL ou conteúdo...">
-            </div>
-            <div class="filter-group">
-                <button class="refresh-btn" id="refreshBtn" title="Atualizar histórico">
-                    <span class="material-icons">refresh</span>
-                </button>
-            </div>
-        </div>
+            <div class="history-body">
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Carregando histórico...</p>
+                </div>
 
-        <div class="loading" id="loading">
-            <span class="material-icons">refresh</span>
-            <p>Carregando histórico...</p>
-        </div>
+                <div class="summary-list" id="summaryList" style="display: none;">
+                    <!-- Resumos serão carregados aqui -->
+                </div>
 
-        <div class="summary-list" id="summaryList" style="display: none;">
-            <!-- Resumos serão carregados aqui -->
-        </div>
-
-        <div class="empty-state" id="emptyState" style="display: none;">
-            <span class="material-icons">description</span>
-            <h3>Nenhum resumo encontrado</h3>
-            <p>Ainda não criou nenhum resumo. Comece a usar a extensão para ver o seu histórico aqui.</p>
-            <a href="popup.html" class="btn">
-                <span class="material-icons">add</span>
-                Criar Primeiro Resumo
-            </a>
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <span class="material-icons">description</span>
+                    <h3>Nenhum resumo encontrado</h3>
+                    <p>Ainda não criou nenhum resumo. Comece a usar a extensão para ver o seu histórico aqui.</p>
+                    <a href="popup.html" class="btn">
+                        <span class="material-icons">add</span>
+                        Criar Primeiro Resumo
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 
