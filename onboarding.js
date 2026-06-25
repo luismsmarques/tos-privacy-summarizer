@@ -288,9 +288,11 @@ async function testAndNext() {
     
     const apiKey = apiKeyInput.value.trim();
     
-    // Validar formato básico
-    if (!apiKey.startsWith('AIza')) {
-        showStatus('Formato de chave da API inválido. Deve começar com "AIza".', 'error', apiKeyStatus);
+    // Validar formato básico (sem assumir o prefixo "AIza": o formato das
+    // chaves do Google AI mudou e nem todas começam por "AIza"). O validador
+    // real é a chamada à API logo a seguir.
+    if (!/^[A-Za-z0-9_-]{20,}$/.test(apiKey)) {
+        showStatus('Formato de chave da API inválido. Verifique se copiou a chave completa, sem espaços.', 'error', apiKeyStatus);
         return;
     }
     
