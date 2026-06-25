@@ -2530,51 +2530,91 @@ document.addEventListener('DOMContentLoaded', () => {
         startAnalyticsAutoRefresh();
     }
     
-    function loadAnalyticsData() {
-        console.log('📊 Carregando dados de analytics...');
-        
-        // Simular carregamento de dados
-        setTimeout(() => {
+    // Mapeia o seletor de período para número de dias
+    function analyticsRangeDays() {
+        const v = document.getElementById('analyticsTimeRange')?.value || '30d';
+        return ({ '24h': 1, '7d': 7, '30d': 30, '90d': 90, '1y': 365 })[v] || 30;
+    }
+
+    // Seleciona um canvas DENTRO da secção analytics (há ids duplicados com o Overview)
+    function aCanvas(id) {
+        return document.querySelector('#analytics-section #' + id);
+    }
+
+    // Cria/recria um gráfico Chart.js destruindo a instância anterior
+    function aRenderChart(key, id, config) {
+        window.__analyticsCharts = window.__analyticsCharts || {};
+        const ctx = aCanvas(id);
+        if (!ctx) return;
+        if (window.__analyticsCharts[key]) {
+            window.__analyticsCharts[key].destroy();
+        }
+        window.__analyticsCharts[key] = new Chart(ctx, config);
+    }
+
+    function setChartTitle(id, title) {
+        const h3 = aCanvas(id)?.closest('.chart-card')?.querySelector('.chart-header h3');
+        if (h3) h3.textContent = title;
+    }
+
+    async function loadAnalyticsData() {
+        console.log('📊 Carregando dados REAIS de analytics...');
+        try {
+            const days = analyticsRangeDays();
+            const resp = await window.dashboard.fetchData(`/api/analytics/insights?days=${days}`);
+            window.__analyticsInsights = (resp && resp.success) ? resp : (resp || {});
             updateAnalyticsMetrics();
             createAnalyticsCharts();
             loadTopUrls();
             generateInsights();
-        }, 1000);
+        } catch (err) {
+            console.error('❌ Erro ao carregar analytics:', err);
+            if (typeof showNotification === 'function') {
+                showNotification('❌ Não foi possível carregar os analytics', 'error');
+            }
+        }
     }
     
     function updateAnalyticsMetrics() {
-        console.log('📊 Atualizando métricas de analytics...');
-        
-        // Simular dados de métricas
-        const metrics = {
-            totalRequests: Math.floor(Math.random() * 10000) + 5000,
-            avgResponseTime: Math.floor(Math.random() * 500) + 200,
-            errorRate: (Math.random() * 5).toFixed(2),
-            cacheHitRate: Math.floor(Math.random() * 30) + 70
-        };
-        
-        // Atualizar UI
-        document.getElementById('analyticsTotalRequests').textContent = metrics.totalRequests.toLocaleString();
-        document.getElementById('analyticsAvgResponseTime').textContent = metrics.avgResponseTime + 'ms';
-        document.getElementById('analyticsErrorRate').textContent = metrics.errorRate + '%';
-        document.getElementById('analyticsCacheHitRate').textContent = metrics.cacheHitRate + '%';
-        
-        // Atualizar mudanças percentuais
+        const m = (window.__analyticsInsights || {}).metrics || {};
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+        set('analyticsTotalRequests', Number(m.total_summaries || 0).toLocaleString('pt-PT'));
+        set('analyticsAvgResponseTime', Math.round(m.avg_duration_ms || 0) + 'ms');
+        set('analyticsErrorRate', (m.failure_rate ?? 0) + '%');
+        set('analyticsCacheHitRate', (m.cache_hit_rate ?? 0) + '%');
+
+        // Relabel honesto: esta métrica é nº de resumos, não "requests"
+        const lbl = document.getElementById('analyticsTotalRequests')?.parentElement?.querySelector('.metric-label');
+        if (lbl) lbl.textContent = 'Resumos no período';
+
         updateMetricChanges();
     }
     
     function updateMetricChanges() {
-        const changes = {
-            requestsGrowth: Math.floor(Math.random() * 20) + 5,
-            responseTimeChange: -(Math.floor(Math.random() * 15) + 5),
-            errorRateChange: -(Math.floor(Math.random() * 5) + 1),
-            cacheHitChange: Math.floor(Math.random() * 10) + 2
-        };
-        
-        document.getElementById('requestsGrowthValue').textContent = `+${changes.requestsGrowth}%`;
-        document.getElementById('responseTimeValue').textContent = `${changes.responseTimeChange}%`;
-        document.getElementById('errorRateValue').textContent = `${changes.errorRateChange}%`;
-        document.getElementById('cacheHitValue').textContent = `+${changes.cacheHitChange}%`;
+        const change = (window.__analyticsInsights || {}).comparison?.summaries_change_pct;
+        const reqEl = document.getElementById('requestsGrowthValue');
+        if (reqEl) {
+            const parent = reqEl.closest('.metric-change');
+            if (change == null) {
+                reqEl.textContent = '—';
+                if (parent) parent.classList.remove('positive', 'negative');
+            } else {
+                reqEl.textContent = (change >= 0 ? '+' : '') + change + '%';
+                if (parent) {
+                    parent.classList.toggle('positive', change >= 0);
+                    parent.classList.toggle('negative', change < 0);
+                }
+            }
+        }
+        // Sem comparação fiável para estas três → mostrar neutro (não inventar)
+        ['responseTimeValue', 'errorRateValue', 'cacheHitValue'].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.textContent = '—';
+                el.closest('.metric-change')?.classList.remove('positive', 'negative');
+            }
+        });
     }
     
     function createAnalyticsCharts() {
@@ -2600,34 +2640,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const ctx = document.getElementById('requestsOverTimeChart');
         if (!ctx) return;
         
-        const labels = generateTimeLabels(30);
-        const requestsData = generateRandomData(30, 100, 1000);
-        const usersData = generateRandomData(30, 10, 100);
-        const summariesData = generateRandomData(30, 50, 500);
-        
-        new Chart(ctx, {
+        const daily = (window.__analyticsInsights || {}).daily_activity || [];
+        const labels = daily.map((d) => {
+            const dt = new Date(d.date + 'T00:00:00');
+            return dt.toLocaleDateString('pt-PT', { month: 'short', day: 'numeric' });
+        });
+
+        aRenderChart('requestsOverTime', 'requestsOverTimeChart', {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Requests',
-                    data: requestsData,
+                    label: 'Resumos por dia',
+                    data: daily.map((d) => d.summaries || 0),
                     borderColor: 'rgb(103, 80, 164)',
                     backgroundColor: 'rgba(103, 80, 164, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }, {
-                    label: 'Utilizadores',
-                    data: usersData,
-                    borderColor: 'rgb(125, 82, 96)',
-                    backgroundColor: 'rgba(125, 82, 96, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }, {
-                    label: 'Resumos',
-                    data: summariesData,
-                    borderColor: 'rgb(98, 91, 113)',
-                    backgroundColor: 'rgba(98, 91, 113, 0.1)',
                     tension: 0.4,
                     fill: true
                 }]
@@ -2635,34 +2662,28 @@ document.addEventListener('DOMContentLoaded', () => {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
+                plugins: { legend: { position: 'top' } },
+                scales: { y: { beginAtZero: true } }
             }
         });
     }
     
     function createDocumentTypesChart() {
-        const ctx = document.getElementById('documentTypesChart');
-        if (!ctx) return;
-        
-        new Chart(ctx, {
+        const types = (window.__analyticsInsights || {}).document_types || {};
+        const labels = Object.keys(types);
+        const data = Object.values(types);
+
+        aRenderChart('documentTypes', 'documentTypesChart', {
             type: 'doughnut',
             data: {
-                labels: ['Política de Privacidade', 'Termos de Serviço', 'Outros'],
+                labels: labels.length ? labels : ['Sem dados'],
                 datasets: [{
-                    data: [45, 35, 20],
+                    data: data.length ? data : [1],
                     backgroundColor: [
                         'rgb(103, 80, 164)',
                         'rgb(125, 82, 96)',
-                        'rgb(98, 91, 113)'
+                        'rgb(98, 91, 113)',
+                        'rgb(70, 110, 160)'
                     ],
                     borderWidth: 0
                 }]
@@ -2670,29 +2691,22 @@ document.addEventListener('DOMContentLoaded', () => {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                    }
-                }
+                plugins: { legend: { position: 'bottom' } }
             }
         });
     }
     
     function createPerformanceChart() {
-        const ctx = document.getElementById('performanceChart');
-        if (!ctx) return;
-        
-        const labels = ['CPU', 'Memória', 'Rede', 'Disco'];
-        const data = [75, 60, 85, 45];
-        
-        new Chart(ctx, {
+        const r = (window.__analyticsInsights || {}).ratings || {};
+        setChartTitle('performanceChart', 'Ratings médios (1–10)');
+
+        aRenderChart('ratings', 'performanceChart', {
             type: 'radar',
             data: {
-                labels: labels,
+                labels: ['Complexidade', 'Boas práticas', 'Risco'],
                 datasets: [{
-                    label: 'Performance (%)',
-                    data: data,
+                    label: `Médias (${Number(r.rated_count || 0).toLocaleString('pt-PT')} avaliados)`,
+                    data: [r.avg_complexidade || 0, r.avg_boas_praticas || 0, r.avg_risk_score || 0],
                     borderColor: 'rgb(103, 80, 164)',
                     backgroundColor: 'rgba(103, 80, 164, 0.2)',
                     pointBackgroundColor: 'rgb(103, 80, 164)',
@@ -2704,48 +2718,35 @@ document.addEventListener('DOMContentLoaded', () => {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: {
-                    r: {
-                        beginAtZero: true,
-                        max: 100
-                    }
-                }
+                scales: { r: { beginAtZero: true, max: 10 } }
             }
         });
     }
     
     function createActiveUsersChart() {
-        const ctx = document.getElementById('activeUsersChart');
-        if (!ctx) return;
-        
-        const labels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
-        const data = [120, 150, 180, 200, 160, 90, 70];
-        
-        new Chart(ctx, {
+        const rd = (window.__analyticsInsights || {}).risk_distribution || {};
+        setChartTitle('activeUsersChart', 'Distribuição de risco');
+
+        aRenderChart('riskDist', 'activeUsersChart', {
             type: 'bar',
             data: {
-                labels: labels,
+                labels: ['Baixo (1–3)', 'Médio (4–6)', 'Alto (7–10)'],
                 datasets: [{
-                    label: 'Utilizadores Ativos',
-                    data: data,
-                    backgroundColor: 'rgba(103, 80, 164, 0.8)',
-                    borderColor: 'rgb(103, 80, 164)',
-                    borderWidth: 1
+                    label: 'Resumos',
+                    data: [rd.low || 0, rd.medium || 0, rd.high || 0],
+                    backgroundColor: [
+                        'rgba(56, 142, 60, 0.8)',
+                        'rgba(245, 166, 35, 0.8)',
+                        'rgba(186, 26, 26, 0.8)'
+                    ],
+                    borderWidth: 0
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true } }
             }
         });
     }
@@ -2754,28 +2755,35 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('activityHeatmap');
         if (!container) return;
         
-        // Simular heatmap de atividade
+        // Heatmap real: dia-da-semana × hora, a partir de hourly_activity
         const days = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
-        const hours = Array.from({length: 24}, (_, i) => i);
-        
+        const dayToDow = { 'Seg': 1, 'Ter': 2, 'Qua': 3, 'Qui': 4, 'Sex': 5, 'Sáb': 6, 'Dom': 0 };
+        const hours = Array.from({ length: 24 }, (_, i) => i);
+
+        const hourly = (window.__analyticsInsights || {}).hourly_activity || [];
+        const counts = {};
+        let max = 0;
+        hourly.forEach((h) => {
+            counts[`${h.dow}-${h.hour}`] = h.count;
+            if (h.count > max) max = h.count;
+        });
+
         let heatmapHTML = '<div class="heatmap-grid">';
-        
-        // Cabeçalho com horas
         heatmapHTML += '<div class="heatmap-header"></div>';
-        hours.forEach(hour => {
+        hours.forEach((hour) => {
             heatmapHTML += `<div class="heatmap-hour">${hour}h</div>`;
         });
-        
-        // Linhas para cada dia
-        days.forEach(day => {
+
+        days.forEach((day) => {
             heatmapHTML += `<div class="heatmap-day">${day}</div>`;
-            hours.forEach(hour => {
-                const intensity = Math.random();
-                const level = intensity > 0.7 ? 'high' : intensity > 0.4 ? 'medium' : 'low';
-                heatmapHTML += `<div class="heatmap-cell ${level}" title="${day} ${hour}h: ${Math.floor(intensity * 100)}% atividade"></div>`;
+            hours.forEach((hour) => {
+                const count = counts[`${dayToDow[day]}-${hour}`] || 0;
+                const ratio = max > 0 ? count / max : 0;
+                const level = count === 0 ? 'low' : ratio > 0.66 ? 'high' : ratio > 0.33 ? 'medium' : 'low';
+                heatmapHTML += `<div class="heatmap-cell ${level}" title="${day} ${hour}h: ${count} resumo(s)"></div>`;
             });
         });
-        
+
         heatmapHTML += '</div>';
         container.innerHTML = heatmapHTML;
         
@@ -2831,64 +2839,80 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadTopUrls() {
         const container = document.getElementById('topUrlsList');
         if (!container) return;
-        
-        const topUrls = [
-            { domain: 'google.com', path: '/privacy-policy', count: 1250 },
-            { domain: 'facebook.com', path: '/privacy', count: 980 },
-            { domain: 'microsoft.com', path: '/privacy', count: 750 },
-            { domain: 'apple.com', path: '/privacy', count: 650 },
-            { domain: 'amazon.com', path: '/privacy', count: 580 },
-            { domain: 'netflix.com', path: '/privacy', count: 520 },
-            { domain: 'spotify.com', path: '/privacy', count: 480 },
-            { domain: 'twitter.com', path: '/privacy', count: 420 }
-        ];
-        
+
+        const domains = (window.__analyticsInsights || {}).top_domains || [];
+        if (!domains.length) {
+            container.innerHTML = '<div class="empty-state"><p>Sem domínios no período selecionado.</p></div>';
+            return;
+        }
+
+        const riskLabel = (r) => {
+            if (r == null) return '';
+            const color = r >= 7 ? 'var(--md-sys-color-error)' : r >= 4 ? '#f5a623' : 'var(--md-sys-color-tertiary)';
+            return `<span style="color:${color};font-weight:600">risco ${r}/10</span>`;
+        };
+
         let html = '';
-        topUrls.forEach(url => {
+        domains.forEach((d) => {
             html += `
                 <div class="url-item">
                     <div class="url-info">
-                        <div class="url-domain">${url.domain}</div>
-                        <div class="url-path">${url.path}</div>
+                        <div class="url-domain">${d.domain}</div>
+                        <div class="url-path">${riskLabel(d.avg_risk)}</div>
                     </div>
-                    <div class="url-count">${url.count.toLocaleString()}</div>
+                    <div class="url-count">${Number(d.count).toLocaleString('pt-PT')}</div>
                 </div>
             `;
         });
-        
+
         container.innerHTML = html;
     }
     
     function generateInsights() {
-        console.log('🔍 Gerando insights...');
-        
-        const insights = [
-            {
-                id: 'usersGrowthInsight',
-                text: `O número de utilizadores ativos cresceu ${Math.floor(Math.random() * 20) + 10}% este mês comparado ao mês anterior.`
-            },
-            {
-                id: 'peakTimeInsight',
-                text: `O horário de maior atividade é entre ${Math.floor(Math.random() * 4) + 14}h-${Math.floor(Math.random() * 4) + 16}h, com ${Math.floor(Math.random() * 20) + 30}% dos requests totais.`
-            },
-            {
-                id: 'performanceAlertInsight',
-                text: `Tempo de resposta ${Math.random() > 0.5 ? 'aumentou' : 'diminuiu'} ${Math.floor(Math.random() * 30) + 10}% nas últimas 2 horas. ${Math.random() > 0.5 ? 'Recomenda-se verificar o servidor.' : 'Performance está otimizada.'}`
-            },
-            {
-                id: 'recommendationsInsight',
-                text: `Considere implementar ${Math.random() > 0.5 ? 'cache adicional' : 'otimizações de rede'} para ${Math.random() > 0.5 ? 'URLs mais populares' : 'melhorar performance geral'}.`
-            }
-        ];
-        
-        insights.forEach(insight => {
-            const element = document.getElementById(insight.id);
-            if (element) {
-                element.textContent = insight.text;
-            }
+        const d = window.__analyticsInsights || {};
+        const m = d.metrics || {};
+        const r = d.ratings || {};
+        const change = d.comparison?.summaries_change_pct;
+
+        // Crescimento / volume
+        let growthText = `${Number(m.total_summaries || 0).toLocaleString('pt-PT')} resumos no período, de ${Number(m.active_users || 0).toLocaleString('pt-PT')} utilizadores distintos.`;
+        if (change != null) {
+            growthText += ` ${change >= 0 ? 'Subida' : 'Descida'} de ${Math.abs(change)}% vs período anterior.`;
+        }
+
+        // Hora de pico (soma por hora em todos os dias)
+        const hourly = d.hourly_activity || [];
+        let peakText = 'Sem dados de atividade suficientes para determinar o horário de pico.';
+        if (hourly.length) {
+            const byHour = {};
+            hourly.forEach((h) => { byHour[h.hour] = (byHour[h.hour] || 0) + h.count; });
+            const peakHour = Object.keys(byHour).reduce((a, b) => (byHour[b] > (byHour[a] || 0) ? b : a));
+            peakText = `Maior atividade às ${peakHour}h (${Number(byHour[peakHour]).toLocaleString('pt-PT')} resumos nessa hora).`;
+        }
+
+        // Qualidade / performance
+        let perfText = `Taxa de sucesso de ${m.success_rate ?? 0}% e tempo médio de ${Math.round(m.avg_duration_ms || 0)}ms por resumo.`;
+        if (r.avg_risk_score != null) {
+            perfText += ` Risco médio dos documentos analisados: ${r.avg_risk_score}/10.`;
+        }
+
+        // Recomendações baseadas em dados
+        let recText = `Cache hit rate de ${m.cache_hit_rate ?? 0}% (${Number(m.cache_hits || 0).toLocaleString('pt-PT')} reutilizações).`;
+        const worst = (d.top_domains || []).filter((x) => x.avg_risk != null).sort((a, b) => b.avg_risk - a.avg_risk)[0];
+        if (worst) {
+            recText += ` Domínio com pior risco: ${worst.domain} (${worst.avg_risk}/10).`;
+        }
+
+        const insights = {
+            usersGrowthInsight: growthText,
+            peakTimeInsight: peakText,
+            performanceAlertInsight: perfText,
+            recommendationsInsight: recText
+        };
+        Object.entries(insights).forEach(([id, text]) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = text;
         });
-        
-        showNotification('🔍 Insights atualizados com sucesso!', 'success');
     }
     
     function updateChartType(type) {
@@ -2973,35 +2997,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function startAnalyticsAutoRefresh() {
         console.log('🔄 Iniciando atualização automática de analytics...');
         
-        // Atualizar analytics a cada 5 minutos
+        // Atualizar analytics a cada 5 minutos (refetch de dados reais)
         setInterval(() => {
             if (window.dashboard && !window.dashboard.isLoading) {
-                updateAnalyticsMetrics();
-                generateInsights();
+                loadAnalyticsData();
             }
         }, 300000); // 5 minutos
-    }
-    
-    // Funções auxiliares
-    function generateTimeLabels(days) {
-        const labels = [];
-        const now = new Date();
-        
-        for (let i = days - 1; i >= 0; i--) {
-            const date = new Date(now);
-            date.setDate(date.getDate() - i);
-            labels.push(date.toLocaleDateString('pt-PT', { month: 'short', day: 'numeric' }));
-        }
-        
-        return labels;
-    }
-    
-    function generateRandomData(count, min, max) {
-        const data = [];
-        for (let i = 0; i < count; i++) {
-            data.push(Math.floor(Math.random() * (max - min + 1)) + min);
-        }
-        return data;
     }
     
     function initializeSettings() {

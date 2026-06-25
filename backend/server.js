@@ -119,7 +119,19 @@ app.use('/api/gemini', geminiRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/credits', creditsRoutes);
 app.use('/api/stripe', stripeRoutes);
-app.use('/api/analytics', analyticsRoutes);
+
+// As rotas de analytics são de ADMINISTRAÇÃO e exigem JWT.
+// Exceção: endpoints per-utilizador consumidos pela extensão (o próprio
+// histórico/estatísticas do utilizador), que não têm sessão de admin.
+// Isto fecha a exposição pública de dados pessoais (/users) e de operações
+// perigosas (/seed, /migrate, /migrate-sql, /debug, /test-db-connection).
+const PUBLIC_ANALYTICS_PATHS = [/^\/user-history\//, /^\/user-stats\//];
+app.use('/api/analytics', (req, res, next) => {
+    // Preflight CORS não transporta o header Authorization.
+    if (req.method === 'OPTIONS') return next();
+    if (PUBLIC_ANALYTICS_PATHS.some((re) => re.test(req.path))) return next();
+    return auth.authenticateToken(req, res, next);
+}, analyticsRoutes);
 
 // Middleware para proteger todas as rotas do dashboard
 app.use('/dashboard', auth.protectDashboard);

@@ -711,6 +711,184 @@ router.get('/summaries', async (req, res) => {
   }
 });
 
+// Endpoint consolidado de INSIGHTS reais para a secção Analytics do dashboard.
+// Tudo é derivado da tabela `summaries` (fonte fiável e rica: ratings, tipos,
+// domínios, durações) e de `summary_cache`. Cada sub-query é tolerante a falhas
+// para que um problema pontual de schema não derrube a resposta inteira.
+router.get('/insights', async (req, res) => {
+  try {
+    if (!db.isConnected) {
+      const connected = await db.connect();
+      if (!connected) {
+        return res.status(500).json({ success: false, error: 'Base de dados indisponível' });
+      }
+    }
+
+    // Janela temporal em dias (1..365), default 30.
+    let days = parseInt(req.query.days, 10);
+    if (!Number.isFinite(days) || days < 1) days = 30;
+    if (days > 365) days = 365;
+    const win = [days];
+
+    const safe = async (fn, fallback) => {
+      try { return await fn(); } catch (e) { console.error('insights sub-query falhou:', e.message); return fallback; }
+    };
+
+    const [metricsRow, prevRow, docTypes, ratingsRow, topDomains, daily, hourly, cacheRow] = await Promise.all([
+      // Métricas do período
+      safe(async () => (await db.query(`
+        SELECT
+          COUNT(*)                                            AS total_summaries,
+          COUNT(*) FILTER (WHERE success = true)              AS successful,
+          COUNT(*) FILTER (WHERE success = false)            AS failed,
+          AVG(duration) FILTER (WHERE success = true)         AS avg_duration,
+          COUNT(DISTINCT user_id)                             AS active_users,
+          COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE)  AS today_summaries
+        FROM summaries
+        WHERE created_at >= NOW() - ($1 * INTERVAL '1 day')
+      `, win)).rows[0] || {}, {}),
+
+      // Total do período anterior (igual duração) para variação %
+      safe(async () => (await db.query(`
+        SELECT COUNT(*) AS prev_total
+        FROM summaries
+        WHERE created_at >= NOW() - (2 * $1 * INTERVAL '1 day')
+          AND created_at <  NOW() - ($1 * INTERVAL '1 day')
+      `, win)).rows[0] || {}, {}),
+
+      // Distribuição por tipo de documento (apenas sucessos)
+      safe(async () => (await db.query(`
+        SELECT
+          CASE
+            WHEN COALESCE(type, document_type) = 'terms_of_service' THEN 'Termos de Serviço'
+            WHEN COALESCE(type, document_type) = 'privacy_policy'   THEN 'Políticas de Privacidade'
+            ELSE 'Outros'
+          END AS document_type,
+          COUNT(*) AS count
+        FROM summaries
+        WHERE success = true AND created_at >= NOW() - ($1 * INTERVAL '1 day')
+        GROUP BY 1 ORDER BY count DESC
+      `, win)).rows, []),
+
+      // Ratings médios + distribuição de risco
+      safe(async () => (await db.query(`
+        SELECT
+          AVG(rating_complexidade)                          AS avg_complexidade,
+          AVG(rating_boas_praticas)                         AS avg_boas_praticas,
+          AVG(risk_score)                                   AS avg_risk_score,
+          COUNT(*) FILTER (WHERE risk_score IS NOT NULL)    AS rated_count,
+          COUNT(*) FILTER (WHERE risk_score BETWEEN 1 AND 3) AS risk_low,
+          COUNT(*) FILTER (WHERE risk_score BETWEEN 4 AND 6) AS risk_medium,
+          COUNT(*) FILTER (WHERE risk_score >= 7)            AS risk_high
+        FROM summaries
+        WHERE created_at >= NOW() - ($1 * INTERVAL '1 day')
+      `, win)).rows[0] || {}, {}),
+
+      // Top domínios processados (com risco médio)
+      safe(async () => (await db.query(`
+        SELECT
+          substring(url from '^https?://(?:www\\.)?([^/:?#]+)') AS domain,
+          COUNT(*)         AS count,
+          AVG(risk_score)  AS avg_risk
+        FROM summaries
+        WHERE created_at >= NOW() - ($1 * INTERVAL '1 day')
+          AND url IS NOT NULL AND url <> ''
+        GROUP BY domain
+        HAVING substring(url from '^https?://(?:www\\.)?([^/:?#]+)') IS NOT NULL
+        ORDER BY count DESC
+        LIMIT 10
+      `, win)).rows, []),
+
+      // Atividade diária (série temporal)
+      safe(async () => (await db.query(`
+        SELECT
+          to_char(date_trunc('day', created_at), 'YYYY-MM-DD') AS date,
+          COUNT(*)                                    AS summaries,
+          AVG(duration) FILTER (WHERE success = true) AS avg_duration
+        FROM summaries
+        WHERE created_at >= NOW() - ($1 * INTERVAL '1 day')
+        GROUP BY 1 ORDER BY 1
+      `, win)).rows, []),
+
+      // Atividade por dia-da-semana x hora (heatmap)
+      safe(async () => (await db.query(`
+        SELECT
+          EXTRACT(DOW  FROM created_at)::int AS dow,
+          EXTRACT(HOUR FROM created_at)::int AS hour,
+          COUNT(*)                           AS count
+        FROM summaries
+        WHERE created_at >= NOW() - ($1 * INTERVAL '1 day')
+        GROUP BY 1, 2
+      `, win)).rows, []),
+
+      // Cache persistente (reutilizações vs entradas)
+      safe(async () => (await db.query(`
+        SELECT COALESCE(SUM(hits), 0) AS cache_hits, COUNT(*) AS cache_entries
+        FROM summary_cache
+      `)).rows[0] || {}, {})
+    ]);
+
+    const num = (v) => (v == null ? 0 : Number(v));
+    const total = num(metricsRow.total_summaries);
+    const failed = num(metricsRow.failed);
+    const prevTotal = num(prevRow.prev_total);
+    const cacheHits = num(cacheRow.cache_hits);
+    const cacheEntries = num(cacheRow.cache_entries);
+    const cacheDenom = cacheHits + cacheEntries;
+
+    const documentTypes = {};
+    docTypes.forEach((r) => { documentTypes[r.document_type] = num(r.count); });
+
+    res.json({
+      success: true,
+      range_days: days,
+      metrics: {
+        total_summaries: total,
+        successful: num(metricsRow.successful),
+        failed,
+        success_rate: total > 0 ? +(num(metricsRow.successful) / total * 100).toFixed(1) : 0,
+        failure_rate: total > 0 ? +(failed / total * 100).toFixed(2) : 0,
+        avg_duration_ms: Math.round(num(metricsRow.avg_duration)),
+        active_users: num(metricsRow.active_users),
+        today_summaries: num(metricsRow.today_summaries),
+        cache_hit_rate: cacheDenom > 0 ? +(cacheHits / cacheDenom * 100).toFixed(1) : 0,
+        cache_hits: cacheHits,
+        cache_entries: cacheEntries
+      },
+      comparison: {
+        summaries_change_pct: prevTotal > 0 ? +(((total - prevTotal) / prevTotal) * 100).toFixed(1) : null
+      },
+      document_types: documentTypes,
+      ratings: {
+        avg_complexidade: ratingsRow.avg_complexidade != null ? +Number(ratingsRow.avg_complexidade).toFixed(1) : null,
+        avg_boas_praticas: ratingsRow.avg_boas_praticas != null ? +Number(ratingsRow.avg_boas_praticas).toFixed(1) : null,
+        avg_risk_score: ratingsRow.avg_risk_score != null ? +Number(ratingsRow.avg_risk_score).toFixed(1) : null,
+        rated_count: num(ratingsRow.rated_count)
+      },
+      risk_distribution: {
+        low: num(ratingsRow.risk_low),
+        medium: num(ratingsRow.risk_medium),
+        high: num(ratingsRow.risk_high)
+      },
+      top_domains: topDomains.map((r) => ({
+        domain: r.domain,
+        count: num(r.count),
+        avg_risk: r.avg_risk != null ? +Number(r.avg_risk).toFixed(1) : null
+      })),
+      daily_activity: daily.map((r) => ({
+        date: r.date,
+        summaries: num(r.summaries),
+        avg_duration: Math.round(num(r.avg_duration))
+      })),
+      hourly_activity: hourly.map((r) => ({ dow: num(r.dow), hour: num(r.hour), count: num(r.count) })),
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Erro ao obter insights:', error);
+    res.status(500).json({ success: false, error: 'Erro ao obter insights: ' + error.message });
+  }
+});
+
 // Função para obter dados de tipos de documentos
 async function getDocumentTypesData() {
   try {
