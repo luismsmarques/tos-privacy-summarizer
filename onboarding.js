@@ -1,6 +1,8 @@
 // Script para o onboarding da extensão
 let currentStep = 0;
 const totalSteps = 5;
+// Modo escolhido no ecrã de boas-vindas: 'shared' (predefinido) ou 'own'
+let welcomeMode = 'shared';
 
 // Inicializar quando a página carrega
 document.addEventListener('DOMContentLoaded', function() {
@@ -16,18 +18,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Configurar todos os event listeners
 function setupEventListeners() {
-    // Botão "Começar Configuração" (Passo 1)
+    // Botão "Get started" (Passo 1)
     const startConfigBtn = document.getElementById('startConfigBtn');
     if (startConfigBtn) {
-        startConfigBtn.addEventListener('click', nextStep);
+        startConfigBtn.addEventListener('click', startConfig);
     }
     
-    // Link "Saltar configuração" (Passo 1)
+    // Link "Skip intro" (Passo 1)
     const skipOnboardingLink = document.getElementById('skipOnboardingLink');
     if (skipOnboardingLink) {
         skipOnboardingLink.addEventListener('click', function(e) {
             e.preventDefault();
             skipOnboarding();
+        });
+    }
+
+    // Seleção de modo no ecrã de boas-vindas (cartões com radio)
+    const welcomeSharedOption = document.getElementById('welcomeSharedOption');
+    const welcomeOwnOption = document.getElementById('welcomeOwnOption');
+    if (welcomeSharedOption && welcomeOwnOption) {
+        welcomeSharedOption.addEventListener('click', function() {
+            selectWelcomeOption('shared');
+        });
+        welcomeOwnOption.addEventListener('click', function() {
+            selectWelcomeOption('own');
         });
     }
     
@@ -107,6 +121,24 @@ function setupEventListeners() {
     }
     
     console.log('Event listeners configurados');
+}
+
+// Selecionar opção no ecrã de boas-vindas (apenas estado visual + preferência)
+function selectWelcomeOption(mode) {
+    welcomeMode = mode;
+    const sharedCard = document.getElementById('welcomeSharedOption');
+    const ownCard = document.getElementById('welcomeOwnOption');
+    if (sharedCard) sharedCard.classList.toggle('is-selected', mode === 'shared');
+    if (ownCard) ownCard.classList.toggle('is-selected', mode === 'own');
+}
+
+// Avançar a partir do ecrã de boas-vindas para a configuração da API
+function startConfig() {
+    nextStep();
+    // Se o utilizador escolheu a sua própria chave, abrir já essa secção no passo 2
+    if (welcomeMode === 'own') {
+        useOwnApi();
+    }
 }
 
 // Função para avançar para o próximo passo

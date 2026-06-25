@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bem-vindo - ToS & Privacy Summarizer</title>
+    <title>Welcome - ToS & Privacy Summarizer</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
     <link rel="stylesheet" href="design-system.css" />
     <style>
@@ -20,63 +20,12 @@
             text-rendering: optimizeLegibility;
         }
 
-        /* ---- App bar ---- */
-        .page-header {
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            height: 64px;
-            background: var(--ds-surface);
-            border-bottom: 1px solid var(--ds-hairline);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 24px;
-            z-index: 999;
-        }
-
-        .page-header-brand {
-            display: flex;
-            align-items: center;
-            gap: 11px;
-        }
-
-        .page-header-logo {
-            width: 32px; height: 32px;
-            border-radius: 9px;
-            background: var(--ds-grad-icon);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .page-title {
-            font: 700 15px/1 var(--ds-font);
-            color: var(--ds-ink);
-            margin: 0;
-        }
-
-        .theme-toggle {
-            width: 44px; height: 44px;
-            border-radius: var(--ds-r-sm);
-            background: var(--ds-surface);
-            border: 1px solid var(--ds-border-2);
-            color: var(--ds-muted);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background .15s ease;
-        }
-        .theme-toggle:hover { background: var(--ds-surface-soft); }
-        .theme-toggle .material-icons { font-size: 22px; }
-
         /* ---- Layout ---- */
         .onboarding-container {
-            max-width: 720px;
-            margin: 64px auto 0;
-            padding: 40px 24px 56px;
-            min-height: calc(100vh - 64px);
+            max-width: 920px;
+            margin: 0 auto;
+            padding: 56px 24px 64px;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -88,7 +37,7 @@
             border-radius: var(--ds-r-pill);
             background: var(--ds-hairline);
             overflow: hidden;
-            margin-bottom: 28px;
+            margin-bottom: 24px;
         }
         .progress-fill {
             height: 100%;
@@ -98,7 +47,7 @@
             width: 0%;
         }
 
-        /* ---- Step card ---- */
+        /* ---- Step card (the whole framed mockup) ---- */
         .step {
             background: var(--ds-surface);
             border: 1px solid var(--ds-border);
@@ -115,6 +64,59 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* ---- App bar (inside the card, per mockup) ---- */
+        .card-appbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 28px;
+            border-bottom: 1px solid var(--ds-hairline);
+        }
+        .card-appbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+        }
+        .card-appbar-logo {
+            width: 32px; height: 32px;
+            border-radius: 9px;
+            background: var(--ds-grad-icon);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .card-appbar-title {
+            font: 700 15px/1 var(--ds-font);
+            color: var(--ds-ink);
+        }
+        .card-appbar-right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .skip-intro {
+            font: 600 13px/1 var(--ds-font);
+            color: var(--ds-faint);
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .skip-intro:hover { color: var(--ds-brand); }
+        .theme-toggle {
+            width: 34px; height: 34px;
+            border-radius: var(--ds-r-sm);
+            background: transparent;
+            border: none;
+            color: var(--ds-faint);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .15s ease, color .15s ease;
+        }
+        .theme-toggle:hover { background: var(--ds-surface-soft); color: var(--ds-muted); }
+        .theme-toggle .material-icons { font-size: 20px; }
+
         .step-body {
             padding: 48px 56px 40px;
             text-align: center;
@@ -128,7 +130,6 @@
             background: var(--ds-tint);
             padding: 7px 13px;
             border-radius: var(--ds-r-pill);
-            margin-bottom: 18px;
         }
 
         .step-icon {
@@ -140,11 +141,11 @@
         .step-title {
             font-family: var(--ds-serif);
             font-weight: 600;
-            font-size: 34px;
+            font-size: 36px;
             line-height: 1.2;
             letter-spacing: -.015em;
             color: var(--ds-ink);
-            margin: 0 auto 12px;
+            margin: 18px auto 12px;
             max-width: 560px;
             text-wrap: balance;
         }
@@ -154,7 +155,7 @@
             text-align: center;
             color: var(--ds-muted);
             max-width: 520px;
-            margin: 0 auto 32px;
+            margin: 0 auto;
         }
 
         .step-content { margin-bottom: 8px; text-align: left; }
@@ -165,7 +166,7 @@
             color: var(--ds-faint);
             letter-spacing: .07em;
             text-transform: uppercase;
-            margin: 36px 0 14px;
+            margin: 40px 0 14px;
             text-align: left;
         }
 
@@ -175,6 +176,7 @@
             grid-template-columns: repeat(3, 1fr);
             gap: 18px;
             text-align: left;
+            margin-top: 40px;
         }
         .feature-card {
             background: var(--ds-surface-soft);
@@ -212,6 +214,12 @@
             grid-template-columns: 1fr 1fr;
             gap: 16px;
             text-align: left;
+            margin-top: 14px;
+        }
+        .start-option-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
         .start-option-icon {
             width: 40px; height: 40px;
@@ -580,32 +588,35 @@
     </style>
 </head>
 <body>
-    <!-- Page Header -->
-    <div class="page-header">
-        <div class="page-header-brand">
-            <div class="page-header-logo">
-                <svg width="20" height="20" viewBox="0 0 36 36" fill="none"><path d="M18 5.5l9 3.2v6.8c0 5.7-3.8 9.7-9 11.2-5.2-1.5-9-5.5-9-11.2V8.7l9-3.2z" fill="#fff" fill-opacity=".18" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><path d="M13.6 17.8l3 3 6-6.4" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-            <h1 class="page-title">ToS &amp; Privacy Summarizer</h1>
-        </div>
-        <button class="theme-toggle" id="themeToggle" title="Alternar tema">
-            <span class="material-icons">dark_mode</span>
-        </button>
-    </div>
-
     <div class="onboarding-container">
         <!-- Barra de Progresso -->
         <div class="progress-bar">
             <div class="progress-fill" id="progressFill"></div>
         </div>
 
-        <!-- Passo 1: Boas-vindas -->
+        <!-- Passo 1: Boas-vindas (ecrã do mockup) -->
         <div class="step active" id="step1">
+            <!-- App bar: logo + título + Skip intro -->
+            <div class="card-appbar">
+                <div class="card-appbar-brand">
+                    <div class="card-appbar-logo">
+                        <svg width="20" height="20" viewBox="0 0 36 36" fill="none"><path d="M18 5.5l9 3.2v6.8c0 5.7-3.8 9.7-9 11.2-5.2-1.5-9-5.5-9-11.2V8.7l9-3.2z" fill="#fff" fill-opacity=".18" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><path d="M13.6 17.8l3 3 6-6.4" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <span class="card-appbar-title">ToS &amp; Privacy Summarizer</span>
+                </div>
+                <div class="card-appbar-right">
+                    <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+                        <span class="material-icons">dark_mode</span>
+                    </button>
+                    <a href="#" class="skip-intro" id="skipOnboardingLink">Skip intro</a>
+                </div>
+            </div>
+
             <div class="step-body">
-                <div class="step-badge">Bem-vindo</div>
-                <h2 class="step-title">Leia o que importa. Ignore o resto.</h2>
+                <div class="step-badge">Welcome</div>
+                <h2 class="step-title">Read what matters. Skip the rest.</h2>
                 <p class="step-description">
-                    Em três passos simples, transforme páginas legais densas em resumos claros com alertas de risco.
+                    In three simple steps, turn dense legal pages into clear summaries with risk alerts.
                 </p>
 
                 <div class="step-content">
@@ -613,48 +624,50 @@
                     <div class="steps-grid">
                         <div class="feature-card">
                             <div class="feature-card-num">1</div>
-                            <div class="feature-card-title">Navegue</div>
-                            <div class="feature-card-desc">Abra qualquer página de Termos ou Política de Privacidade.</div>
+                            <div class="feature-card-title">Browse</div>
+                            <div class="feature-card-desc">Open any Terms or Privacy Policy page.</div>
                         </div>
                         <div class="feature-card">
                             <div class="feature-card-num">2</div>
-                            <div class="feature-card-title">Clique no ícone</div>
-                            <div class="feature-card-desc">A IA extrai e analisa o texto em 10–30 segundos.</div>
+                            <div class="feature-card-title">Click the icon</div>
+                            <div class="feature-card-desc">The AI extracts and analyzes the text in 10–30 seconds.</div>
                         </div>
                         <div class="feature-card">
                             <div class="feature-card-num">3</div>
-                            <div class="feature-card-title">Leia o resumo</div>
-                            <div class="feature-card-desc">Resumo, pontos-chave e níveis de risco, prontos a ler.</div>
+                            <div class="feature-card-title">Read the summary</div>
+                            <div class="feature-card-desc">Summary, key points and risk ratings, ready to read.</div>
                         </div>
                     </div>
 
                     <!-- Duas opções de início -->
-                    <div class="section-label">Como gostaria de começar?</div>
+                    <div class="section-label">How would you like to start?</div>
                     <div class="start-options">
                         <div class="ds-option is-selected" id="welcomeSharedOption">
-                            <div class="ds-tag-rec">Recomendado</div>
-                            <div class="start-option-icon">
-                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--ds-brand);"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg>
+                            <div class="ds-tag-rec">Recommended</div>
+                            <div class="start-option-row">
+                                <div class="start-option-icon">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--ds-brand);"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg>
+                                </div>
+                                <div class="ds-radio"></div>
                             </div>
-                            <div class="start-option-title">Créditos grátis</div>
-                            <div class="start-option-desc">Use a nossa API partilhada. Sem configuração — comece já com créditos incluídos.</div>
+                            <div class="start-option-title">Free credits</div>
+                            <div class="start-option-desc">Use our shared API. No setup — start now with 8 credits included.</div>
                         </div>
                         <div class="ds-option" id="welcomeOwnOption">
-                            <div class="start-option-icon">
-                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--ds-muted);"><path d="M21 2l-2 2m-7.6 7.6a5 5 0 11-7.1 7.1 5 5 0 017.1-7.1zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3"/></svg>
+                            <div class="start-option-row">
+                                <div class="start-option-icon">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--ds-muted);"><path d="M21 2l-2 2m-7.6 7.6a5 5 0 11-7.1 7.1 5 5 0 017.1-7.1zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3"/></svg>
+                                </div>
+                                <div class="ds-radio"></div>
                             </div>
-                            <div class="start-option-title">A minha chave Gemini</div>
-                            <div class="start-option-desc">Use a sua própria chave Google Gemini para uso ilimitado e privado.</div>
+                            <div class="start-option-title">My Gemini key</div>
+                            <div class="start-option-desc">Use your own Google Gemini key for unlimited, private use.</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="button-group">
-                    <button class="btn btn-primary" id="startConfigBtn">Começar</button>
-                </div>
-
-                <div class="skip-link">
-                    <a href="#" id="skipOnboardingLink">Saltar configuração</a>
+                    <button class="btn btn-primary" id="startConfigBtn">Get started</button>
                 </div>
             </div>
         </div>
