@@ -889,6 +889,145 @@ router.get('/insights', async (req, res) => {
   }
 });
 
+// Endpoint de RECEITA & CRÉDITOS para o dashboard admin.
+// Receita vem de processed_payments (amount_cents). Para pagamentos antigos
+// sem montante guardado, estima-se a 1€/crédito e sinaliza-se como estimativa.
+// Créditos consumidos derivam dos resumos com sucesso (o consumo decrementa
+// 1 crédito por resumo e não é registado em credits_history).
+router.get('/revenue', async (req, res) => {
+  try {
+    if (!db.isConnected) {
+      const connected = await db.connect();
+      if (!connected) {
+        return res.status(500).json({ success: false, error: 'Base de dados indisponível' });
+      }
+    }
+    // Garante a tabela e as colunas de receita antes de consultar.
+    await db.ensurePaymentsTable();
+
+    let days = parseInt(req.query.days, 10);
+    if (!Number.isFinite(days) || days < 1) days = 30;
+    if (days > 365) days = 365;
+    const win = [days];
+
+    const safe = async (fn, fallback) => {
+      try { return await fn(); } catch (e) { console.error('revenue sub-query falhou:', e.message); return fallback; }
+    };
+
+    // Expressão de receita por linha, com fallback para linhas legadas.
+    const REV = `COALESCE(amount_cents, credits * 100)`;
+
+    const [periodRow, globalRow, byPackage, daily, topBuyers, recent, consumedRow] = await Promise.all([
+      safe(async () => (await db.query(`
+        SELECT
+          COUNT(*)                          AS payments,
+          COALESCE(SUM(${REV}), 0)          AS revenue_cents,
+          COALESCE(SUM(credits), 0)         AS credits_sold,
+          COUNT(*) FILTER (WHERE amount_cents IS NULL) AS legacy_rows,
+          COUNT(DISTINCT user_id)           AS paying_users
+        FROM processed_payments
+        WHERE created_at >= NOW() - ($1 * INTERVAL '1 day')
+      `, win)).rows[0] || {}, {}),
+
+      safe(async () => (await db.query(`
+        SELECT
+          (SELECT COUNT(*) FROM users)                                    AS total_users,
+          (SELECT COUNT(DISTINCT user_id) FROM processed_payments)        AS paying_users_all,
+          (SELECT COALESCE(SUM(credits), 0) FROM users)                   AS outstanding_credits,
+          (SELECT COALESCE(SUM(${REV}), 0) FROM processed_payments)       AS revenue_all_cents,
+          (SELECT COUNT(*) FROM processed_payments)                       AS payments_all
+      `)).rows[0] || {}, {}),
+
+      safe(async () => (await db.query(`
+        SELECT COALESCE(package, '(desconhecido)') AS package,
+               COUNT(*)                  AS payments,
+               COALESCE(SUM(${REV}), 0)  AS revenue_cents,
+               COALESCE(SUM(credits), 0) AS credits
+        FROM processed_payments
+        WHERE created_at >= NOW() - ($1 * INTERVAL '1 day')
+        GROUP BY 1 ORDER BY revenue_cents DESC
+      `, win)).rows, []),
+
+      safe(async () => (await db.query(`
+        SELECT to_char(date_trunc('day', created_at), 'YYYY-MM-DD') AS date,
+               COUNT(*)                  AS payments,
+               COALESCE(SUM(${REV}), 0)  AS revenue_cents
+        FROM processed_payments
+        WHERE created_at >= NOW() - ($1 * INTERVAL '1 day')
+        GROUP BY 1 ORDER BY 1
+      `, win)).rows, []),
+
+      safe(async () => (await db.query(`
+        SELECT user_id,
+               COUNT(*)                  AS payments,
+               COALESCE(SUM(${REV}), 0)  AS revenue_cents,
+               COALESCE(SUM(credits), 0) AS credits
+        FROM processed_payments
+        WHERE created_at >= NOW() - ($1 * INTERVAL '1 day')
+        GROUP BY user_id ORDER BY revenue_cents DESC LIMIT 10
+      `, win)).rows, []),
+
+      safe(async () => (await db.query(`
+        SELECT session_id, user_id, credits, amount_cents, currency, package, created_at
+        FROM processed_payments
+        ORDER BY created_at DESC LIMIT 20
+      `)).rows, []),
+
+      safe(async () => (await db.query(`
+        SELECT COUNT(*) AS credits_consumed
+        FROM summaries
+        WHERE success = true AND created_at >= NOW() - ($1 * INTERVAL '1 day')
+      `, win)).rows[0] || {}, {})
+    ]);
+
+    const num = (v) => (v == null ? 0 : Number(v));
+    const revenueCents = num(periodRow.revenue_cents);
+    const payments = num(periodRow.payments);
+    const totalUsers = num(globalRow.total_users);
+    const payingAll = num(globalRow.paying_users_all);
+    const revenueAll = num(globalRow.revenue_all_cents);
+
+    res.json({
+      success: true,
+      range_days: days,
+      currency: 'EUR',
+      revenue_estimated: num(periodRow.legacy_rows) > 0,
+      metrics: {
+        revenue_cents: revenueCents,
+        payments,
+        avg_order_cents: payments > 0 ? Math.round(revenueCents / payments) : 0,
+        credits_sold: num(periodRow.credits_sold),
+        credits_consumed: num(consumedRow.credits_consumed),
+        paying_users: num(periodRow.paying_users),
+        paying_users_all: payingAll,
+        total_users: totalUsers,
+        conversion_rate: totalUsers > 0 ? +((payingAll / totalUsers) * 100).toFixed(1) : 0,
+        arppu_cents: payingAll > 0 ? Math.round(revenueAll / payingAll) : 0,
+        arpu_cents: totalUsers > 0 ? Math.round(revenueAll / totalUsers) : 0,
+        outstanding_credits: num(globalRow.outstanding_credits),
+        revenue_all_cents: revenueAll,
+        payments_all: num(globalRow.payments_all)
+      },
+      by_package: byPackage.map((r) => ({
+        package: r.package, payments: num(r.payments), revenue_cents: num(r.revenue_cents), credits: num(r.credits)
+      })),
+      daily_revenue: daily.map((r) => ({ date: r.date, payments: num(r.payments), revenue_cents: num(r.revenue_cents) })),
+      top_buyers: topBuyers.map((r) => ({
+        user_id: r.user_id, payments: num(r.payments), revenue_cents: num(r.revenue_cents), credits: num(r.credits)
+      })),
+      recent_payments: recent.map((r) => ({
+        session_id: r.session_id, user_id: r.user_id, credits: num(r.credits),
+        amount_cents: r.amount_cents != null ? num(r.amount_cents) : null,
+        currency: r.currency, package: r.package, created_at: r.created_at
+      })),
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Erro ao obter receita:', error);
+    res.status(500).json({ success: false, error: 'Erro ao obter receita: ' + error.message });
+  }
+});
+
 // Função para obter dados de tipos de documentos
 async function getDocumentTypesData() {
   try {

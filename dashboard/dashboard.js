@@ -813,11 +813,12 @@ class Dashboard {
             'overview': 'Visão Geral',
             'users': 'Utilizadores',
             'summaries': 'Resumos',
+            'revenue': 'Receita',
             'analytics': 'Analytics',
             'settings': 'Configurações'
         };
         pageTitle.textContent = titles[section] || 'Dashboard';
-        
+
         this.currentSection = section;
 
         // Load section-specific data
@@ -825,6 +826,9 @@ class Dashboard {
             this.loadUsersData();
         } else if (section === 'summaries') {
             this.loadSummariesData();
+        } else if (section === 'revenue') {
+            // loadRevenueData vive no closure do DOMContentLoaded; exposto em window.
+            if (typeof window.__loadRevenue === 'function') window.__loadRevenue();
         }
     }
 
@@ -2494,7 +2498,148 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Inicializar analytics
     initializeAnalytics();
-    
+
+    // Inicializar receita
+    initializeRevenue();
+
+    // ===== Secção Receita & Créditos =====
+    const eur = (cents) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format((cents || 0) / 100);
+
+    function revenueRangeDays() {
+        const v = document.getElementById('revenueTimeRange')?.value || '30d';
+        return ({ '7d': 7, '30d': 30, '90d': 90, '1y': 365 })[v] || 30;
+    }
+
+    function rRenderChart(key, id, config) {
+        window.__revenueCharts = window.__revenueCharts || {};
+        const ctx = document.querySelector('#revenue-section #' + id);
+        if (!ctx) return;
+        if (window.__revenueCharts[key]) window.__revenueCharts[key].destroy();
+        window.__revenueCharts[key] = new Chart(ctx, config);
+    }
+
+    function initializeRevenue() {
+        document.getElementById('refreshRevenueBtn')?.addEventListener('click', loadRevenueData);
+        document.getElementById('revenueTimeRange')?.addEventListener('change', loadRevenueData);
+        // Ponte para a navegação (método de classe no top-level não vê este closure).
+        window.__loadRevenue = loadRevenueData;
+    }
+
+    async function loadRevenueData() {
+        try {
+            const days = revenueRangeDays();
+            const resp = await window.dashboard.fetchData(`/api/analytics/revenue?days=${days}`);
+            window.__revenueData = (resp && resp.success) ? resp : (resp || {});
+            renderRevenue();
+        } catch (err) {
+            console.error('❌ Erro ao carregar receita:', err);
+            if (typeof showNotification === 'function') {
+                showNotification('❌ Não foi possível carregar a receita', 'error');
+            }
+        }
+    }
+
+    function renderRevenue() {
+        const d = window.__revenueData || {};
+        const m = d.metrics || {};
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+        // Nota de estimativa
+        const note = document.getElementById('revenueEstimateNote');
+        if (note) note.classList.toggle('hidden', !d.revenue_estimated);
+
+        // Cards
+        set('revRevenue', eur(m.revenue_cents));
+        set('revPayments', Number(m.payments || 0).toLocaleString('pt-PT'));
+        set('revAvgOrder', eur(m.avg_order_cents));
+        set('revCreditsSold', Number(m.credits_sold || 0).toLocaleString('pt-PT'));
+        set('revPayingUsers', `${Number(m.paying_users_all ?? m.paying_users ?? 0).toLocaleString('pt-PT')} / ${Number(m.total_users || 0).toLocaleString('pt-PT')}`);
+        set('revConversion', (m.conversion_rate ?? 0) + '%');
+        set('revArppu', eur(m.arppu_cents));
+        // Passivo: créditos por consumir, com valor estimado a 1€/crédito
+        set('revLiability', `${Number(m.outstanding_credits || 0).toLocaleString('pt-PT')} créd. (~${eur((m.outstanding_credits || 0) * 100)})`);
+
+        // Gráfico: receita ao longo do tempo
+        const daily = d.daily_revenue || [];
+        rRenderChart('revOverTime', 'revenueOverTimeChart', {
+            type: 'line',
+            data: {
+                labels: daily.map((x) => new Date(x.date + 'T00:00:00').toLocaleDateString('pt-PT', { month: 'short', day: 'numeric' })),
+                datasets: [{
+                    label: 'Receita (€)',
+                    data: daily.map((x) => (x.revenue_cents || 0) / 100),
+                    borderColor: 'rgb(103, 80, 164)',
+                    backgroundColor: 'rgba(103, 80, 164, 0.1)',
+                    tension: 0.4, fill: true
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } }
+        });
+
+        // Gráfico: receita por pacote
+        const byPkg = d.by_package || [];
+        rRenderChart('revByPackage', 'revenueByPackageChart', {
+            type: 'doughnut',
+            data: {
+                labels: byPkg.length ? byPkg.map((x) => x.package) : ['Sem dados'],
+                datasets: [{
+                    data: byPkg.length ? byPkg.map((x) => (x.revenue_cents || 0) / 100) : [1],
+                    backgroundColor: ['rgb(103,80,164)', 'rgb(125,82,96)', 'rgb(98,91,113)', 'rgb(70,110,160)', 'rgb(56,142,60)'],
+                    borderWidth: 0
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        });
+
+        // Gráfico: créditos vendidos vs consumidos
+        rRenderChart('creditsFlow', 'creditsFlowChart', {
+            type: 'bar',
+            data: {
+                labels: ['Vendidos', 'Consumidos'],
+                datasets: [{
+                    label: 'Créditos',
+                    data: [m.credits_sold || 0, m.credits_consumed || 0],
+                    backgroundColor: ['rgba(56,142,60,0.8)', 'rgba(186,26,26,0.8)'],
+                    borderWidth: 0
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+        });
+
+        // Top compradores
+        const buyersEl = document.getElementById('revTopBuyers');
+        if (buyersEl) {
+            const buyers = d.top_buyers || [];
+            buyersEl.innerHTML = buyers.length ? buyers.map((b) => `
+                <div class="url-item">
+                    <div class="url-info">
+                        <div class="url-domain">${shortId(b.user_id)}</div>
+                        <div class="url-path">${Number(b.payments).toLocaleString('pt-PT')} pagamento(s) · ${Number(b.credits).toLocaleString('pt-PT')} créditos</div>
+                    </div>
+                    <div class="url-count">${eur(b.revenue_cents)}</div>
+                </div>`).join('') : '<div class="empty-state"><p>Sem compradores no período.</p></div>';
+        }
+
+        // Pagamentos recentes
+        const tbody = document.getElementById('revRecentPayments');
+        if (tbody) {
+            const rows = d.recent_payments || [];
+            tbody.innerHTML = rows.length ? rows.map((p) => `
+                <tr>
+                    <td>${new Date(p.created_at).toLocaleDateString('pt-PT')}</td>
+                    <td><span class="user-id">${shortId(p.user_id)}</span></td>
+                    <td>${p.package || '—'}</td>
+                    <td>${Number(p.credits).toLocaleString('pt-PT')}</td>
+                    <td>${p.amount_cents != null ? eur(p.amount_cents) : '<em>estimado</em>'}</td>
+                </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;padding:24px">Sem pagamentos registados.</td></tr>';
+        }
+    }
+
+    function shortId(id) {
+        if (!id) return '—';
+        return id.length > 16 ? id.slice(0, 10) + '…' + id.slice(-4) : id;
+    }
+
     function initializeAnalytics() {
         console.log('📊 Inicializando área de analytics...');
         

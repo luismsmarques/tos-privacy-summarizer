@@ -1877,6 +1877,10 @@
                     <span class="material-symbols-outlined nav-icon">description</span>
                     <span class="nav-text">Resumos</span>
                 </a>
+                <a href="#revenue" class="nav-item" data-section="revenue">
+                    <span class="material-symbols-outlined nav-icon">payments</span>
+                    <span class="nav-text">Receita</span>
+                </a>
                 <a href="#analytics" class="nav-item" data-section="analytics">
                     <span class="material-symbols-outlined nav-icon">bar_chart</span>
                     <span class="nav-text">Analytics</span>
@@ -2210,7 +2214,138 @@
                         </div>
                     </div>
                 </section>
-                
+
+                <!-- Revenue Section -->
+                <section id="revenue-section" class="content-section hidden">
+                    <div class="section-header">
+                        <h2>💶 Receita &amp; Créditos</h2>
+                        <div class="section-controls">
+                            <div class="time-range-selector">
+                                <label for="revenueTimeRange">Período:</label>
+                                <select id="revenueTimeRange">
+                                    <option value="7d">Últimos 7 dias</option>
+                                    <option value="30d" selected>Últimos 30 dias</option>
+                                    <option value="90d">Últimos 90 dias</option>
+                                    <option value="1y">Último ano</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" id="refreshRevenueBtn">
+                                <span class="material-symbols-outlined">refresh</span>
+                                Atualizar
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="revenueEstimateNote" class="danger-warning hidden" style="background: var(--md-sys-color-tertiary-container); color: var(--md-sys-color-on-tertiary-container);">
+                        <span class="material-symbols-outlined">info</span>
+                        <p>Alguns pagamentos antigos não têm o valor pago guardado. A receita desses é <strong>estimada</strong> a 1€/crédito. Os pagamentos novos registam o valor real.</p>
+                    </div>
+
+                    <!-- Métricas principais -->
+                    <div class="analytics-metrics-grid">
+                        <div class="metric-card primary">
+                            <div class="metric-icon"><span class="material-symbols-outlined">euro</span></div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="revRevenue">-</div>
+                                <div class="metric-label">Receita (período)</div>
+                            </div>
+                        </div>
+                        <div class="metric-card info">
+                            <div class="metric-icon"><span class="material-symbols-outlined">receipt_long</span></div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="revPayments">-</div>
+                                <div class="metric-label">Pagamentos</div>
+                            </div>
+                        </div>
+                        <div class="metric-card success">
+                            <div class="metric-icon"><span class="material-symbols-outlined">shopping_cart</span></div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="revAvgOrder">-</div>
+                                <div class="metric-label">Valor médio / compra</div>
+                            </div>
+                        </div>
+                        <div class="metric-card warning">
+                            <div class="metric-icon"><span class="material-symbols-outlined">toll</span></div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="revCreditsSold">-</div>
+                                <div class="metric-label">Créditos vendidos</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="analytics-metrics-grid">
+                        <div class="metric-card primary">
+                            <div class="metric-icon"><span class="material-symbols-outlined">group</span></div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="revPayingUsers">-</div>
+                                <div class="metric-label">Utilizadores pagantes (total)</div>
+                            </div>
+                        </div>
+                        <div class="metric-card success">
+                            <div class="metric-icon"><span class="material-symbols-outlined">trending_up</span></div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="revConversion">-</div>
+                                <div class="metric-label">Taxa de conversão</div>
+                            </div>
+                        </div>
+                        <div class="metric-card info">
+                            <div class="metric-icon"><span class="material-symbols-outlined">paid</span></div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="revArppu">-</div>
+                                <div class="metric-label">ARPPU (receita / pagante)</div>
+                            </div>
+                        </div>
+                        <div class="metric-card warning">
+                            <div class="metric-icon"><span class="material-symbols-outlined">account_balance_wallet</span></div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="revLiability">-</div>
+                                <div class="metric-label">Passivo de créditos</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gráficos -->
+                    <div class="analytics-charts-grid">
+                        <div class="chart-card large">
+                            <div class="chart-header"><h3>Receita ao longo do tempo</h3></div>
+                            <div class="chart-container"><canvas id="revenueOverTimeChart"></canvas></div>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-header"><h3>Receita por pacote</h3></div>
+                            <div class="chart-container"><canvas id="revenueByPackageChart"></canvas></div>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-header"><h3>Créditos: vendidos vs consumidos</h3></div>
+                            <div class="chart-container"><canvas id="creditsFlowChart"></canvas></div>
+                        </div>
+                    </div>
+
+                    <!-- Tabelas -->
+                    <div class="analytics-charts-grid">
+                        <div class="chart-card">
+                            <div class="chart-header"><h3>Top compradores</h3></div>
+                            <div class="top-urls-list" id="revTopBuyers"></div>
+                        </div>
+                        <div class="chart-card large">
+                            <div class="chart-header"><h3>Pagamentos recentes</h3></div>
+                            <div class="users-table-container" style="border:none">
+                                <table class="users-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Data</th>
+                                            <th>Utilizador</th>
+                                            <th>Pacote</th>
+                                            <th>Créditos</th>
+                                            <th>Valor</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="revRecentPayments"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
                 <section id="analytics-section" class="content-section hidden">
                     <div class="section-header">
                         <h2>📊 Analytics Detalhados</h2>

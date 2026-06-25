@@ -467,8 +467,13 @@ class Database {
     // Creditar um pagamento de forma idempotente: regista o session_id do
     // Stripe e só adiciona créditos se este pagamento ainda não foi processado.
     // Evita o double-credit (verify-payment + webhook podem ambos disparar).
-    async creditUserForPayment(userId, sessionId, creditsToAdd) {
+    async creditUserForPayment(userId, sessionId, creditsToAdd, meta = {}) {
         await this.ensurePaymentsTable();
+
+        // Metadados de receita (opcionais; persistidos para o dashboard).
+        const amountCents = Number.isFinite(meta.amountCents) ? meta.amountCents : null;
+        const currency = meta.currency || null;
+        const packageName = meta.packageName || null;
 
         // Transação: registar o pagamento E creditar de forma atómica. Se o
         // crédito falhar, o registo é revertido (ROLLBACK) para o retry poder
@@ -478,11 +483,11 @@ class Database {
             await client.query('BEGIN');
 
             const claim = await client.query(`
-                INSERT INTO processed_payments (session_id, user_id, credits)
-                VALUES ($1, $2, $3)
+                INSERT INTO processed_payments (session_id, user_id, credits, amount_cents, currency, package)
+                VALUES ($1, $2, $3, $4, $5, $6)
                 ON CONFLICT (session_id) DO NOTHING
                 RETURNING session_id
-            `, [sessionId, userId, creditsToAdd]);
+            `, [sessionId, userId, creditsToAdd, amountCents, currency, packageName]);
 
             if (claim.rows.length === 0) {
                 // Já processado — não creditar de novo. Ler o saldo pelo MESMO
@@ -526,6 +531,10 @@ class Database {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+        // Colunas de receita acrescentadas mais tarde (idempotente).
+        await this.query(`ALTER TABLE processed_payments ADD COLUMN IF NOT EXISTS amount_cents INTEGER`);
+        await this.query(`ALTER TABLE processed_payments ADD COLUMN IF NOT EXISTS currency TEXT`);
+        await this.query(`ALTER TABLE processed_payments ADD COLUMN IF NOT EXISTS package TEXT`);
         this._paymentsTableReady = true;
     }
 
