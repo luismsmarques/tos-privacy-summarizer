@@ -91,6 +91,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let pageAnalysis = null;
     let processingStartTime = null;
     let progressInterval = null;
+    // URL de um link legal em análise (para fallback "abrir página" se a
+    // extração no servidor falhar — ex.: páginas renderizadas por JS).
+    let pendingLegalUrl = null;
 
     // Aguardar inicialização do i18n
     const initI18n = async () => {
@@ -675,7 +678,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handler para resumir
     async function handleSummarize() {
         if (isProcessing) return;
-        
+        pendingLegalUrl = null; // análise da página atual, não de um link
+
         try {
             // Verificar créditos antes de iniciar
             const result = await chrome.storage.local.get(['sharedCredits', 'geminiApiKey', 'apiType']);
@@ -788,6 +792,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Analisar um link detetado (o servidor busca e extrai o texto da página).
     async function handleSummarizeUrl(url, language) {
         if (isProcessing) return;
+        pendingLegalUrl = url;
         try {
             const result = await chrome.storage.local.get(['sharedCredits', 'geminiApiKey']);
             const credits = result.sharedCredits || 5;
@@ -1240,6 +1245,29 @@ document.addEventListener('DOMContentLoaded', function() {
         hideProgress();
         if (errorContainer) errorContainer.classList.remove('hidden');
         if (errorMessage) errorMessage.textContent = message;
+
+        // Fallback: se era um link legal e o servidor não conseguiu extrair o
+        // texto (típico de páginas renderizadas por JavaScript), oferecer abrir
+        // a página num separador — aí o content script lê o DOM já renderizado.
+        const old = document.getElementById('openLegalPageBtn');
+        if (old) old.remove();
+        const extractionIssue = /extrair texto|não foi possível obter|não é HTML|respondeu \d|HTTP/i.test(message || '');
+        if (pendingLegalUrl && extractionIssue && errorContainer) {
+            if (errorMessage) {
+                errorMessage.textContent = 'Esta página parece ser gerada por JavaScript, por isso não foi possível lê-la do servidor. Abre-a e analisa diretamente:';
+            }
+            const urlToOpen = pendingLegalUrl;
+            const btn = document.createElement('button');
+            btn.id = 'openLegalPageBtn';
+            btn.className = 'action-button';
+            btn.style.marginTop = '12px';
+            btn.textContent = '🔗 Abrir página e analisar lá';
+            btn.addEventListener('click', () => {
+                chrome.tabs.create({ url: urlToOpen });
+                window.close();
+            });
+            errorContainer.appendChild(btn);
+        }
         resetButton();
     }
 
