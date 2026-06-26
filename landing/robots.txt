@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Reduce crawling on technical/private paths if added later.
+Disallow: /wp-admin/
+Disallow: /wp-includes/
+Disallow: /cgi-bin/
+
+Sitemap: https://atlasinvencivel.pt/sitemap.xml
